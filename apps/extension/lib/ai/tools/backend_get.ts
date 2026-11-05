@@ -15,11 +15,7 @@ export const tool = defineTool({
   }),
   run: async ({ endpoint, params }) => {
     const result = await backendGet(endpoint, params ?? {});
-    if (!result.ok) {
-      return result.retryAfterMs === undefined
-        ? { error: result.error }
-        : { error: result.error, retryAfterMs: result.retryAfterMs };
-    }
+    if (!result.ok) return result.error.toToolResult();
     return { data: result.data, personal: result.personal, truncated: result.truncated };
   },
 });

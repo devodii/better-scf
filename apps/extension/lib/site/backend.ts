@@ -1,3 +1,4 @@
+import { AppError, assertNever, type ToolErrorResult } from '../errors';
 import {
   buildEndpointPath,
   type EndpointEntry,
@@ -7,9 +8,92 @@ import {
 } from './catalog/endpoints';
 import { matchPath, type PathParams, patternToRegex } from './catalog/pattern';
 import { SITE_ORIGIN } from './routes';
-import { getSession } from './session';
+import { getSession, type SessionError } from './session';
 
 export type BackendErrorKind = 'not-logged-in' | 'not-allowed' | 'rate-limited' | 'failed';
+
+export interface BackendToolResult extends ToolErrorResult<BackendErrorKind> {
+  retryAfterMs?: number;
+}
+
+interface BackendErrorDetail {
+  status?: number;
+  path?: string;
+  retryAfterMs?: number;
+  cause?: unknown;
+}
+
+const MAX_PATH_CHARS = 120;
+
+export class BackendError extends AppError<BackendErrorKind> {
+  readonly status: number | undefined;
+  readonly path: string | undefined;
+  readonly retryAfterMs: number | undefined;
+
+  private constructor(kind: BackendErrorKind, message: string, detail: BackendErrorDetail) {
+    super({ name: 'BackendError', kind, message, cause: detail.cause });
+    this.status = detail.status;
+    this.path = detail.path;
+    this.retryAfterMs = detail.retryAfterMs;
+  }
+
+  static notLoggedIn(): BackendError {
+    return new BackendError(
+      'not-logged-in',
+      'The user is not signed in to the Community Fund.',
+      {},
+    );
+  }
+
+  static notAllowed(path: string): BackendError {
+    return new BackendError(
+      'not-allowed',
+      'That backend path is not on the read-only allow-list.',
+      {
+        path: path.replace(/[?#].*$/s, '').slice(0, MAX_PATH_CHARS),
+      },
+    );
+  }
+
+  static rateLimited(retryAfterMs: number): BackendError {
+    return new BackendError(
+      'rate-limited',
+      'The backend is rate limited. Wait before asking again.',
+      {
+        retryAfterMs,
+      },
+    );
+  }
+
+  static failed(statusOrCause?: unknown): BackendError {
+    const message = 'The backend request failed.';
+    return typeof statusOrCause === 'number'
+      ? new BackendError('failed', message, { status: statusOrCause })
+      : new BackendError('failed', message, { cause: statusOrCause });
+  }
+
+  userMessage(): string {
+    switch (this.kind) {
+      case 'not-logged-in':
+        return "You're not signed in to the Community Fund. Sign in on the site, then try again.";
+      case 'not-allowed':
+        return "That data can't be read from the Community Fund.";
+      case 'rate-limited':
+        return `The Community Fund asked us to slow down. Try again in ${Math.ceil((this.retryAfterMs ?? 0) / 1000)} seconds.`;
+      case 'failed':
+        return 'The Community Fund data could not be loaded. Please try again.';
+      default:
+        return assertNever(this.kind);
+    }
+  }
+
+  override toToolResult(): BackendToolResult {
+    const result = super.toToolResult();
+    return this.retryAfterMs === undefined
+      ? result
+      : { ...result, retryAfterMs: this.retryAfterMs };
+  }
+}
 
 export interface BackendSuccess {
   ok: true;
@@ -20,8 +104,7 @@ export interface BackendSuccess {
 
 export interface BackendFailure {
   ok: false;
-  error: BackendErrorKind;
-  retryAfterMs?: number;
+  error: BackendError;
 }
 
 export type BackendResult = BackendSuccess | BackendFailure;
@@ -60,8 +143,20 @@ export function findEndpointByPath(path: string): EndpointEntry | undefined {
   return compiled.find(({ regex }) => matchPath(regex, path))?.endpoint;
 }
 
-function fail(error: BackendErrorKind, retryAfterMs?: number): BackendFailure {
-  return retryAfterMs === undefined ? { ok: false, error } : { ok: false, error, retryAfterMs };
+function fail(error: BackendError): BackendFailure {
+  return { ok: false, error };
+}
+
+function fromSession(error: SessionError): BackendError {
+  switch (error.kind) {
+    case 'not-logged-in':
+      cache.clear();
+      return BackendError.notLoggedIn();
+    case 'failed':
+      return BackendError.failed(error);
+    default:
+      return assertNever(error.kind);
+  }
 }
 
 function trimValue(value: unknown, state: TrimState, depth: number): unknown {
@@ -146,13 +241,9 @@ async function request(path: string, entry: EndpointEntry): Promise<BackendResul
   await acquire();
   try {
     const wait = reserve(Date.now());
-    if (wait > 0) return fail('rate-limited', wait);
+    if (wait > 0) return fail(BackendError.rateLimited(wait));
     const session = await getSession();
-    if (session.status === 'not-logged-in') {
-      cache.clear();
-      return fail('not-logged-in');
-    }
-    if (session.status !== 'ok') return fail('failed');
+    if (!session.ok) return fail(fromSession(session.error));
     const response = await fetch(`${SITE_ORIGIN}${path}`, {
       method: 'GET',
       credentials: 'same-origin',
@@ -167,22 +258,22 @@ async function request(path: string, entry: EndpointEntry): Promise<BackendResul
         Math.max(backoffMs, retryAfterHeader(response.headers.get('retry-after'))),
       );
       blockedUntil = Date.now() + wait429;
-      return fail('rate-limited', wait429);
+      return fail(BackendError.rateLimited(wait429));
     }
     if (response.status === 401) {
       cache.clear();
-      return fail('not-logged-in');
+      return fail(BackendError.notLoggedIn());
     }
-    if (response.status === 403) return fail('not-allowed');
-    if (!response.ok) return fail('failed');
+    if (response.status === 403) return fail(BackendError.notAllowed(path));
+    if (!response.ok) return fail(BackendError.failed(response.status));
     backoffMs = 0;
     const raw: unknown = await response.json();
     const { data, truncated } = trimForModel(raw, entry.trim);
     const result: BackendSuccess = { ok: true, data, personal: entry.personal, truncated };
     remember(path, result);
     return result;
-  } catch {
-    return fail('failed');
+  } catch (cause) {
+    return fail(BackendError.failed(cause));
   } finally {
     release();
   }
@@ -196,9 +287,11 @@ export async function backendGet(
     const path = pathOrEndpointId.startsWith('/')
       ? pathOrEndpointId
       : buildEndpointPath(pathOrEndpointId, params);
-    if (path === null || !isAllowedBackendPath(path)) return fail('not-allowed');
+    if (path === null || !isAllowedBackendPath(path)) {
+      return fail(BackendError.notAllowed(path ?? pathOrEndpointId));
+    }
     const entry = findEndpointByPath(path);
-    if (!entry) return fail('not-allowed');
+    if (!entry) return fail(BackendError.notAllowed(path));
 
     const hit = cache.get(path);
     if (hit) {
@@ -213,7 +306,7 @@ export async function backendGet(
     });
     sharing.set(path, running);
     return running;
-  } catch {
-    return fail('failed');
+  } catch (cause) {
+    return fail(BackendError.failed(cause));
   }
 }
