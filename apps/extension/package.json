@@ -9,7 +9,10 @@
     "build": "wxt build",
     "zip": "wxt zip",
     "postinstall": "wxt prepare",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p .storybook",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build",
+    "shots:stories": "pnpm -w shots:stories"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.166",
@@ -25,12 +28,17 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@storybook/addon-mcp": "10.6.5",
+    "@storybook/react-vite": "10.6.5",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
     "@wxt-dev/module-react": "^1.2.2",
     "sass": "^1.107.1",
+    "storybook": "10.6.5",
     "typescript": "^7.0.2",
+    "vite": "8.3.5",
     "wxt": "^0.21.5"
   }
 }

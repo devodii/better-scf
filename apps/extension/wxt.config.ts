@@ -22,6 +22,7 @@ const serverHostPermission = `${serverUrl.protocol}//${serverUrl.hostname}/*`;
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
+  imports: { dirs: ['!components/**/*.stories.tsx'] },
   manifest: {
     name: 'better-scf',
     version: rootPackage.version,

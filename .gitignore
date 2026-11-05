@@ -7,6 +7,12 @@ node_modules/
 # WXT generated types and tsconfig, written by `wxt prepare`.
 /apps/extension/.wxt/
 
+# Static Storybook build, written by `pnpm build-storybook`.
+/apps/extension/storybook-static/
+
+# Story screenshot index, written by `pnpm shots:stories` next to its pw-shot-story-*.png files.
+/docs/verification/stories.html
+
 # Build output of the server, written by tsup (`pnpm --filter server build`).
 /apps/server/dist/
 
