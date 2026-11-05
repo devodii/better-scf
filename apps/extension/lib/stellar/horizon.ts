@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { HorizonSummary } from 'shared';
 import { z } from 'zod';
 import { isValidAccountId } from './detect';
@@ -9,7 +10,6 @@ export type FetchLike = (input: string, init?: { signal?: AbortSignal }) => Prom
 
 export interface HorizonOptions {
   baseUrl?: string;
-  /** Epoch ms used for `fetchedAt`; defaults to Date.now(). */
   now?: number;
 }
 
@@ -18,7 +18,6 @@ const balanceSchema = z.object({
   balance: z.string().optional(),
 });
 
-/** Only the fields we read; Horizon returns many more. Optional ones may be absent. */
 const accountSchema = z.object({
   account_id: z.string(),
   last_modified_ledger: z.number().int().nonnegative().optional(),
@@ -27,11 +26,6 @@ const accountSchema = z.object({
   balances: z.array(balanceSchema).default([]),
 });
 
-/**
- * GET /accounts/:id for a G account. 404, non-OK statuses, network errors and unexpected bodies
- * all mean "no data" (null); this never throws. Contracts have no Horizon endpoint and are
- * rejected without a request.
- */
 export async function fetchHorizonSummary(
   accountId: string,
   fetchFn: FetchLike,
@@ -63,10 +57,9 @@ export async function fetchHorizonSummary(
   }
 }
 
-/** Whole days between an ISO time and `now`, for the "active N days ago" line; null if unparsable. */
 export function daysSince(iso: string | null, now: number): number | null {
   if (!iso) return null;
-  const then = Date.parse(iso);
-  if (Number.isNaN(then)) return null;
-  return Math.max(0, Math.floor((now - then) / 86_400_000));
+  const then = dayjs(iso);
+  if (!then.isValid()) return null;
+  return Math.max(0, dayjs(now).diff(then, 'day'));
 }

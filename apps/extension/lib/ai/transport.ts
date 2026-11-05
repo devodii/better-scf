@@ -1,4 +1,5 @@
 import { type ChatTransport, DefaultChatTransport, type UIMessage } from 'ai';
+import dayjs from 'dayjs';
 import {
   CHAT_LIMITS,
   type ChatRequest,
@@ -50,10 +51,7 @@ export class ChatTransportError extends Error {
 const GENERIC_MESSAGE = 'Something went wrong while asking. Please try again.';
 
 function formatResetTime(nowMs: number, retryAfterSeconds: number): string {
-  return new Date(nowMs + retryAfterSeconds * 1000).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return dayjs(nowMs).add(retryAfterSeconds, 'second').format('HH:mm');
 }
 
 function parseRetryAfterHeader(value: string | null): number | null {
