@@ -18,7 +18,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      # Reads the pnpm version from the root package.json `packageManager` field.
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -34,8 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      # Public build-time value (repository variable). An unset variable is an empty string,
-      # which `new URL()` in wxt.config.ts rejects, so fall back to localhost here (CI builds are not released).
+      # An unset variable is an empty string, which new URL() in wxt.config.ts rejects.
       WXT_SERVER_URL: ${{ vars.WXT_SERVER_URL || 'http://localhost:8787' }}
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +77,6 @@ jobs:
       - name: Smoke start and check /health
         env:
           PORT: "8787"
-          # Fake values only; the smoke test never calls the model.
           ANTHROPIC_API_KEY: ci-fake-key
           ALLOWED_EXTENSION_IDS: abcdefghijklmnopabcdefghijklmnop
           NODE_ENV: production
@@ -116,7 +113,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Fail on Anthropic key shaped strings
-        # Key shape (prefix plus 20 or more key characters), so docs that name the prefix do not trip it.
         run: |
           if git grep -nE 'sk-ant-[A-Za-z0-9_-]{20,}'; then
             echo "An Anthropic key shaped string is committed." >&2

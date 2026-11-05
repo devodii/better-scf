@@ -11,7 +11,6 @@ on:
 permissions:
   contents: read
 
-# Never cancel a deployment mid flight; a newer one queues behind it.
 concurrency:
   group: deploy-server
   cancel-in-progress: false
@@ -35,7 +34,6 @@ jobs:
   deploy:
     name: Deploy to Railway
     needs: check
-    # Only from the default branch of this repository (also covers manual dispatch on other refs).
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -43,7 +41,6 @@ jobs:
       contents: read
     env:
       RAILWAY_CONFIGURED: ${{ secrets.RAILWAY_TOKEN != '' }}
-      # Public base URL of the deployed server, a repository variable (no trailing slash).
       SERVER_URL: ${{ vars.SERVER_URL }}
     steps:
       - name: Skip when Railway is not configured
@@ -60,7 +57,7 @@ jobs:
         run: npm i -g @railway/cli@4
       - name: Deploy
         if: env.RAILWAY_CONFIGURED == 'true'
-        # Runs from the repository root: the Dockerfile needs the root as its build context.
+        # Must run from the repository root: the server Dockerfile needs the root as its build context.
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --service better-scf-server --detach
@@ -71,8 +68,6 @@ jobs:
             echo "Repository variable SERVER_URL is not set; cannot poll /health." >&2
             exit 1
           fi
-          # `railway up --detach` returns before the new build is live, so the old
-          # instance may answer first; the window is up to 60 seconds either way.
           for _ in $(seq 1 12); do
             if curl --fail --silent --show-error "${SERVER_URL%/}/health"; then
               echo

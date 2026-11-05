@@ -29,7 +29,6 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
-          # Full history so the tagged commit can be compared with origin/main.
           fetch-depth: 0
       - name: Require the tagged commit to be on main
         env:
@@ -98,7 +97,6 @@ jobs:
     permissions:
       contents: read
     env:
-      # A secret cannot be tested in `if:`; expose only whether all four exist.
       CWS_CONFIGURED: ${{ secrets.CWS_CLIENT_ID != '' && secrets.CWS_CLIENT_SECRET != '' && secrets.CWS_REFRESH_TOKEN != '' && secrets.CWS_EXTENSION_ID != '' }}
     steps:
       - name: Report whether publishing is configured
