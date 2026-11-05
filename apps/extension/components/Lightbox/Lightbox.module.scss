@@ -1,0 +1,122 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.root {
+  @include base;
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--bscf-bg) 92%, transparent);
+  color: var(--bscf-text);
+  animation: fade-in 120ms ease-out;
+  pointer-events: none;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.scrim {
+  @include reset-button;
+
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  cursor: zoom-out;
+}
+
+.bar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  pointer-events: none;
+}
+
+.caption {
+  min-width: 0;
+  margin: 0;
+  padding-top: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.action {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 0 0.75rem 0.75rem;
+  overflow: auto;
+  pointer-events: none;
+
+  @media (min-width: 64rem) {
+    padding: 0 2rem 2rem;
+  }
+}
+
+.spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.message {
+  margin: auto;
+  padding: 0.75rem 1rem;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-surface);
+  pointer-events: auto;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: auto;
+}
+
+.isLoaded {
+  opacity: 1;
+  animation: fade-in 120ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.isActualSize {
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+}
