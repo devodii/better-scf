@@ -1,21 +1,34 @@
 import { createHash } from 'node:crypto';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import {
+  convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  type JSONSchema7,
+  jsonSchema,
   type LanguageModel,
+  stepCountIs,
   streamText,
+  type ToolSet,
+  tool,
 } from 'ai';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { type ChatErrorCode, type ChatRequest, chatError, chatRequestSchema } from 'shared';
+import {
+  CHAT_LIMITS,
+  type ChatErrorCode,
+  type ChatRequest,
+  type ChatRequestMessage,
+  chatError,
+  chatRequestSchema,
+  messageText,
+} from 'shared';
 import { z } from 'zod';
 import { type AnswerCache, cacheKey } from '../ai/cache.js';
 import { buildContextBlock, promptMatches, SYSTEM_PROMPT } from '../ai/prompts.js';
 import type { Env } from '../env.js';
 import type { ClientVariables } from '../middleware/client.js';
 
-const MAX_BODY_BYTES = 256 * 1024;
 const MAX_OUTPUT_TOKENS = 900;
 const TEMPERATURE = 0.2;
 const BURST_WINDOW_SECONDS = 60;
@@ -65,6 +78,34 @@ async function parseBody(c: ChatContext): Promise<ChatRequest | undefined> {
   return parsed.success ? parsed.data : undefined;
 }
 
+function hasToolResult(message: ChatRequestMessage): boolean {
+  return (
+    message.role === 'assistant' &&
+    message.parts.some(
+      (part) =>
+        'state' in part && (part.state === 'output-available' || part.state === 'output-error'),
+    )
+  );
+}
+
+function lastUserText(messages: readonly ChatRequestMessage[]): string | undefined {
+  const lastUser = messages.findLast((message) => message.role === 'user');
+  return lastUser === undefined ? undefined : messageText(lastUser);
+}
+
+function declaredTools(body: ChatRequest): ToolSet | undefined {
+  if (body.tools === undefined || body.tools.length === 0) return undefined;
+  return Object.fromEntries(
+    body.tools.map((declared) => [
+      declared.name,
+      tool({
+        description: declared.description,
+        inputSchema: jsonSchema(declared.inputSchema as JSONSchema7),
+      }),
+    ]),
+  );
+}
+
 // Hono drops headers set with c.header when a handler returns a raw Response.
 function corsHeaders(c: ChatContext): Record<string, string> {
   const requestOrigin = c.req.header('origin');
@@ -107,20 +148,26 @@ export function createChatRoute(deps: ChatRouteDeps) {
 
   route.post(
     '/',
-    bodyLimit({ maxSize: MAX_BODY_BYTES, onError: (c) => badRequest(c, 413) }),
+    bodyLimit({ maxSize: CHAT_LIMITS.maxRequestBytes, onError: (c) => badRequest(c, 413) }),
     async (c) => {
       const body = await parseBody(c);
       const last = body?.messages[body.messages.length - 1];
-      if (body === undefined || last === undefined || last.role !== 'user') {
+      if (body === undefined || last === undefined) return badRequest(c);
+      const userText = lastUserText(body.messages);
+      const tools = declaredTools(body);
+      if (
+        userText === undefined ||
+        (last.role !== 'user' && (tools === undefined || !hasToolResult(last)))
+      ) {
         return badRequest(c);
       }
-      if (!promptMatches(body.promptId, last.content)) {
+      if (!promptMatches(body.promptId, userText)) {
         return badRequest(c);
       }
 
       const clientId = c.get('clientId');
       const key =
-        body.promptId !== undefined && body.messages.length === 1
+        body.promptId !== undefined && body.messages.length === 1 && tools === undefined
           ? cacheKey({
               submissionId: body.submissionId,
               contentHash: createHash('sha256')
@@ -148,7 +195,11 @@ export function createChatRoute(deps: ChatRouteDeps) {
             providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
           },
         ],
-        messages: body.messages,
+        messages: await convertToModelMessages(body.messages, {
+          ...(tools === undefined ? {} : { tools }),
+          ignoreIncompleteToolCalls: true,
+        }),
+        ...(tools === undefined ? {} : { tools, stopWhen: stepCountIs(CHAT_LIMITS.maxSteps) }),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         temperature: TEMPERATURE,
         abortSignal: c.req.raw.signal,
