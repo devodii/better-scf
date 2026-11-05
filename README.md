@@ -2,8 +2,6 @@
 
 A Chrome extension that adds a reviewer-focused layer to [communityfund.stellar.org](https://communityfund.stellar.org), plus a small server behind its in-page AI chat.
 
-Status: the foundation (extension scaffold, server, CI) is in place. The features below are built milestone by milestone; see the [Roadmap](#roadmap) and `docs/build-spec.md` for what is done.
-
 ## What it is
 
 It reads the pages you already have open on the Stellar Community Fund site and adds facts next to them:
@@ -11,15 +9,10 @@ It reads the pages you already have open on the Stellar Community Fund site and 
 - Chips on every submission card: track, previously awarded, comment count.
 - Team avatars resolved from the GitHub and X handles listed in the Team section.
 - Read and unread state, navigation memory (return to where you were), and private stance, shortlist and notes.
-- Grid filters, sorting and keyboard navigation; round header totals and phase countdown.
-- On a submission page: a table of contents, a tranche summary, and Stellar address pills with a Horizon hover.
+- Grid filters, sorting, search and keyboard navigation; round header totals and phase countdown.
+- On a submission page: a table of contents, a tranche summary, Stellar address pills with a Horizon hover, an image lightbox and a reviewer bar.
 - A markdown or CSV export of your own review notes.
-- An AI dock that answers questions about the proposal on screen.
-
-Screenshots (placeholders, not yet captured):
-
-- [PLACEHOLDER: a submission card before and after]
-- [PLACEHOLDER: the AI dock open on a submission]
+- An AI dock that answers questions about the page on screen and can read your own Community Fund data when you ask.
 
 ## Install from a GitHub Release
 
@@ -32,8 +25,9 @@ To update, repeat steps 1 and 4 with the new release (or click the reload icon o
 
 ## What leaves your device
 
-- Chat: the question you type and the text of the proposal on screen are sent to our server, which sends them to Anthropic to produce the answer. Along with them go a random client id and the extension version.
-- Data the page shows: requests to Horizon (`horizon.stellar.org`, on address hover), GitHub (`api.github.com`, repository info for visible cards; `github.com` for avatars) and `unavatar.io` (X avatars).
+- Chat: the question you type, the text of the page you are viewing and the results of tools you asked the assistant to run (your own data read from the site's backend) are sent to our server, which sends them to Anthropic to produce the answer. Along with them go a random client id and the extension version.
+- Your session token goes only to the site's own backend, never to our server.
+- Data the page shows: requests to Horizon (`horizon.stellar.org`, on address hover), `github.com` (avatars) and `unavatar.io` (X avatars).
 - Nothing else. No analytics, no telemetry, no tracking.
 
 Your stance, shortlist, notes, read state and settings stay in the extension's own storage on your machine. Details: [docs/privacy.md](docs/privacy.md).
@@ -44,7 +38,7 @@ Your stance, shortlist, notes, read state and settings stay in the extension's o
 - Flag mismatches, audit or judge the quality of any proposal.
 - Click, scroll or type on the site for you, or write anything to the site. It only reads the pages and data you are browsing, using your own session.
 
-## Contributing
+## Development
 
 Requirements: Node 22 or newer and pnpm (the version is pinned in `package.json`).
 
@@ -53,25 +47,30 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` runs the extension (WXT, with hot reload in a managed Chrome) and the server in parallel. Copy `apps/extension/.env.example` and `apps/server/.env.example` to `.env` in each app first; the server needs an Anthropic key for local chat. Other root scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`. To produce the release zip: `pnpm --filter extension zip`.
+`pnpm dev` runs the extension (WXT, with hot reload in a managed Chrome) and the server in parallel. Copy `apps/extension/.env.example` and `apps/server/.env.example` to `.env` in each app first; the server needs an Anthropic key for local chat.
 
-### Design tokens
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Extension and server in watch mode. |
+| `pnpm build` | Builds the extension and the server. |
+| `pnpm lint` | Biome check across the repository. |
+| `pnpm format` | Biome check with fixes applied. |
+| `pnpm typecheck` | TypeScript check of every package. |
+| `pnpm storybook` | Storybook on port 6006. |
+| `pnpm build-storybook` | Static Storybook build. |
+| `pnpm --filter extension zip` | The release zip. |
 
-Injected UI uses only tokens scraped from the live site, so it looks native. `pnpm tokens` runs `scripts/scrape-tokens.ts` (Playwright, you log in yourself) and regenerates `apps/extension/entrypoints/scf.content/styles/tokens.scss`. Never edit that file by hand, and never write colors or font names in feature styles.
+### Storybook
 
-### Selectors
+Every UI component in `apps/extension/components/<Name>/` ships with its SCSS module and a story. Storybook is the design reference: run `pnpm storybook` to see each component and its states.
 
-All DOM selectors live in one module, `apps/extension/lib/site/selectors.ts`, nowhere else. Prefer `data-*` attributes, ARIA roles and heading text over class names, which the site generates. `pnpm recon` runs `scripts/recon.ts` to record how the site loads its data; the findings go in `docs/site-recon.md`.
+### Layout
 
-### Layout and CI
+- `apps/extension`: WXT, React and SCSS. Page features live in `entrypoints/scf.content/features/`, shared logic in `lib/`, presentational components in `components/`. All DOM selectors live in `lib/site/selectors/`; they prefer `data-*` attributes, ARIA roles and heading text over the site's generated class names.
+- `apps/server`: Hono server behind the chat.
+- `packages/shared`: types and zod schemas used by both.
 
-`apps/extension` (WXT, React, SCSS), `apps/server` (Hono), `packages/shared` (types and zod schemas used by both). CI, releases and deployment are described in [docs/ci.md](docs/ci.md).
-
-## Roadmap
-
-Follows `docs/build-spec.md`, in this order: site recon and design tokens, data layer, navigation memory and card chips, grid tools and round header, submission page, server and AI dock, release.
-
-After launch, only if people use it: comment views, bring-your-own-key, a Firefox build.
+CI, releases and deployment are described in [docs/ci.md](docs/ci.md).
 
 ## License
 

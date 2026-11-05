@@ -9,5 +9,3 @@ Loaded by `work` through `--mcp-dir <repo>/mcp`. Servers connect only when a ses
   Start `pnpm storybook` and wait until it answers before launching the session; a session started without it never gets the `mcp__storybook__*` tools, and starting Storybook later does not fix that session.
   Unverified: this JSON form is a translation of the documented `npx mcp-add --type http` CLI form.
   The test toolset is off because no test addon is installed.
-
-Story screenshots: `pnpm shots:stories [filter ...]` builds Storybook, screenshots every story (or those whose id, title or name contains a filter) into `docs/verification/pw-shot-story-<id>.png`, and writes the index `docs/verification/stories.html`. Both are gitignored.
