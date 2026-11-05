@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { browser } from 'wxt/browser';
+import { browser, type PublicPath } from 'wxt/browser';
+import tokens from '../../entrypoints/scf.content/styles/tokens.scss?inline';
 
 export const OWN_ATTRIBUTE = 'data-bscf';
 
-const STYLESHEET = 'content-scripts/scf.css';
+const STYLESHEET: string = 'content-scripts/scf.css';
 const HOST_CSS = ':host{all:initial !important}:host{color-scheme:dark !important}';
 const DOCUMENT_RULES = /(\s*@(property|font-face)[\s\S]*?{[\s\S]*?})/gm;
 
@@ -29,16 +30,16 @@ let loading: Promise<CSSStyleSheet> | undefined;
 let documentStyle: HTMLStyleElement | undefined;
 
 async function readStylesheet(): Promise<string> {
-  try {
-    const response = await fetch(new URL(STYLESHEET, browser.runtime.getURL('/')));
-    return response.ok ? await response.text() : '';
-  } catch {
-    return '';
-  }
+  const response = await fetch(browser.runtime.getURL(STYLESHEET as PublicPath));
+  if (!response.ok) throw new Error(`stylesheet ${STYLESHEET}: HTTP ${response.status}`);
+  const css = await response.text();
+  if (!css.trim()) throw new Error(`stylesheet ${STYLESHEET}: empty`);
+  return css;
 }
 
 function loadSheet(): Promise<CSSStyleSheet> {
-  loading ??= readStylesheet().then((css) => {
+  if (loading) return loading;
+  const pending = readStylesheet().then((css) => {
     const documentCss = Array.from(css.matchAll(DOCUMENT_RULES), (match) => match[0]).join('');
     if (documentCss.trim()) {
       documentStyle = document.createElement('style');
@@ -47,11 +48,17 @@ function loadSheet(): Promise<CSSStyleSheet> {
       (document.head ?? document.documentElement).append(documentStyle);
     }
     const next = new CSSStyleSheet();
-    next.replaceSync(HOST_CSS + css.replace(DOCUMENT_RULES, '').replaceAll(':root', ':host'));
+    next.replaceSync(
+      HOST_CSS + tokens + css.replace(DOCUMENT_RULES, '').replaceAll(':root', ':host'),
+    );
     sheet = next;
     return next;
   });
-  return loading;
+  pending.catch(() => {
+    loading = undefined;
+  });
+  loading = pending;
+  return pending;
 }
 
 export function releaseStyles(): void {
