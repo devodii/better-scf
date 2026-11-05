@@ -15,6 +15,18 @@
   line-height: 1;
 }
 
+.link {
+  @include focus-ring;
+  @include quick-transition(opacity);
+
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
 .label {
   @include truncate;
 

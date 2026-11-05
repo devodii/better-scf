@@ -31,6 +31,21 @@ export const LongText: Story = {
   ],
 };
 
+export const Link: Story = {
+  args: { children: 'Ada Lovelace', variant: 'purple', href: 'https://github.com/octocat' },
+};
+
+export const LinkFocused: Story = {
+  args: { children: 'Ada Lovelace', variant: 'yellow', href: 'https://github.com/octocat' },
+  decorators: [
+    (Story) => (
+      <div data-force-focus style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Row: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: '0.5rem' }}>
