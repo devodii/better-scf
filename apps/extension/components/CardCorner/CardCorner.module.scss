@@ -1,0 +1,94 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  border-radius: 62.5rem;
+  background: color-mix(in srgb, var(--bscf-bg) 72%, transparent);
+}
+
+.dot {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-inline: 0.5rem;
+  border-radius: 50%;
+}
+
+.unread {
+  background: var(--bscf-accent-yellow);
+}
+
+.opened {
+  background: var(--bscf-text-muted);
+}
+
+.reveal {
+  @include quick-transition(opacity);
+
+  opacity: var(--bscf-card-reveal, 1);
+
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.pip {
+  @include reset-button;
+  @include focus-ring;
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 0.125rem solid var(--bscf-text-muted);
+  border-radius: 50%;
+  color: var(--bscf-bg);
+  line-height: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.pip:hover .none {
+  border-color: var(--bscf-accent-yellow);
+}
+
+.support {
+  border-color: var(--bscf-chip-purple-fg);
+  background: var(--bscf-chip-purple-fg);
+}
+
+.unsure {
+  border-color: var(--bscf-accent-yellow);
+  background: var(--bscf-accent-yellow);
+}
+
+.against {
+  border-color: var(--bscf-text);
+  background: var(--bscf-text);
+}
+
+@media (max-width: 639px) {
+  .root .action {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
