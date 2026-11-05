@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { fillPattern, matchPath, type PathParams, patternToRegex } from './pattern';
 
+export interface TrimRule {
+  strip: readonly string[];
+  maxItems: number;
+}
+
 export interface EndpointEntry {
   id: string;
   path: string;
@@ -8,6 +13,16 @@ export interface EndpointEntry {
   params: z.ZodType<PathParams>;
   response: string;
   personal: boolean;
+  trim: TrimRule;
+}
+
+export type WriteMethod = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+
+export interface BlockedEntry {
+  id: string;
+  method: 'GET' | WriteMethod;
+  path: string;
+  reason: string;
 }
 
 const noParams = z.object({});
@@ -19,6 +34,16 @@ const round = z.object({
     .describe('Round identifier as the site uses it in the path'),
 });
 
+const roundNumber = z.object({
+  round: z
+    .string()
+    .regex(/^[0-9]{1,3}$/)
+    .describe('Round number, for example 45 for SCF #45'),
+});
+
+const plain: TrimRule = { strip: [], maxItems: 50 };
+const ownList: TrimRule = { strip: [], maxItems: 25 };
+
 export const endpoints = [
   {
     id: 'user',
@@ -28,6 +53,7 @@ export const endpoints = [
     response:
       'airtableUser{id, name, companyName, type, country, email, discord, siteUrls, votingPowers, latestRoundVotingPower} and sanityUser',
     personal: true,
+    trim: { strip: ['email', 'discord', 'siteUrls', 'sanityUser'], maxItems: 10 },
   },
   {
     id: 'user-email-status',
@@ -36,6 +62,7 @@ export const endpoints = [
     params: noParams,
     response: '{ emailStatus }',
     personal: true,
+    trim: plain,
   },
   {
     id: 'form-items-essential',
@@ -45,6 +72,7 @@ export const endpoints = [
     response:
       'rounds[{key, value, type, phase, roundNumber}], interestFormProjects[{key, value, buildTrack, category, hasInterestForm, teamDescription}], assignedProjects[{key, value, eligible, category, hasInterestForm, teamDescription}]',
     personal: true,
+    trim: { strip: ['teamDescription'], maxItems: 50 },
   },
   {
     id: 'tier-request',
@@ -54,6 +82,7 @@ export const endpoints = [
     response:
       '{ buttonLabel, disabled, blockingReasons[], votingPowerThreshold, requestType, targetTier }',
     personal: true,
+    trim: ownList,
   },
   {
     id: 'tier-nomination',
@@ -62,22 +91,43 @@ export const endpoints = [
     params: noParams,
     response: '{ tierNominations[], selfTierNominations[], threshold{navigator, pilot, round} }',
     personal: true,
+    trim: ownList,
   },
   {
     id: 'vote-trust',
     path: '/backend/dashboard/vote/trust',
-    description: 'Trust relations of the user on the Delegates and Trust page.',
+    description: 'The users the logged-in user trusts, on the Delegates and Trust page.',
     params: noParams,
-    response: 'An array; its item shape has not been inspected.',
+    response: 'An array of the trusted users; its item shape has not been inspected.',
     personal: true,
+    trim: ownList,
   },
   {
     id: 'vote-delegate',
     path: '/backend/dashboard/vote/delegate',
-    description: 'Delegates of the user on the vote page.',
+    description: 'The delegates of the logged-in user on the vote page.',
     params: noParams,
-    response: 'An array; its item shape has not been inspected.',
+    response: 'An array of delegate ids.',
     personal: true,
+    trim: ownList,
+  },
+  {
+    id: 'vote-category-delegate',
+    path: '/backend/dashboard/vote/category_delegate',
+    description: 'Delegation of the logged-in user per category.',
+    params: noParams,
+    response: 'An object keyed by category; empty when the user delegates nothing per category.',
+    personal: true,
+    trim: ownList,
+  },
+  {
+    id: 'vote-quarterly-category-delegate',
+    path: '/backend/dashboard/vote/quarterly_category_delegate',
+    description: 'Quarterly delegation of the logged-in user per track.',
+    params: noParams,
+    response: '{ integration_track[], open_track[], rfp_track[] }',
+    personal: true,
+    trim: ownList,
   },
   {
     id: 'nqg-graph',
@@ -86,6 +136,7 @@ export const endpoints = [
     params: noParams,
     response: '{ nqgOverTime[[round, ...]] }',
     personal: true,
+    trim: plain,
   },
   {
     id: 'voting-statistics',
@@ -94,6 +145,27 @@ export const endpoints = [
     params: round,
     response: 'Neuron scores and totalNQGScore for that round.',
     personal: true,
+    trim: ownList,
+  },
+  {
+    id: 'analytics-rounds',
+    path: '/backend/dashboard/analytics/rounds',
+    description: 'The rounds that have analytics, with when each was computed.',
+    params: noParams,
+    response: '{ rounds[{ round, computedAt }] }',
+    personal: false,
+    trim: plain,
+  },
+  {
+    id: 'analytics-round',
+    path: '/backend/dashboard/analytics/round/:round',
+    description:
+      'Analytics of one round: awarded count, budgets, categories, community, voters, delegation, Lorenz curve and neurons.',
+    params: roundNumber,
+    response:
+      'Awarded count, average and median budget, budget buckets, category breakdown, community size, voters, delegation network, Lorenz curve, neuron breakdown and deep dive, and submissionDetails[] in older rounds. It has no track field.',
+    personal: false,
+    trim: { strip: ['submissionDetails'], maxItems: 30 },
   },
   {
     id: 'analytics-insights',
@@ -104,6 +176,7 @@ export const endpoints = [
     response:
       '{ generatedAt, global{headline, trends[], anomalies[], alerts[]}, perRound[{round, summary, highlights[], concerns[], tags[]}], roundsIncluded[] }',
     personal: false,
+    trim: { strip: [], maxItems: 20 },
   },
   {
     id: 'analytics-all-rounds',
@@ -114,8 +187,78 @@ export const endpoints = [
     response:
       '{ computedAt, roundsIncluded[], series{categoryMix, delegationHealth, fundingTrends[{round, avgBudget, medianBudget, totalAwardedUSD}], neuronBreakdown, participation, powerConcentration, projectFunnel[{round, submissionsCount, awardedCount}], repeatSubmitters, reputationTrend, trustGraphTrend, trustLossTrend, voteQualityTrend, voterCohort, votingHistoryTrend} }',
     personal: false,
+    trim: plain,
   },
 ] as const satisfies readonly EndpointEntry[];
+
+export const blocked = [
+  {
+    id: 'form-items-users',
+    method: 'GET',
+    path: '/backend/dashboard/form_items/users',
+    reason: 'A directory of about 6000 users: bulk personal data, never exposed to the model.',
+  },
+  {
+    id: 'tier-request-submit',
+    method: 'POST',
+    path: '/backend/dashboard/tier/request',
+    reason: 'Write: submits a tier request.',
+  },
+  {
+    id: 'tier-nomination-create',
+    method: 'POST',
+    path: '/backend/dashboard/tier_nomination',
+    reason: 'Write: creates a tier nomination.',
+  },
+  {
+    id: 'tier-nomination-update',
+    method: 'POST',
+    path: '/backend/dashboard/tier_nomination/:id',
+    reason: 'Write: changes a tier nomination.',
+  },
+  {
+    id: 'tier-upgrade',
+    method: 'POST',
+    path: '/backend/dashboard/tier_upgrade',
+    reason: 'Write: upgrades the tier.',
+  },
+  {
+    id: 'vote-delegate-set',
+    method: 'POST',
+    path: '/backend/dashboard/vote/delegate',
+    reason: 'Write: changes the delegation.',
+  },
+  {
+    id: 'user-update',
+    method: 'PATCH',
+    path: '/backend/dashboard/user',
+    reason: 'Write: changes the account.',
+  },
+  {
+    id: 'project-update',
+    method: 'POST',
+    path: '/backend/dashboard/project/:id',
+    reason: 'Write: changes a project.',
+  },
+  {
+    id: 'media-signature',
+    method: 'POST',
+    path: '/backend/dashboard/media/signature',
+    reason: 'Write: requests a media upload signature.',
+  },
+  {
+    id: 'wallet-address-set',
+    method: 'POST',
+    path: '/backend/dashboard/wallet_address',
+    reason: 'Write: sets the wallet address.',
+  },
+  {
+    id: 'wallet-address-challenge',
+    method: 'POST',
+    path: '/backend/dashboard/wallet_address/challenge',
+    reason: 'Write: starts a wallet address challenge.',
+  },
+] as const satisfies readonly BlockedEntry[];
 
 export type EndpointId = (typeof endpoints)[number]['id'];
 
@@ -124,6 +267,11 @@ const BACKEND_PREFIX = '/backend/dashboard/';
 const compiled = endpoints.map((endpoint: EndpointEntry) => ({
   endpoint,
   regex: patternToRegex(endpoint.path),
+}));
+
+const compiledBlocked = blocked.map((entry: BlockedEntry) => ({
+  method: entry.method,
+  regex: patternToRegex(entry.path),
 }));
 
 export function findEndpoint(id: string): EndpointEntry | undefined {
@@ -136,8 +284,14 @@ export function buildEndpointPath(id: string, params: PathParams = {}): string |
   return fillPattern(endpoint.path, params);
 }
 
+export function isBlockedBackendRequest(method: string, path: string): boolean {
+  const upper = method.toUpperCase();
+  return compiledBlocked.some((item) => item.method === upper && item.regex.test(path));
+}
+
 export function isAllowedBackendPath(path: string): boolean {
   if (!path.startsWith(BACKEND_PREFIX)) return false;
+  if (isBlockedBackendRequest('GET', path)) return false;
   for (const { endpoint, regex } of compiled) {
     const params = matchPath(regex, path);
     if (params && endpoint.params.safeParse(params).success) return true;
