@@ -5,12 +5,8 @@ import { Dock } from '../../../../components/Dock';
 import type { DockHistoryItem } from '../../../../components/DockHistory';
 import type { DockPromptItem } from '../../../../components/DockPrompts';
 import { detectPageKind } from '../../../../lib/ai/context';
-import {
-  type BscfChat,
-  type ChatPageRequest,
-  ChatTransportError,
-  createBscfChat,
-} from '../../../../lib/ai/transport';
+import { type BscfChat, type ChatPageRequest, createBscfChat } from '../../../../lib/ai/transport';
+import { isAppError } from '../../../../lib/errors';
 import type { Feature, FeatureContext } from '../../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
 import dockCss from '../../styles/dock.scss?inline';
@@ -88,7 +84,7 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
   const errorText = (): string | undefined => {
     const error = session?.chat.error;
     if (!error) return undefined;
-    return error instanceof ChatTransportError ? error.message : GENERIC_ERROR;
+    return isAppError(error) ? error.userMessage() : GENERIC_ERROR;
   };
 
   const persist = (message: UIMessage, promptId?: string): void => {

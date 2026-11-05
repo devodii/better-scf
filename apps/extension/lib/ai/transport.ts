@@ -18,6 +18,7 @@ import {
   type ProposalContext,
   parseChatError,
 } from 'shared';
+import { AppError, assertNever, isAppError } from '../errors';
 import { getToolDeclarations, runTool } from './tools/registry';
 
 export interface ChatPageRequest extends ProposalContext {
@@ -33,36 +34,96 @@ export interface BscfChatTransportOptions {
   extensionVersion?: string;
 }
 
-export type ChatTransportErrorCode =
-  | 'daily_limit'
-  | 'rate_limited'
-  | 'global_cap'
+export type ChatTransportErrorKind =
+  | 'daily-limit'
+  | 'rate-limited'
+  | 'global-cap'
   | 'server'
   | 'network';
 
-export class ChatTransportError extends Error {
-  readonly code: ChatTransportErrorCode;
-  readonly status: number;
-  readonly retryAfterSeconds: number | null;
-
-  constructor(
-    code: ChatTransportErrorCode,
-    message: string,
-    status: number,
-    retryAfterSeconds: number | null,
-  ) {
-    super(message);
-    this.name = 'ChatTransportError';
-    this.code = code;
-    this.status = status;
-    this.retryAfterSeconds = retryAfterSeconds;
-  }
+interface ChatTransportErrorDetail {
+  status: number;
+  retryAfterSeconds: number | null;
+  serverMessage?: string | undefined;
+  resetsAt?: string | undefined;
+  cause?: unknown;
 }
 
 const GENERIC_MESSAGE = 'Something went wrong while asking. Please try again.';
 
 function formatResetTime(nowMs: number, retryAfterSeconds: number): string {
   return dayjs(nowMs).add(retryAfterSeconds, 'second').format('HH:mm');
+}
+
+export class ChatTransportError extends AppError<ChatTransportErrorKind> {
+  readonly status: number;
+  readonly retryAfterSeconds: number | null;
+  private readonly serverMessage: string | undefined;
+  private readonly resetsAt: string | undefined;
+
+  private constructor(kind: ChatTransportErrorKind, detail: ChatTransportErrorDetail) {
+    super({
+      name: 'ChatTransportError',
+      kind,
+      message: `The assistant request failed (${kind}, status ${detail.status}).`,
+      cause: detail.cause,
+    });
+    this.status = detail.status;
+    this.retryAfterSeconds = detail.retryAfterSeconds;
+    this.serverMessage = detail.serverMessage;
+    this.resetsAt = detail.resetsAt;
+  }
+
+  static rateLimited(retryAfterSeconds: number | null): ChatTransportError {
+    return new ChatTransportError('rate-limited', { status: 429, retryAfterSeconds });
+  }
+
+  static dailyLimit(retryAfterSeconds: number | null, nowMs: number): ChatTransportError {
+    return new ChatTransportError('daily-limit', {
+      status: 429,
+      retryAfterSeconds,
+      resetsAt: retryAfterSeconds === null ? undefined : formatResetTime(nowMs, retryAfterSeconds),
+    });
+  }
+
+  static globalCap(
+    serverMessage: string | undefined,
+    retryAfterSeconds: number | null,
+  ): ChatTransportError {
+    return new ChatTransportError('global-cap', { status: 503, retryAfterSeconds, serverMessage });
+  }
+
+  static server(
+    status: number,
+    serverMessage: string | undefined,
+    retryAfterSeconds: number | null,
+  ): ChatTransportError {
+    return new ChatTransportError('server', { status, retryAfterSeconds, serverMessage });
+  }
+
+  static network(cause: unknown): ChatTransportError {
+    return new ChatTransportError('network', { status: 0, retryAfterSeconds: null, cause });
+  }
+
+  userMessage(): string {
+    switch (this.kind) {
+      case 'rate-limited': {
+        const wait =
+          this.retryAfterSeconds === null ? 'a moment' : `${this.retryAfterSeconds} seconds`;
+        return `You're asking too fast. Try again in ${wait}.`;
+      }
+      case 'daily-limit':
+        return `You've hit the limit for today (${CHAT_LIMITS.dailyQuestionsPerClient} questions). Resets at ${this.resetsAt ?? 'tomorrow'}.`;
+      case 'global-cap':
+        return this.serverMessage ?? 'The assistant is busy right now. Please try again later.';
+      case 'server':
+        return this.serverMessage ?? GENERIC_MESSAGE;
+      case 'network':
+        return 'Could not reach the assistant. Check your connection and try again.';
+      default:
+        return assertNever(this.kind);
+    }
+  }
 }
 
 function parseRetryAfterHeader(value: string | null): number | null {
@@ -82,37 +143,12 @@ async function mapChatErrorResponse(
     detail?.retryAfterSeconds ?? parseRetryAfterHeader(response.headers.get('Retry-After'));
 
   if (response.status === 429) {
-    if (detail?.code === 'rate_limited') {
-      const wait = retryAfter === null ? 'a moment' : `${retryAfter} seconds`;
-      return new ChatTransportError(
-        'rate_limited',
-        `You're asking too fast. Try again in ${wait}.`,
-        429,
-        retryAfter,
-      );
-    }
-    const resets = retryAfter === null ? 'tomorrow' : formatResetTime(now(), retryAfter);
-    return new ChatTransportError(
-      'daily_limit',
-      `You've hit the limit for today (${CHAT_LIMITS.dailyQuestionsPerClient} questions). Resets at ${resets}.`,
-      429,
-      retryAfter,
-    );
+    return detail?.code === 'rate_limited'
+      ? ChatTransportError.rateLimited(retryAfter)
+      : ChatTransportError.dailyLimit(retryAfter, now());
   }
-  if (response.status === 503) {
-    return new ChatTransportError(
-      'global_cap',
-      detail?.message ?? 'The assistant is busy right now. Please try again later.',
-      503,
-      retryAfter,
-    );
-  }
-  return new ChatTransportError(
-    'server',
-    detail?.message ?? GENERIC_MESSAGE,
-    response.status,
-    retryAfter,
-  );
+  if (response.status === 503) return ChatTransportError.globalCap(detail?.message, retryAfter);
+  return ChatTransportError.server(response.status, detail?.message, retryAfter);
 }
 
 type AssistantRequestPart = Extract<ChatRequestMessage, { role: 'assistant' }>['parts'][number];
@@ -219,13 +255,8 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
         return response;
       } catch (error) {
         inFlight.delete(controller);
-        if (error instanceof ChatTransportError || controller.signal.aborted) throw error;
-        throw new ChatTransportError(
-          'network',
-          'Could not reach the assistant. Check your connection and try again.',
-          0,
-          null,
-        );
+        if (isAppError(error) || controller.signal.aborted) throw error;
+        throw ChatTransportError.network(error);
       } finally {
         outer?.removeEventListener('abort', forward);
       }
@@ -293,11 +324,12 @@ export function createBscfChat(options: BscfChatTransportOptions): BscfChat {
     if (outcome.ok) {
       void chat.addToolOutput({ tool: toolName, toolCallId, output: outcome.output });
     } else {
+      const { error, message } = outcome.error.toToolResult();
       void chat.addToolOutput({
         state: 'output-error',
         tool: toolName,
         toolCallId,
-        errorText: outcome.error,
+        errorText: `${error}: ${message}`,
       });
     }
   };
