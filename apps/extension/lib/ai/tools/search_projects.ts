@@ -16,7 +16,7 @@ export const tool = defineTool({
     const { matches, ready, error } = searchProjects(query, limit ?? 5);
     return {
       ready,
-      error,
+      error: error?.toToolResult() ?? null,
       matches: matches.map(({ project }) => ({
         title: project.title,
         category: project.category,

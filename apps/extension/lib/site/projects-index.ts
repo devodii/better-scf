@@ -6,9 +6,53 @@ import {
   type ProjectIndexRecord,
   TTL_MS,
 } from '../db';
+import { AppError, assertNever } from '../errors';
 import { SITE_ORIGIN } from './routes';
 
 export type ProjectRecord = ProjectIndexEntry;
+
+export type ProjectsIndexErrorKind = 'unavailable' | 'unreadable';
+
+export class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
+  readonly status: number | undefined;
+
+  private constructor(
+    kind: ProjectsIndexErrorKind,
+    message: string,
+    status: number | undefined,
+    cause: unknown,
+  ) {
+    super({ name: 'ProjectsIndexError', kind, message, cause });
+    this.status = status;
+  }
+
+  static unavailable(statusOrCause?: unknown): ProjectsIndexError {
+    const message = 'The projects list could not be loaded.';
+    return typeof statusOrCause === 'number'
+      ? new ProjectsIndexError('unavailable', message, statusOrCause, undefined)
+      : new ProjectsIndexError('unavailable', message, undefined, statusOrCause);
+  }
+
+  static unreadable(): ProjectsIndexError {
+    return new ProjectsIndexError(
+      'unreadable',
+      'The projects page had no readable project records.',
+      undefined,
+      undefined,
+    );
+  }
+
+  userMessage(): string {
+    switch (this.kind) {
+      case 'unavailable':
+        return 'The project list could not be loaded. Check your connection and try again.';
+      case 'unreadable':
+        return 'The project list could not be read. Try again later.';
+      default:
+        return assertNever(this.kind);
+    }
+  }
+}
 
 export interface MatchRange {
   start: number;
@@ -24,8 +68,12 @@ export interface ProjectMatch {
 export interface ProjectSearchResult {
   matches: ProjectMatch[];
   ready: boolean;
-  error: boolean;
+  error: ProjectsIndexError | null;
 }
+
+type FetchOutcome =
+  | { ok: true; record: ProjectIndexRecord }
+  | { ok: false; error: ProjectsIndexError };
 
 interface Prepared {
   project: ProjectRecord;
@@ -55,7 +103,7 @@ const rpc = createRpcClient();
 
 let prepared: Prepared[] | null = null;
 let checkedAt = 0;
-let failed = false;
+let failure: ProjectsIndexError | null = null;
 let retryAt = 0;
 let loading: Promise<boolean> | null = null;
 let debugEnabled = false;
@@ -171,46 +219,56 @@ function adopt(record: ProjectIndexRecord): void {
   prepared = record.projects.map(prepare);
 }
 
-async function fetchProjects(): Promise<ProjectIndexRecord | null> {
-  const response = await fetch(PROJECTS_URL, {
-    credentials: 'omit',
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-  if (!response.ok) return null;
-  const projects = parseProjectRecords(await response.text());
-  if (projects.length === 0) {
-    debug();
-    return null;
+async function fetchProjects(): Promise<FetchOutcome> {
+  try {
+    const response = await fetch(PROJECTS_URL, {
+      credentials: 'omit',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) return { ok: false, error: ProjectsIndexError.unavailable(response.status) };
+    const projects = parseProjectRecords(await response.text());
+    if (projects.length === 0) {
+      debug();
+      return { ok: false, error: ProjectsIndexError.unreadable() };
+    }
+    return { ok: true, record: { key: PROJECT_INDEX_KEY, projects, fetchedAt: Date.now() } };
+  } catch (cause) {
+    return { ok: false, error: ProjectsIndexError.unavailable(cause) };
   }
-  return { key: PROJECT_INDEX_KEY, projects, fetchedAt: Date.now() };
 }
 
 async function run(): Promise<boolean> {
+  const fetched: { error: ProjectsIndexError | null } = { error: null };
   try {
     const { value } = await revalidate<ProjectIndexRecord>({
       key: PROJECT_INDEX_KEY,
       read: () => rpc.getProjectIndex(),
-      fetchFresh: fetchProjects,
+      fetchFresh: async () => {
+        const outcome = await fetchProjects();
+        if (outcome.ok) return outcome.record;
+        fetched.error = outcome.error;
+        return null;
+      },
       write: (record) => rpc.putProjectIndex(record),
       onUpdate: adopt,
     });
     if (value) {
       adopt(value);
-      failed = false;
+      failure = null;
     } else if (!prepared) {
-      failed = true;
+      failure = fetched.error ?? ProjectsIndexError.unavailable();
     }
-  } catch {
-    if (!prepared) failed = true;
+  } catch (cause) {
+    if (!prepared) failure = ProjectsIndexError.unavailable(cause);
   }
   checkedAt = Date.now();
-  if (failed) retryAt = checkedAt + RETRY_AFTER_FAILURE_MS;
+  if (failure) retryAt = checkedAt + RETRY_AFTER_FAILURE_MS;
   return prepared !== null;
 }
 
 function needsLoad(now: number): boolean {
   if (prepared) return now - checkedAt >= TTL_MS.projectIndex;
-  return !failed || now >= retryAt;
+  return failure === null || now >= retryAt;
 }
 
 export function loadProjectsIndex(): Promise<boolean> {
@@ -223,7 +281,7 @@ export function loadProjectsIndex(): Promise<boolean> {
 }
 
 export function reloadProjectsIndex(): Promise<boolean> {
-  failed = false;
+  failure = null;
   retryAt = 0;
   return loadProjectsIndex();
 }
@@ -292,9 +350,9 @@ function scoreItem(
 export function searchProjects(query: string, limit: number = DEFAULT_LIMIT): ProjectSearchResult {
   try {
     const tokens = tokenize(query);
-    if (tokens.length === 0) return { matches: [], ready: prepared !== null, error: failed };
+    if (tokens.length === 0) return { matches: [], ready: prepared !== null, error: failure };
     if (needsLoad(Date.now())) void loadProjectsIndex();
-    if (!prepared) return { matches: [], ready: false, error: failed };
+    if (!prepared) return { matches: [], ready: false, error: failure };
     const scored: (ProjectMatch & { rank: number })[] = [];
     for (const item of prepared) {
       const match = scoreItem(item, tokens);
@@ -310,8 +368,8 @@ export function searchProjects(query: string, limit: number = DEFAULT_LIMIT): Pr
       titleRanges,
       categoryRanges,
     }));
-    return { matches, ready: true, error: false };
-  } catch {
-    return { matches: [], ready: prepared !== null, error: true };
+    return { matches, ready: true, error: null };
+  } catch (cause) {
+    return { matches: [], ready: prepared !== null, error: ProjectsIndexError.unavailable(cause) };
   }
 }
