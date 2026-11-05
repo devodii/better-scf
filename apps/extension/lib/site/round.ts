@@ -59,7 +59,6 @@ export const submissionSummarySchema = submissionSchema
     budget: z.unknown().transform(toNumber),
     awardType: nullableString,
     isCvvc: nullableBoolean,
-    isOwnedByUser: nullableBoolean,
     thumbnail: z
       .object({ url: z.string() })
       .transform((t) => t.url)
@@ -190,7 +189,6 @@ function toSummary(raw: string): SubmissionSummary | null {
     budget: record.budget,
     awardType: record.awardType,
     isCvvc: record.isCvvc,
-    isOwnedByUser: record.isOwnedByUser,
     thumbnail: record.thumbnail,
   });
   return result.ok ? result.data : null;
