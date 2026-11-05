@@ -1,30 +1,15 @@
 import type { Context, MiddlewareHandler } from 'hono';
 
-/**
- * In-memory sliding-window rate limiter (single instance; state is lost on restart
- * and is not shared between instances). Limits and the clock are passed in; this
- * module never reads process.env.
- *
- * Mount it after the origin and client middleware:
- *   app.use('/v1/*', origin, client, createRateLimit({ limits, now }))
- */
-
 export interface RateLimits {
-  /** Burst allowance per client id over the last 60 seconds. */
   clientPerMinute: number;
-  /** Allowance per client id over the last 24 hours. */
   clientPerDay: number;
-  /** Allowance per IP over the last 24 hours. */
   ipPerDay: number;
-  /** Requests served by the whole server over the last 24 hours (protects the key). */
   globalPerDay: number;
 }
 
 export interface RateLimitOptions {
   limits: RateLimits;
-  /** Injectable clock in epoch milliseconds. Defaults to Date.now. */
   now?: () => number;
-  /** Override how the client IP is found. Defaults to {@link clientIpFromRequest}. */
   getIp?: (c: Context) => string;
 }
 
@@ -34,12 +19,7 @@ const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * 60_000;
 const SWEEP_EVERY = 500;
 
-/**
- * Proxy-aware client IP. Railway (and most proxies) APPEND the connecting address to
- * `X-Forwarded-For`, so the rightmost entry is the one the trusted proxy wrote; the
- * leftmost entries can be forged by the caller. Falls back to `X-Real-IP`, then
- * to "unknown" (all such requests share one bucket, which fails closed).
- */
+// Proxies append the connecting address to X-Forwarded-For: only the rightmost entry is trusted, the leftmost can be forged.
 export function clientIpFromRequest(c: Context): string {
   const forwarded = c.req.header('x-forwarded-for');
   if (forwarded) {
@@ -59,7 +39,6 @@ type Decision =
   | { allowed: false; reason: 'global' | 'client' | 'ip'; retryAfterSeconds: number };
 
 export interface RateLimiter {
-  /** Records the request when allowed. A denied request is not recorded. */
   check(clientId: string, ip: string): Decision;
 }
 
@@ -69,7 +48,6 @@ export function createRateLimiter(limits: RateLimits, now: () => number = Date.n
   let global: number[] = [];
   let calls = 0;
 
-  // Drops timestamps older than the window; both arrays stay sorted ascending.
   const prune = (stamps: number[], windowMs: number, t: number): number[] => {
     const cutoff = t - windowMs;
     let i = 0;
@@ -77,9 +55,7 @@ export function createRateLimiter(limits: RateLimits, now: () => number = Date.n
     return i === 0 ? stamps : stamps.slice(i);
   };
 
-  // Seconds until the entry that blocks us leaves the window (at least 1).
   const retryAfter = (stamps: number[], windowMs: number, limit: number, t: number): number => {
-    // The (length - limit + 1)-th oldest entry must expire before a slot opens.
     const blocking = stamps[Math.max(0, stamps.length - limit)] ?? t;
     return Math.max(1, Math.ceil((blocking + windowMs - t) / 1000));
   };
@@ -154,8 +130,6 @@ export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
 
   return async (c, next) => {
     const ip = getIp(c);
-    // The client middleware rejects a missing id earlier; fall back to the IP so a
-    // misordered mount still limits instead of sharing one bucket.
     const clientId = c.req.header(CLIENT_HEADER) ?? `ip:${ip}`;
     const decision = limiter.check(clientId, ip);
     if (decision.allowed) {

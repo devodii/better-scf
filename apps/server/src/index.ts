@@ -14,7 +14,6 @@ import {
 } from './routes/chat.js';
 import { createHealthRoute } from './routes/health.js';
 
-// Keep in sync with package.json (a test asserts it).
 export const SERVER_VERSION = '0.1.0';
 
 const IP_DAILY_CAP = 120;
@@ -26,7 +25,6 @@ export interface AppDeps extends Partial<Omit<ChatRouteDeps, 'now'>> {
 export function createApp(env: Env, deps: AppDeps = {}) {
   const app = new Hono();
 
-  // Open to any origin: deploy checks call it.
   app.route('/health', createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }));
 
   const v1 = new Hono();
@@ -62,7 +60,6 @@ export function createApp(env: Env, deps: AppDeps = {}) {
 
   app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
-  // Never returns a stack or a thrown message; logs only the error name.
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
       return c.json({ error: 'http_error' }, err.status);

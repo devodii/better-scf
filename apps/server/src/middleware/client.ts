@@ -7,7 +7,6 @@ export interface ClientVariables {
   clientId: string;
 }
 
-/** Requires `X-BSCF-Client` to be a UUID v4 (400 otherwise) and exposes it as `clientId`. */
 export const client = createMiddleware<{ Variables: ClientVariables }>(async (c, next) => {
   const parsed = clientIdSchema.safeParse(c.req.header('x-bscf-client'));
   if (!parsed.success) {

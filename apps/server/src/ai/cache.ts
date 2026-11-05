@@ -1,13 +1,6 @@
 import { createHash } from 'node:crypto';
 import Database from 'better-sqlite3';
 
-/**
- * Answer cache for the quick prompts. Keyed by sha256(submissionId, contentHash,
- * promptId). Always an in-memory LRU; when a SQLite file path is passed in, answers
- * are also persisted there and read back after a restart. This module never reads
- * process.env: the caller passes the path.
- */
-
 export interface CacheKeyParts {
   submissionId: string;
   contentHash: string;
@@ -17,19 +10,12 @@ export interface CacheKeyParts {
 export interface AnswerCache {
   get(key: string): string | undefined;
   set(key: string, answer: string): void;
-  /** Releases the SQLite handle, if any. */
   close(): void;
 }
 
 export interface AnswerCacheOptions {
-  /** Entries kept in memory. Defaults to 2000. */
   maxEntries?: number;
-  /** SQLite file path. Omit to stay memory-only. */
   sqlitePath?: string | undefined;
-  /**
-   * Called with the error name only when the SQLite store cannot be opened and the
-   * cache falls back to memory. Defaults to a fixed `console.warn` message.
-   */
   onSqliteFallback?: (errorName: string) => void;
 }
 
@@ -43,7 +29,6 @@ export function cacheKey(parts: CacheKeyParts): string {
 }
 
 export function createMemoryCache(maxEntries: number = DEFAULT_MAX_ENTRIES): AnswerCache {
-  // A Map iterates in insertion order, so the first key is the least recently used.
   const entries = new Map<string, string>();
   return {
     get(key) {
@@ -80,7 +65,7 @@ export function createSqliteCache(path: string): AnswerCache {
       'INSERT INTO answers (key, answer) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET answer = excluded.answer',
     );
   } catch (error) {
-    db.close(); // a half-opened handle must not leak when the caller falls back
+    db.close();
     throw error;
   }
   return {
@@ -94,7 +79,6 @@ export function createSqliteCache(path: string): AnswerCache {
   };
 }
 
-/** Memory LRU in front; SQLite behind it only when `sqlitePath` is a non-empty string. */
 export function createAnswerCache(options: AnswerCacheOptions = {}): AnswerCache {
   const memory = createMemoryCache(options.maxEntries ?? DEFAULT_MAX_ENTRIES);
   if (!options.sqlitePath) return memory;
@@ -102,7 +86,6 @@ export function createAnswerCache(options: AnswerCacheOptions = {}): AnswerCache
   try {
     store = createSqliteCache(options.sqlitePath);
   } catch (error) {
-    // Never log the path, the error message or any key/answer: the name is enough.
     const name = error instanceof Error ? error.name : 'UnknownError';
     if (options.onSqliteFallback) options.onSqliteFallback(name);
     else console.warn(`answer cache: SQLite store unavailable (${name}); using memory only`);

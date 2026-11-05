@@ -20,14 +20,12 @@ export function isAllowedOrigin(origin: string | undefined, options: OriginOptio
   return options.development && LOCALHOST_ORIGIN.test(origin);
 }
 
-/** Rejects any request whose Origin is not allow-listed with 403 before the handler runs. */
 export function origin(options: OriginOptions) {
   return createMiddleware(async (c, next) => {
     const requestOrigin = c.req.header('origin');
     if (requestOrigin === undefined || !isAllowedOrigin(requestOrigin, options)) {
       return c.json({ error: 'forbidden_origin' }, 403);
     }
-    // CORS headers only for allowed origins.
     c.header('Access-Control-Allow-Origin', requestOrigin);
     c.header('Vary', 'Origin');
     if (c.req.method === 'OPTIONS') {

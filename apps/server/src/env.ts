@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-5';
 
-// Positive integer from a string; a blank value falls back to the default.
 const intWithDefault = (fallback: number) => z.coerce.number().int().positive().default(fallback);
 
 const envSchema = z
@@ -38,7 +37,6 @@ export type Env = z.infer<typeof envSchema>;
 
 export type EnvResult = { ok: true; env: Env } | { ok: false; message: string };
 
-/** Pure parse of a variable map. Blank values count as unset. Never includes values in the message. */
 export function parseEnv(source: Record<string, string | undefined>): EnvResult {
   const present: Record<string, string> = {};
   for (const [key, value] of Object.entries(source)) {
@@ -56,7 +54,6 @@ export function parseEnv(source: Record<string, string | undefined>): EnvResult 
   return { ok: false, message: `Invalid server configuration: ${problems.join('; ')}` };
 }
 
-/** Reads the process environment once; exits the process with a clear message when it is invalid. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
   const result = parseEnv(source);
   if (!result.ok) {
