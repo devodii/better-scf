@@ -1,0 +1,89 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  max-height: min(60vh, 24rem);
+  padding: 0.5rem;
+  overflow-y: auto;
+  color: var(--bscf-text);
+}
+
+.empty {
+  margin: 0;
+  padding: 0.5rem;
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+}
+
+.item {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(background-color);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--bscf-radius-chip);
+  text-align: start;
+
+  &:hover {
+    background: var(--bscf-muted-chip);
+  }
+
+  @media (min-width: 40rem) {
+    min-height: 2.5rem;
+  }
+}
+
+.text {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+}
+
+.clear {
+  @include reset-button;
+  @include focus-ring;
+
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  color: var(--bscf-link);
+  font-size: 0.875rem;
+  text-decoration: underline;
+
+  &:hover:not(:disabled) {
+    color: var(--bscf-accent-yellow);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  @media (min-width: 40rem) {
+    min-height: 2rem;
+  }
+}

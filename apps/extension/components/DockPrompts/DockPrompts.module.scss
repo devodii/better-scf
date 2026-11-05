@@ -1,0 +1,53 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  min-width: 0;
+  max-height: 7.5rem;
+  margin: 0;
+  padding: 0.25rem;
+  overflow-y: auto;
+  border: 0;
+
+  @media (min-width: 40rem) {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.pill {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(border-color, color);
+
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: 62.5rem;
+  background: var(--bscf-surface);
+  color: var(--bscf-text);
+  font-size: 0.875rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: start;
+
+  &:hover:not(:disabled) {
+    border-color: var(--bscf-accent-yellow);
+    color: var(--bscf-accent-yellow);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  @media (min-width: 40rem) {
+    min-height: 2rem;
+    padding: 0.25rem 0.875rem;
+  }
+}
