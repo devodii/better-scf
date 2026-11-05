@@ -1,0 +1,42 @@
+import { createMiddleware } from 'hono/factory';
+
+export interface OriginOptions {
+  allowedExtensionIds: readonly string[];
+  development: boolean;
+}
+
+const EXTENSION_ORIGIN = /^chrome-extension:\/\/([a-p]{32})$/;
+const LOCALHOST_ORIGIN = /^http:\/\/localhost(:\d{1,5})?$/;
+
+export function isAllowedOrigin(origin: string | undefined, options: OriginOptions): boolean {
+  if (origin === undefined) {
+    return false;
+  }
+  const extension = EXTENSION_ORIGIN.exec(origin);
+  if (extension !== null) {
+    const id = extension[1];
+    return id !== undefined && options.allowedExtensionIds.includes(id);
+  }
+  return options.development && LOCALHOST_ORIGIN.test(origin);
+}
+
+/** Rejects any request whose Origin is not allow-listed with 403 before the handler runs. */
+export function origin(options: OriginOptions) {
+  return createMiddleware(async (c, next) => {
+    const requestOrigin = c.req.header('origin');
+    if (requestOrigin === undefined || !isAllowedOrigin(requestOrigin, options)) {
+      return c.json({ error: 'forbidden_origin' }, 403);
+    }
+    // CORS headers only for allowed origins.
+    c.header('Access-Control-Allow-Origin', requestOrigin);
+    c.header('Vary', 'Origin');
+    if (c.req.method === 'OPTIONS') {
+      c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      c.header('Access-Control-Allow-Headers', 'content-type, x-bscf-client, x-bscf-version');
+      c.header('Access-Control-Max-Age', '600');
+      return c.body(null, 204);
+    }
+    await next();
+    return undefined;
+  });
+}
