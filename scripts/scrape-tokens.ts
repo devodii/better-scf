@@ -1,13 +1,5 @@
-/**
- * Design token capture (build-spec section 4.2). Run once by the human:
- * `pnpm tokens -- round=<url> submission=<url> award-rounds=<url>`.
- *
- * Same session rules as recon.ts: headed Chrome, persistent `.profile/`, the human logs in, one
- * visit per page with a pause between pages, read-only. Only computed styles are read; no
- * cookies, tokens or storage. Writes `apps/extension/entrypoints/scf.content/styles/tokens.scss`.
- */
 import { z } from 'zod';
-import { openSession, visitPages, waitForHumanLogin, writeRepoFile } from './lib/browser';
+import { openSession, run, visitPages, waitForHumanLogin, writeRepoFile } from './lib/browser';
 import { parseCli } from './lib/cli';
 import { TOKEN_PROBE } from './lib/page-scripts';
 import {
@@ -15,7 +7,7 @@ import {
   mergeTokenValues,
   missingTokens,
   normalizeColor,
-  TOKEN_DEFINITIONS,
+  TOKEN_NAMES,
   type TokenName,
   type TokenValues,
 } from './lib/tokens';
@@ -45,7 +37,7 @@ const probeSchema = z.object({
 
 function toTokenValues(found: Record<string, string>): TokenValues {
   const values: TokenValues = {};
-  for (const { name } of TOKEN_DEFINITIONS) {
+  for (const name of TOKEN_NAMES) {
     const raw = found[name];
     if (raw === undefined) continue;
     const value = COLOR_TOKENS.has(name) ? normalizeColor(raw) : raw;
@@ -59,10 +51,10 @@ async function main(): Promise<void> {
   const perPage: TokenValues[] = [];
   const siteVariables: Record<string, string> = {};
 
-  const context = await openSession();
+  const session = await openSession();
   try {
-    await waitForHumanLogin(context);
-    const result = await visitPages(context, pages, delayMs, {
+    await waitForHumanLogin(session);
+    const result = await visitPages(session, pages, delayMs, {
       beforeNavigate: () => undefined,
       onPage: async (page) => {
         const probe = probeSchema.parse(await page.evaluate(TOKEN_PROBE));
@@ -85,7 +77,7 @@ async function main(): Promise<void> {
       );
     }
   } finally {
-    await context.close();
+    await session.end();
   }
 
   const merged = mergeTokenValues(perPage);
@@ -100,7 +92,4 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+run(main);

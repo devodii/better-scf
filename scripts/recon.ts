@@ -1,15 +1,5 @@
-/**
- * Site recon (build-spec section 4.1). Run once by the human: `pnpm recon -- round=<url> ...`.
- *
- * Opens a headed Chrome with the persistent `.profile/` directory, waits while the human logs
- * in, then visits each named page once, in order, with a pause between pages. For each page it
- * records the site's own XHR and fetch calls (method, URL pattern, status, response shape) and
- * saves a scrubbed copy of the main landmark. It never types credentials, never reads cookies,
- * tokens or storage, never clicks, scrolls or follows links, never retries, and it records only
- * header names after stripping cookie, authorization and credential-like headers.
- */
 import type { Response } from 'playwright';
-import { openSession, visitPages, waitForHumanLogin, writeRepoFile } from './lib/browser';
+import { openSession, run, visitPages, waitForHumanLogin, writeRepoFile } from './lib/browser';
 import { parseCli, SITE_HOST } from './lib/cli';
 import { RECON_PROBE } from './lib/page-scripts';
 import {
@@ -65,7 +55,7 @@ async function recordResponse(
     try {
       shape = describeShape(await response.json());
     } catch {
-      shape = null; // empty or redirect body: nothing to describe
+      shape = null;
     }
   }
   calls.set(key, {
@@ -93,19 +83,16 @@ async function main(): Promise<void> {
     );
   }
 
-  const context = await openSession();
+  const session = await openSession();
   try {
-    await waitForHumanLogin(context);
-    // The tracker is set by `beforeNavigate`, before the navigation starts, so every response of
-    // a page is recorded under that page's name.
+    await waitForHumanLogin(session);
     const tracker = createPageTracker();
     const pending: Promise<void>[] = [];
-    const first = context.pages()[0];
-    first?.on('response', (response) => {
+    session.page.on('response', (response) => {
       pending.push(recordResponse(response, tracker.current(), calls).catch(() => undefined));
     });
 
-    const result = await visitPages(context, pages, delayMs, {
+    const result = await visitPages(session, pages, delayMs, {
       beforeNavigate: (spec) => tracker.begin(spec.name),
       onPage: async (page, spec) => {
         const probe = reconProbeSchema.parse(await page.evaluate(RECON_PROBE));
@@ -138,7 +125,7 @@ async function main(): Promise<void> {
     await Promise.allSettled(pending.splice(0));
     skipped = result.skipped;
   } finally {
-    await context.close();
+    await session.end();
   }
 
   const report: ReconReport = { site: SITE_HOST, calls: [...calls.values()], pages: facts };
@@ -158,7 +145,4 @@ async function main(): Promise<void> {
   console.log(renderSummary(report));
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+run(main);

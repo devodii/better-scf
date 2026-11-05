@@ -1,31 +1,36 @@
-/** Token names of build-spec section 4.2, in output order, with the note written beside each. */
-export const TOKEN_DEFINITIONS = [
-  { name: 'bg', note: 'body background' },
-  { name: 'surface', note: 'card background' },
-  { name: 'text', note: 'card text, primary' },
-  { name: 'text-muted', note: 'card text, secondary' },
-  { name: 'chip-purple-bg', note: 'SCF #46 chip background' },
-  { name: 'chip-purple-fg', note: 'SCF #46 chip text' },
-  { name: 'chip-olive-bg', note: 'Build / Submitted chip background' },
-  { name: 'chip-olive-fg', note: 'Build / Submitted chip text' },
-  { name: 'chip-yellow-bg', note: 'Ended chip background' },
-  { name: 'chip-yellow-fg', note: 'Ended chip text' },
-  { name: 'accent-yellow', note: 'nav arrows' },
-  { name: 'link', note: 'link blue' },
-  { name: 'radius-card', note: 'card border radius' },
-  { name: 'radius-chip', note: 'chip border radius' },
-  { name: 'shadow-card', note: 'card shadow' },
-  { name: 'space-card-section', note: 'spacing between card sections' },
-  { name: 'font-display', note: 'section heading font family (condensed uppercase)' },
-  { name: 'font-display-weight', note: 'section heading font weight' },
-  { name: 'font-body', note: 'body font family' },
+export const TOKEN_NAMES = [
+  'bg',
+  'surface',
+  'text',
+  'text-muted',
+  'chip-purple-bg',
+  'chip-purple-fg',
+  'chip-olive-bg',
+  'chip-olive-fg',
+  'chip-yellow-bg',
+  'chip-yellow-fg',
+  'accent-yellow',
+  'link',
+  'radius-card',
+  'radius-chip',
+  'shadow-card',
+  'space-card-section',
+  'font-display',
+  'font-display-weight',
+  'font-body',
 ] as const;
 
-export type TokenName = (typeof TOKEN_DEFINITIONS)[number]['name'];
+export type TokenName = (typeof TOKEN_NAMES)[number];
 export type TokenValues = Partial<Record<TokenName, string>>;
-
-/** The `--*` custom properties found on `:root`, name to value. */
 export type SiteVariables = Readonly<Record<string, string>>;
+
+const SEMANTIC_TOKENS: readonly { name: string; expression: string; needs: TokenName }[] = [
+  { name: 'track-integration', expression: '$bscf-chip-purple-bg', needs: 'chip-purple-bg' },
+  { name: 'track-open', expression: '$bscf-chip-olive-bg', needs: 'chip-olive-bg' },
+  { name: 'track-rfp', expression: '$bscf-accent-yellow', needs: 'accent-yellow' },
+  { name: 'awarded', expression: '$bscf-accent-yellow', needs: 'accent-yellow' },
+  { name: 'muted-chip', expression: 'color.mix(#fff, $bscf-surface, 6%)', needs: 'surface' },
+];
 
 function toHexByte(channel: number): string {
   return Math.max(0, Math.min(255, Math.round(channel)))
@@ -33,10 +38,6 @@ function toHexByte(channel: number): string {
     .padStart(2, '0');
 }
 
-/**
- * Normalises a computed color. Opaque `rgb()` becomes `#rrggbb`; partly transparent becomes
- * `rgba(r, g, b, a)`; fully transparent returns null. Colors in other spaces pass through.
- */
 export function normalizeColor(raw: string): string | null {
   const value = raw.trim();
   const match =
@@ -55,11 +56,10 @@ export function normalizeColor(raw: string): string | null {
   return `#${toHexByte(cr)}${toHexByte(cg)}${toHexByte(cb)}`;
 }
 
-/** Takes the first token value found, in page order; a later page never overrides an earlier one. */
 export function mergeTokenValues(sets: readonly TokenValues[]): TokenValues {
   const merged: TokenValues = {};
   for (const set of sets) {
-    for (const { name } of TOKEN_DEFINITIONS) {
+    for (const name of TOKEN_NAMES) {
       const value = set[name];
       if (merged[name] === undefined && value !== undefined && value !== '') merged[name] = value;
     }
@@ -68,7 +68,7 @@ export function mergeTokenValues(sets: readonly TokenValues[]): TokenValues {
 }
 
 export function missingTokens(values: TokenValues): TokenName[] {
-  return TOKEN_DEFINITIONS.filter(({ name }) => values[name] === undefined).map(({ name }) => name);
+  return TOKEN_NAMES.filter((name) => values[name] === undefined);
 }
 
 function customPropertyName(siteName: string): string | null {
@@ -76,10 +76,7 @@ function customPropertyName(siteName: string): string | null {
   return /^[a-zA-Z0-9_-]+$/.test(bare) ? `--bscf-site-${bare}` : null;
 }
 
-/**
- * A value from the page goes into a one-line SCSS declaration, so strip what could end it or
- * comment out the rest of the line (`//` and `/*` are split with a space).
- */
+// Page values land in one-line SCSS declarations: `//` and `/*` would comment out the rest.
 function safeValue(value: string): string {
   return value
     .replace(/[;{}\n\r]/g, ' ')
@@ -87,75 +84,31 @@ function safeValue(value: string): string {
     .trim();
 }
 
-/**
- * Renders `tokens.scss`: SCSS variables, the derived semantic tokens, and a `:host` block of
- * `--bscf-*` custom properties. Tokens that were not found are listed in a comment and omitted,
- * so the build fails loudly where one is used instead of using an invented value.
- */
 export function formatTokensScss(values: TokenValues, siteVariables: SiteVariables = {}): string {
   const lines: string[] = [
     '// GENERATED by scripts/scrape-tokens.ts. Do not edit by hand.',
     "@use 'sass:color';",
     '',
   ];
-  const present = TOKEN_DEFINITIONS.filter(({ name }) => values[name] !== undefined);
-  for (const { name, note } of present) {
-    lines.push(`$bscf-${name}: ${safeValue(values[name] ?? '')}; // ${note}`);
+  const present = TOKEN_NAMES.filter((name) => values[name] !== undefined);
+  for (const name of present) {
+    lines.push(`$bscf-${name}: ${safeValue(values[name] ?? '')};`);
   }
   const missing = missingTokens(values);
   if (missing.length > 0) {
     lines.push('', `// NOT FOUND on the site, omitted: ${missing.join(', ')}`);
   }
 
-  const derived: { name: string; expression: string; needs: TokenName; note: string }[] = [
-    {
-      name: 'track-integration',
-      expression: '$bscf-chip-purple-bg',
-      needs: 'chip-purple-bg',
-      note: 'chip purple',
-    },
-    {
-      name: 'track-open',
-      expression: '$bscf-chip-olive-bg',
-      needs: 'chip-olive-bg',
-      note: 'chip olive',
-    },
-    {
-      name: 'track-rfp',
-      expression: '$bscf-accent-yellow',
-      needs: 'accent-yellow',
-      note: 'accent yellow',
-    },
-    {
-      name: 'awarded',
-      expression: '$bscf-accent-yellow',
-      needs: 'accent-yellow',
-      note: 'accent yellow',
-    },
-    {
-      name: 'muted-chip',
-      expression: 'color.mix(#fff, $bscf-surface, 6%)',
-      needs: 'surface',
-      note: 'surface lightened 6%',
-    },
-  ];
-  const derivedPresent = derived.filter(({ needs }) => values[needs] !== undefined);
-  if (derivedPresent.length > 0) {
-    lines.push('', '// Semantic tokens, derived from the scraped ones');
-    for (const { name, expression, note } of derivedPresent) {
-      lines.push(`$${name}: ${expression}; // ${note}`);
-    }
+  const semantic = SEMANTIC_TOKENS.filter(({ needs }) => values[needs] !== undefined);
+  if (semantic.length > 0) {
+    lines.push('');
+    for (const { name, expression } of semantic) lines.push(`$${name}: ${expression};`);
   }
 
   lines.push('', ':host {');
-  for (const { name } of present) {
-    lines.push(`  --bscf-${name}: #{$bscf-${name}};`);
-  }
-  for (const { name } of derivedPresent) {
-    lines.push(`  --bscf-${name}: #{$${name}};`);
-  }
-  const siteEntries = Object.entries(siteVariables).slice(0, 80);
-  for (const [siteName, siteValue] of siteEntries) {
+  for (const name of present) lines.push(`  --bscf-${name}: #{$bscf-${name}};`);
+  for (const { name } of semantic) lines.push(`  --bscf-${name}: #{$${name}};`);
+  for (const [siteName, siteValue] of Object.entries(siteVariables).slice(0, 80)) {
     const property = customPropertyName(siteName);
     if (property !== null) lines.push(`  ${property}: ${safeValue(siteValue)};`);
   }
