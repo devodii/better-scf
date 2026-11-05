@@ -67,12 +67,10 @@
 }
 
 .accent {
+  @include focus-ring(var(--bscf-text));
+
   background: var(--bscf-accent-yellow);
   color: var(--bscf-bg);
-
-  &:focus-visible {
-    outline-color: var(--bscf-text);
-  }
 
   &:hover:not(:disabled) {
     opacity: 0.85;
