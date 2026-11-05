@@ -9,6 +9,7 @@ import type {
   Submission,
 } from 'shared';
 import { z } from 'zod';
+import { DbError } from './errors';
 
 export const DB_NAME = 'better-scf';
 export const DB_VERSION = 3;
@@ -131,7 +132,7 @@ const MIGRATIONS: readonly Migration[] = [
 export function migrate(db: Db, oldVersion: number, newVersion: number = DB_VERSION): void {
   for (let version = oldVersion; version < newVersion; version += 1) {
     const step = MIGRATIONS[version];
-    if (!step) throw new Error(`No migration from database version ${version}`);
+    if (!step) throw DbError.missingMigration(version);
     step(db);
   }
 }

@@ -22,6 +22,7 @@ import {
   submissionSchema,
 } from 'shared';
 import { z } from 'zod';
+import { DbError } from './errors';
 import { type Cached, createMirror, type Mirror, type Repo } from './repo';
 import {
   type AvatarRecord,
@@ -153,7 +154,7 @@ export function registerRpcHandlers(
   function register<K extends RpcType>(type: K): void {
     messenger.onMessage(type, async (message) => {
       const parsed = parseWith(rpcInputSchemas[type], message.data);
-      if (!parsed.ok) throw new Error(`Invalid payload for ${type}: ${parsed.error}`);
+      if (!parsed.ok) throw DbError.invalidPayload(type, parsed.error);
       return handlers[type](parsed.data);
     });
   }
