@@ -1,0 +1,103 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0 0.5rem;
+  border-bottom: 0.0625rem solid var(--bscf-muted-chip);
+  background: var(--bscf-bg);
+  color: var(--bscf-text);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+}
+
+.search {
+  flex: 1 1 10rem;
+  min-width: 0;
+
+  @container (min-width: 64rem) {
+    flex: 0 1 22rem;
+  }
+}
+
+.searchInput {
+  height: 2.75rem;
+}
+
+.expand {
+  @container (min-width: 40rem) {
+    display: none;
+  }
+}
+
+.note {
+  display: flex;
+
+  @container (min-width: 40rem) {
+    order: 2;
+  }
+}
+
+.panel,
+.panelOpen {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.panel {
+  display: none;
+}
+
+.panelOpen {
+  display: flex;
+}
+
+.panel,
+.panelOpen {
+  @container (min-width: 40rem) {
+    display: flex;
+    order: 1;
+    flex: 1 1 auto;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+  min-width: 0;
+}
+
+.reset {
+  @include reset-button;
+  @include focus-ring;
+
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  border-radius: var(--bscf-radius-chip);
+  color: var(--bscf-link);
+  font-size: 0.875rem;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--bscf-accent-yellow);
+  }
+}
