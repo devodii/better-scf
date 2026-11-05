@@ -1,0 +1,42 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--bscf-radius-chip);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.label {
+  @include truncate;
+
+  min-width: 0;
+}
+
+.purple {
+  background: var(--bscf-chip-purple-bg);
+  color: var(--bscf-chip-purple-fg);
+}
+
+.olive {
+  background: var(--bscf-chip-olive-bg);
+  color: var(--bscf-chip-olive-fg);
+}
+
+.yellow {
+  background: var(--bscf-chip-yellow-bg);
+  color: var(--bscf-chip-yellow-fg);
+}
+
+.muted {
+  background: var(--bscf-muted-chip);
+  color: var(--bscf-text-muted);
+}
