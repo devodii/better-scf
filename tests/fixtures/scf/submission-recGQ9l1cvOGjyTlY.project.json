@@ -1,0 +1,42 @@
+{
+  "summary": {
+    "id": "recGQ9l1cvOGjyTlY",
+    "title": "\\\"Listen-Learn-Earn: Stellar Attestation\\\"",
+    "status": "Submitted",
+    "project": "rec6nbsQTuUpwzZC2",
+    "projectName": "\"Listen-Learn-Earn: Stellar Attestation\"",
+    "roundName": "SCF #46",
+    "budget": "150000",
+    "awardType": "Build",
+    "isCvvc": "false"
+  },
+  "project": {
+    "id": "rec6nbsQTuUpwzZC2",
+    "category": "End-User Application",
+    "totalAwarded": 0,
+    "totalPaid": 0,
+    "team": {
+      "description": "$2b",
+      "count": 1
+    },
+    "submissions": [
+      {
+        "id": "recGQ9l1cvOGjyTlY",
+        "title": "\"Listen-Learn-Earn: Stellar Attestation\"",
+        "status": "Submitted",
+        "project": "rec6nbsQTuUpwzZC2",
+        "projectName": [
+          "Listen-Learn-Earn: Stellar Attestation"
+        ],
+        "roundName": "SCF #46",
+        "budget": 150000,
+        "awardType": "Build",
+        "isCvvc": false,
+        "isOwnedByUser": false,
+        "thumbnail": {
+          "url": "https://cdn.sanity.io/images/thmxviu9/public/b6563a1b417bdfd66253c5c7e19c8d0864db8b72-1920x1080.png"
+        }
+      }
+    ]
+  }
+}

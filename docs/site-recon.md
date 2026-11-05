@@ -16,11 +16,20 @@ How the data reaches the page on communityfund.stellar.org. Method: one gentle p
 - **Round header** on a round page: phase table (Build Submission, Panel Review, Community Vote, Notification and Award Distribution) with dates, AWARDED SUBMISSIONS, RECEIVED SUBMISSIONS with a "See All" button that expands the grid in place (URL unchanged).
 - **Sidebar routes:** `/dashboard/award-rounds`, `/dashboard/projects` (My Projects), `/dashboard/tasks`, `/dashboard/tiers`, `/dashboard/delegate-trust`, `/dashboard/vote`, `/dashboard/voting-history`, `/dashboard/analytics`, `/dashboard/account`.
 
+## The data model (what each page really carries)
+
+- **Round page payload (inline scripts, `self.__next_f.push`):** one record per submission, 52 for SCF #46: `{ id, title, status, project, projectName[], roundName, budget (number, can be non-integer), awardType, isCvvc, isOwnedByUser, thumbnail{url} }`. Cards in the DOM are the same records plus the rendered chips. `isOwnedByUser` gives ownership directly, so owner mode does not need to scan My Projects. `awardType` was `Build` for all 52.
+- **Submission page payload:** the project object `{ id, category, totalAwarded, totalPaid, team{description,count}, submissions[summary records] }`, which is the source of Project Stats and Other Submissions (its shape varies by page, so parse defensively). The DOM carries the proposal text under uppercase headings.
+- **Project Stats in the DOM:** `Team Size`, `Category`, `Total awarded` (shown as `$0*`), `Awarded Submissions`, `Other Submissions` ("No other submissions." when none), and a `View Project` link.
+- **Track:** the heading `TRANCHE 3 ONCHAIN METRIC INFORMATION` exists on every submission, so its presence says nothing. The heuristic is that the section has body text (an on-chain metric is stated) versus an empty section. Treat it as `trackSource: "heuristic"` and never show it as fact on a card.
+- **Never touch the session.** The page payload also contains the logged-in `session` object with an `accessToken`. The extension must not read, copy, store or send it; parsers pick named fields from the records above and ignore everything else, and fixtures are scrubbed of it.
+- **Fixtures** (scrubbed, in `tests/fixtures/scf/`): `round-46-records.json`, `round-card.html`, and `submission-<id>.html` with `.project.json` for five submissions (lowest budget, mid, highest, one-person team, a filled and an empty on-chain section).
+
 ## Consequences for the build
 
-1. **Data strategy: read the DOM the page already rendered.** There is no JSON feed for submissions to call, so the extension does not request submission data. Cards on the round page are parsed from the DOM that is already there; the submission page is parsed from its DOM when the user opens it. The only same-origin JSON the extension may call is `/backend/dashboard/form_items/essential`, once per session, for owner mode.
+1. **Data strategy: read what the page already delivered.** Round page: the inline payload plus the card DOM. Submission page: the project object plus its DOM. The extension never requests submission data itself. The only same-origin JSON the extension may call is `/backend/dashboard/form_items/essential`, once per session, for owner mode.
 2. **No per-card prefetching.** Card features (track, awarded-before, comments) may use only what the card itself shows or what the user has already opened and the extension stored. Anything that would need one request per card is dropped or deferred until the user opens that submission.
-3. **Track:** the card does not show it. It appears on the submission page (presence of the TRANCHE 3 ONCHAIN METRIC INFORMATION section) and in `buildTrack` for the user's own projects. Cards show the track chip only for submissions the user has opened (cached) until a free source is found.
+3. **Track:** the card does not show it; see the heuristic above. Cards show a track chip only for submissions the user has opened (cached), labeled as derived from the on-chain metric section.
 4. **Navigation memory:** cards navigate client side without anchors, so the route watcher must observe URL changes (History API) and the round page's grid state ("See All" expanded or the Swiper position).
 5. **Selectors:** class names are Tailwind utility classes (`flex h-full flex-col`, `group`, `swiper-slide-active`); use the `View` button text, the uppercase section headings, and the card text pattern, never the classes.
 
