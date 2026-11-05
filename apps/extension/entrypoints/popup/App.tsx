@@ -29,7 +29,6 @@ const FEATURES: readonly { key: FeatureKey; label: string }[] = [
   { key: 'reviewerBar', label: 'Reviewer bar' },
   { key: 'teamAvatars', label: 'Team section avatars' },
   { key: 'imageLightbox', label: 'Image lightbox' },
-  { key: 'ownerMode', label: 'Owner self-check' },
   { key: 'aiDock', label: 'AI dock' },
 ];
 
