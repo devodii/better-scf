@@ -1,4 +1,14 @@
-import { type ChatTransport, DefaultChatTransport, type UIMessage } from 'ai';
+import { Chat } from '@ai-sdk/react';
+import {
+  type ChatTransport,
+  DefaultChatTransport,
+  type DynamicToolUIPart,
+  getToolName,
+  isToolUIPart,
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type ToolUIPart,
+  type UIMessage,
+} from 'ai';
 import dayjs from 'dayjs';
 import {
   CHAT_LIMITS,
@@ -8,6 +18,7 @@ import {
   type ProposalContext,
   parseChatError,
 } from 'shared';
+import { getToolDeclarations, runTool } from './tools/registry';
 
 export interface ChatPageRequest extends ProposalContext {
   promptId?: string;
@@ -104,38 +115,96 @@ async function mapChatErrorResponse(
   );
 }
 
-function messageText(message: UIMessage): string {
-  return message.parts
-    .map((part) => (part.type === 'text' ? part.text : ''))
-    .join('')
-    .trim();
+type AssistantRequestPart = Extract<ChatRequestMessage, { role: 'assistant' }>['parts'][number];
+
+const MAX_TOOL_ERROR_CHARS = 300;
+const BODY_SLACK_BYTES = 1024;
+
+function toToolPart(part: ToolUIPart | DynamicToolUIPart): AssistantRequestPart | null {
+  const base = {
+    type: 'dynamic-tool' as const,
+    toolName: getToolName(part),
+    toolCallId: part.toolCallId,
+  };
+  if (part.state === 'output-available') {
+    return { ...base, state: 'output-available', input: part.input ?? {}, output: part.output };
+  }
+  if (part.state === 'output-error') {
+    return {
+      ...base,
+      state: 'output-error',
+      input: part.input ?? {},
+      errorText: part.errorText.slice(0, MAX_TOOL_ERROR_CHARS),
+    };
+  }
+  return null;
+}
+
+function toRequestMessage(message: UIMessage): ChatRequestMessage | null {
+  if (message.role === 'user') {
+    const text = message.parts
+      .map((part) => (part.type === 'text' ? part.text : ''))
+      .join('')
+      .trim()
+      .slice(0, CHAT_LIMITS.maxUserMessageChars);
+    return text === '' ? null : { id: message.id, role: 'user', parts: [{ type: 'text', text }] };
+  }
+  if (message.role !== 'assistant') return null;
+  let budget = CHAT_LIMITS.maxAssistantMessageChars;
+  const parts: AssistantRequestPart[] = [];
+  for (const part of message.parts) {
+    if (part.type === 'text') {
+      const text = part.text.slice(0, budget);
+      if (text.trim() === '') continue;
+      budget -= text.length;
+      parts.push({ type: 'text', text });
+    } else if (part.type === 'step-start') {
+      parts.push({ type: 'step-start' });
+    } else if (isToolUIPart(part)) {
+      const toolPart = toToolPart(part);
+      if (toolPart) parts.push(toolPart);
+    }
+  }
+  return parts.some((part) => part.type !== 'step-start')
+    ? { id: message.id, role: 'assistant', parts }
+    : null;
 }
 
 function toRequestMessages(messages: readonly UIMessage[]): ChatRequestMessage[] {
   const turns: ChatRequestMessage[] = [];
   for (const message of messages) {
-    if (message.role !== 'user' && message.role !== 'assistant') continue;
-    const text = messageText(message);
-    if (text === '') continue;
-    const max =
-      message.role === 'user'
-        ? CHAT_LIMITS.maxUserMessageChars
-        : CHAT_LIMITS.maxAssistantMessageChars;
-    turns.push({ role: message.role, content: text.slice(0, max) });
+    const turn = toRequestMessage(message);
+    if (turn) turns.push(turn);
   }
   const recent = turns.slice(-CHAT_LIMITS.maxMessages);
   const firstUser = recent.findIndex((turn) => turn.role === 'user');
   return firstUser === -1 ? [] : recent.slice(firstUser);
 }
 
+function fitBody(body: ChatRequest): ChatRequest {
+  const limit = CHAT_LIMITS.maxRequestBytes - BODY_SLACK_BYTES;
+  const encoder = new TextEncoder();
+  let current = body;
+  let start = 0;
+  while (encoder.encode(JSON.stringify(current)).length > limit) {
+    const next = body.messages.findIndex((turn, index) => index > start && turn.role === 'user');
+    if (next === -1) break;
+    start = next;
+    current = { ...body, messages: body.messages.slice(start) };
+  }
+  return current;
+}
+
 export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
   private readonly inFlight: Set<AbortController>;
+  private readonly turn: { steps: number };
 
   constructor(options: BscfChatTransportOptions) {
     const doFetch = options.fetch ?? ((...args) => globalThis.fetch(...args));
     const now = options.now ?? Date.now;
     const version = options.extensionVersion ?? EXTENSION_VERSION;
     const inFlight = new Set<AbortController>();
+    const turn = { steps: 0 };
 
     const guardedFetch: typeof globalThis.fetch = async (input, init) => {
       const controller = new AbortController();
@@ -168,6 +237,8 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
       fetch: guardedFetch,
       prepareSendMessagesRequest: async ({ messages }) => {
         const page = options.getPageRequest();
+        const tools = page.promptId === undefined ? await getToolDeclarations() : [];
+        turn.steps = messages.at(-1)?.role === 'assistant' ? turn.steps + 1 : 1;
         const body: ChatRequest = {
           submissionId: page.submissionId,
           contentHash: page.contentHash,
@@ -175,9 +246,10 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
           context: page.context,
           messages: toRequestMessages(messages),
           ...(page.promptId === undefined ? {} : { promptId: page.promptId }),
+          ...(tools.length === 0 ? {} : { tools }),
         };
         return {
-          body,
+          body: fitBody(body),
           headers: {
             'X-BSCF-Client': await options.getClientId(),
             'X-BSCF-Version': version,
@@ -186,6 +258,11 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
       },
     });
     this.inFlight = inFlight;
+    this.turn = turn;
+  }
+
+  canContinue(): boolean {
+    return this.turn.steps < CHAT_LIMITS.maxSteps;
   }
 
   close(): void {
@@ -198,4 +275,51 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
   ): Promise<null> {
     return null;
   }
+}
+
+export interface BscfChat {
+  chat: Chat<UIMessage>;
+  transport: BscfChatTransport;
+  close: () => void;
+}
+
+export function createBscfChat(options: BscfChatTransportOptions): BscfChat {
+  const transport = new BscfChatTransport(options);
+  const controller = new AbortController();
+
+  const answer = async (toolName: string, toolCallId: string, input: unknown): Promise<void> => {
+    const outcome = await runTool(toolName, input, controller.signal);
+    if (controller.signal.aborted) return;
+    if (outcome.ok) {
+      void chat.addToolOutput({ tool: toolName, toolCallId, output: outcome.output });
+    } else {
+      void chat.addToolOutput({
+        state: 'output-error',
+        tool: toolName,
+        toolCallId,
+        errorText: outcome.error,
+      });
+    }
+  };
+
+  const chat = new Chat<UIMessage>({
+    transport,
+    onToolCall: ({ toolCall }) => {
+      void answer(toolCall.toolName, toolCall.toolCallId, toolCall.input);
+    },
+    sendAutomaticallyWhen: ({ messages }) =>
+      !controller.signal.aborted &&
+      transport.canContinue() &&
+      lastAssistantMessageIsCompleteWithToolCalls({ messages }),
+  });
+
+  return {
+    chat,
+    transport,
+    close: () => {
+      controller.abort();
+      transport.close();
+      void chat.stop();
+    },
+  };
 }
