@@ -29,6 +29,17 @@ export const LongLabel: Story = {
   },
 };
 
+export const Focused: Story = {
+  args: { checked: true },
+  decorators: [
+    (Story) => (
+      <div data-force-focus style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Disabled: Story = { args: { disabled: true } };
 
 export const DisabledOn: Story = { args: { disabled: true, checked: true } };

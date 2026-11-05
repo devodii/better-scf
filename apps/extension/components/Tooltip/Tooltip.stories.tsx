@@ -46,6 +46,28 @@ export const OnAvatar: Story = {
   },
 };
 
+export const FocusedTrigger: Story = {
+  args: {
+    isOpen: true,
+    placement: 'bottom',
+    content: 'Shortlist',
+    children: (
+      <IconButton label="Shortlist" variant="surface">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z" />
+        </svg>
+      </IconButton>
+    ),
+  },
+  decorators: [
+    (Story) => (
+      <div data-force-focus>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const OnIconButton: Story = {
   args: {
     isOpen: true,

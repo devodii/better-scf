@@ -33,4 +33,15 @@ export const Overflow: Story = { args: { people: TEAM } };
 
 export const Medium: Story = { args: { people: TEAM, size: 'md' } };
 
+export const FocusedLinks: Story = {
+  args: { people: TEAM, size: 'md' },
+  decorators: [
+    (Story) => (
+      <div data-force-focus style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Empty: Story = { args: { people: [] } };

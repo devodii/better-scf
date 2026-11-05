@@ -40,6 +40,16 @@ export const Closed: Story = {};
 
 export const Open: Story = { args: { isOpen: true } };
 
+export const FocusedTrigger: Story = {
+  decorators: [
+    (Story) => (
+      <div data-force-focus>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Top: Story = { args: { isOpen: true, placement: 'top' } };
 
 export const RichContent: Story = {

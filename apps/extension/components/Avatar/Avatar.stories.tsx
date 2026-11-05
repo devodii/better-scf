@@ -25,6 +25,17 @@ export const Link: Story = { args: { href: 'https://github.com/octocat', src: PH
 
 export const LinkInitials: Story = { args: { href: 'https://x.com/stellarorg' } };
 
+export const LinkFocused: Story = {
+  args: { href: 'https://github.com/octocat', src: PHOTO, size: 'lg' },
+  decorators: [
+    (Story) => (
+      <div data-force-focus style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Small: Story = { args: { size: 'sm' } };
 
 export const Large: Story = { args: { size: 'lg', src: PHOTO } };

@@ -37,6 +37,16 @@ export const Accent: Story = {
 
 export const Small: Story = { args: { size: 'sm', variant: 'surface' } };
 
+export const Focused: Story = {
+  render: (args) => (
+    <div data-force-focus style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+      <IconButton {...args} />
+      <IconButton {...args} variant="surface" />
+      <IconButton {...args} variant="accent" size="lg" label="Send" />
+    </div>
+  ),
+};
+
 export const Disabled: Story = {
   args: { variant: 'accent', size: 'lg', label: 'Send', children: <Arrow />, disabled: true },
 };
