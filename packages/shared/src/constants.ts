@@ -9,9 +9,48 @@ export const CHAT_LIMITS = {
   maxIdChars: 128,
   maxPromptIdChars: 64,
   dailyQuestionsPerClient: 40,
+  maxRequestBytes: 200 * 1024,
+  maxPartsPerMessage: 40,
+  maxTools: 12,
+  maxToolDescriptionChars: 500,
+  maxToolSchemaChars: 4096,
+  maxToolInputChars: 4096,
+  maxToolResultChars: 12000,
+  maxToolErrorChars: 2000,
+  maxSteps: 5,
 } as const;
 
-export type QuickPromptScope = 'submission' | 'round';
+export const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
+
+export const PAGE_KINDS = [
+  'round',
+  'submission',
+  'rounds',
+  'projects',
+  'dashboard',
+  'analytics',
+  'public',
+  'other',
+] as const;
+
+export type QuickPromptScope =
+  | 'submission'
+  | 'round'
+  | 'dashboard'
+  | 'projects'
+  | 'analytics'
+  | 'general';
+
+const PAGE_KIND_SCOPE: Readonly<Record<(typeof PAGE_KINDS)[number], QuickPromptScope>> = {
+  round: 'round',
+  submission: 'submission',
+  rounds: 'dashboard',
+  dashboard: 'dashboard',
+  projects: 'projects',
+  analytics: 'analytics',
+  public: 'general',
+  other: 'general',
+};
 
 export interface QuickPrompt {
   /** Stable id: part of the server's summary-cache key, never rename. */
@@ -57,8 +96,78 @@ export const QUICK_PROMPTS: readonly QuickPrompt[] = [
     scope: 'round',
     text: 'Group submissions by category',
   },
+  {
+    id: 'round-largest-budgets',
+    scope: 'round',
+    text: 'Which submissions request the largest budgets?',
+  },
+  {
+    id: 'dashboard-open-rounds',
+    scope: 'dashboard',
+    text: 'Which rounds are open right now?',
+  },
+  {
+    id: 'dashboard-latest-awards',
+    scope: 'dashboard',
+    text: 'How much was awarded in the latest completed round?',
+  },
+  {
+    id: 'dashboard-go-analytics',
+    scope: 'dashboard',
+    text: 'Take me to the analytics page',
+  },
+  {
+    id: 'projects-by-category',
+    scope: 'projects',
+    text: 'How many funded projects are there in each category?',
+  },
+  {
+    id: 'projects-recent',
+    scope: 'projects',
+    text: 'Which projects were awarded most recently?',
+  },
+  {
+    id: 'projects-find-payments',
+    scope: 'projects',
+    text: 'Find funded projects about payments',
+  },
+  {
+    id: 'analytics-funding-trend',
+    scope: 'analytics',
+    text: 'How have funding totals changed across rounds?',
+  },
+  {
+    id: 'analytics-participation',
+    scope: 'analytics',
+    text: 'How has participation changed across rounds?',
+  },
+  {
+    id: 'analytics-insights',
+    scope: 'analytics',
+    text: 'Summarize the generated insights',
+  },
+  {
+    id: 'general-help',
+    scope: 'general',
+    text: 'What can you help me with on this site?',
+  },
+  {
+    id: 'general-pages',
+    scope: 'general',
+    text: 'Which pages does this site have?',
+  },
+  {
+    id: 'general-latest-round',
+    scope: 'general',
+    text: 'Take me to the latest round',
+  },
 ];
 
 export function findQuickPrompt(id: string): QuickPrompt | undefined {
   return QUICK_PROMPTS.find((prompt) => prompt.id === id);
+}
+
+export function quickPromptsFor(page: (typeof PAGE_KINDS)[number]): readonly QuickPrompt[] {
+  const scope = PAGE_KIND_SCOPE[page];
+  return QUICK_PROMPTS.filter((prompt) => prompt.scope === scope);
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CHAT_LIMITS } from './constants';
+import { CHAT_LIMITS, PAGE_KINDS } from './constants';
 
 export const trackSchema = z.enum(['open', 'integration', 'rfp', 'unknown']);
 export type Track = z.infer<typeof trackSchema>;
@@ -7,7 +7,7 @@ export type Track = z.infer<typeof trackSchema>;
 export const stanceSchema = z.enum(['none', 'support', 'unsure', 'against']);
 export type Stance = z.infer<typeof stanceSchema>;
 
-export const pageKindSchema = z.enum(['submission', 'round']);
+export const pageKindSchema = z.enum(PAGE_KINDS);
 export type PageKind = z.infer<typeof pageKindSchema>;
 
 const usd = z.number().nullable();
