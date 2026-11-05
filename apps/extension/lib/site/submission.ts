@@ -220,7 +220,8 @@ export function findSubmissionSections(root: ParentNode): SubmissionSectionEleme
   let lastBody: Element | null = null;
   for (const heading of root.querySelectorAll(SEL.sectionHeading)) {
     if (lastBody?.contains(heading)) continue;
-    const body = heading.nextElementSibling;
+    let body = heading.nextElementSibling;
+    while (body?.hasAttribute('data-bscf')) body = body.nextElementSibling;
     if (body === null || body.tagName.toLowerCase() !== 'div') continue;
     const title = clean(heading.textContent);
     if (title === '') continue;
