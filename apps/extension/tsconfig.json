@@ -2,6 +2,6 @@
   "extends": ["../../tsconfig.base.json", "./.wxt/tsconfig.json"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["node", "@testing-library/jest-dom/vitest"]
+    "types": ["node"]
   }
 }

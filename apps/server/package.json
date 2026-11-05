@@ -24,7 +24,6 @@
     "shared": "workspace:*",
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vitest": "^5.1.0"
+    "typescript": "^7.0.2"
   }
 }
