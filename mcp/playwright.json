@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless", "--browser", "chrome", "--viewport-size", "1280x720", "--allow-unrestricted-file-access"]
+    }
+  }
+}
