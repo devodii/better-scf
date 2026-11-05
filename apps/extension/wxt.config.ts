@@ -31,7 +31,6 @@ export default defineConfig({
     host_permissions: [
       'https://communityfund.stellar.org/*',
       'https://horizon.stellar.org/*',
-      'https://api.github.com/*',
       'https://unavatar.io/*',
       serverHostPermission,
     ],
