@@ -1,9 +1,4 @@
-// Code that runs inside the page, kept as plain strings because this project's TypeScript config
-// has no DOM types. Both scripts only READ: no clicks, no scrolling, no typing, no network, and
-// they never touch cookies, local storage or session storage. The text they return holds
-// structure and style, never page content, except the landmark HTML, which the caller scrubs.
-
-/** Describes one page for recon: the main landmark's HTML plus a few structural facts. */
+// Plain strings because the scripts' TypeScript config has no DOM types.
 export const RECON_PROBE = String.raw`(() => {
   const landmark = document.querySelector('main') || document.querySelector('[role="main"]');
   const text = ((landmark || document.body).textContent || '').toUpperCase();
@@ -30,7 +25,6 @@ export const RECON_PROBE = String.raw`(() => {
   };
 })()`;
 
-/** Collects the computed styles listed in build-spec section 4.2 from the current page. */
 export const TOKEN_PROBE = String.raw`(() => {
   const found = {};
   const notes = {};
@@ -39,6 +33,15 @@ export const TOKEN_PROBE = String.raw`(() => {
     return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
   };
   const transparent = (c) => !c || c === 'transparent' || /,\s*0\)$/.test(c) || /\/\s*0\s*\)$/.test(c);
+  const fold = (color, el) => {
+    const c = channels(color);
+    const opacity = Number(getComputedStyle(el).opacity);
+    if (!c || !(opacity < 1)) return color;
+    const a = /^rgba?\(\s*[\d.]+[\s,]+[\d.]+[\s,]+[\d.]+\s*[,/]\s*([\d.]+)(%?)/.exec(color);
+    const alpha = a ? Number(a[1]) / (a[2] ? 100 : 1) : 1;
+    return 'rgba(' + c.join(', ') + ', ' + Math.round(alpha * opacity * 1000) / 1000 + ')';
+  };
+  const effective = (el) => fold(getComputedStyle(el).color, el);
   const leaves = Array.from(document.querySelectorAll('body *')).filter((el) => {
     if (el.children.length > 0) return false;
     const r = el.getBoundingClientRect();
@@ -50,7 +53,7 @@ export const TOKEN_PROBE = String.raw`(() => {
     let node = el;
     for (let i = 0; i < 5 && node; i += 1) {
       const bg = getComputedStyle(node).backgroundColor;
-      if (!transparent(bg)) return { bg, node };
+      if (!transparent(bg)) return { bg: fold(bg, node), node };
       node = node.parentElement;
     }
     return null;
@@ -66,7 +69,7 @@ export const TOKEN_PROBE = String.raw`(() => {
     const own = backgroundOf(el);
     if (!own) return;
     record(prefix + '-bg', own.bg, label(el));
-    record(prefix + '-fg', getComputedStyle(el).color, label(el));
+    record(prefix + '-fg', effective(el), label(el));
     return own;
   };
 
@@ -80,7 +83,7 @@ export const TOKEN_PROBE = String.raw`(() => {
   if (amount) {
     const own = backgroundOf(amount);
     if (own) record('chip-purple-bg', own.bg, label(amount));
-    record('chip-purple-fg', getComputedStyle(amount).color, label(amount));
+    record('chip-purple-fg', effective(amount), label(amount));
   }
   const olive = chip('chip-olive', byText((t) => t === 'Build' || t === 'Submitted'));
   chip('chip-yellow', byText((t) => t === 'Ended'));
@@ -92,19 +95,25 @@ export const TOKEN_PROBE = String.raw`(() => {
     let card = anchorChip.node.parentElement;
     for (let i = 0; i < 12 && card; i += 1) {
       const style = getComputedStyle(card);
-      if (!transparent(style.backgroundColor) && style.backgroundColor !== anchorChip.bg && style.borderRadius !== '0px') break;
+      if (!transparent(style.backgroundColor) && fold(style.backgroundColor, card) !== anchorChip.bg) break;
       card = card.parentElement;
     }
     if (card && card !== document.body) {
       const style = getComputedStyle(card);
-      record('surface', style.backgroundColor, 'card around ' + label(anchorChip.node));
-      record('text', style.color, 'card');
+      const text = effective(card);
+      record('surface', fold(style.backgroundColor, card), 'card around ' + label(anchorChip.node));
+      record('text', text, 'card');
       record('radius-card', style.borderRadius, 'card');
       record('shadow-card', style.boxShadow, 'card');
       const muted = Array.from(card.querySelectorAll('*')).find(
-        (el) => el.children.length === 0 && (el.textContent || '').trim() !== '' && getComputedStyle(el).color !== style.color,
+        (el) =>
+          el.children.length === 0 &&
+          (el.textContent || '').trim() !== '' &&
+          !el.closest('button, a, [role="button"]') &&
+          backgroundOf(el)?.node === card &&
+          effective(el) !== text,
       );
-      if (muted) record('text-muted', getComputedStyle(muted).color, label(muted));
+      if (muted) record('text-muted', effective(muted), label(muted));
       let container = card;
       while (container.children.length === 1 && container.firstElementChild) container = container.firstElementChild;
       const kids = Array.from(container.children);
@@ -129,15 +138,21 @@ export const TOKEN_PROBE = String.raw`(() => {
     const c = channels(getComputedStyle(a).color);
     return c !== null && c[2] > c[0] + 20 && c[2] > c[1];
   });
-  if (link) record('link', getComputedStyle(link).color, label(link));
+  if (link) record('link', effective(link), label(link));
 
+  const paintOf = (style) =>
+    !transparent(style.backgroundColor) ? style.backgroundColor : parseFloat(style.borderTopWidth) > 0 ? style.borderTopColor : null;
+  const yellow = (color) => {
+    const c = channels(color);
+    return c !== null && c[0] > 180 && c[1] > 140 && c[2] < 120;
+  };
   const arrow = Array.from(document.querySelectorAll('button, [role="button"], a')).find((el) => {
     const r = el.getBoundingClientRect();
     const style = getComputedStyle(el);
     const round = style.borderRadius.includes('%') || parseFloat(style.borderRadius) >= r.width / 2;
-    return r.width >= 24 && r.width <= 80 && Math.abs(r.width - r.height) < 2 && round && !transparent(style.backgroundColor) && el.querySelector('svg') !== null;
+    return r.width >= 24 && r.width <= 80 && Math.abs(r.width - r.height) < 2 && round && yellow(paintOf(style)) && el.querySelector('svg, img') !== null;
   });
-  if (arrow) record('accent-yellow', getComputedStyle(arrow).backgroundColor, 'round icon button ' + label(arrow));
+  if (arrow) record('accent-yellow', fold(paintOf(getComputedStyle(arrow)), arrow), 'round icon button ' + label(arrow));
 
   const variables = {};
   for (const sheet of Array.from(document.styleSheets)) {
