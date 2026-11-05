@@ -41,7 +41,7 @@ Your stance, shortlist, notes, read state and settings stay in the extension's o
 ## What it will never do
 
 - Score, rank or recommend submissions.
-- Flag mismatches or judge the quality of anyone else's proposal. Self-checks (budget sums, missing sections) exist only on submissions you own.
+- Flag mismatches, audit or judge the quality of any proposal.
 - Click, scroll or type on the site for you, or write anything to the site. It only reads the pages and data you are browsing, using your own session.
 
 ## Contributing
@@ -69,7 +69,7 @@ All DOM selectors live in one module, `apps/extension/lib/site/selectors.ts`, no
 
 ## Roadmap
 
-Follows `docs/build-spec.md`, in this order: site recon and design tokens, data layer, navigation memory and card chips, grid tools and round header, submission page, server and AI dock, owner mode, release.
+Follows `docs/build-spec.md`, in this order: site recon and design tokens, data layer, navigation memory and card chips, grid tools and round header, submission page, server and AI dock, release.
 
 After launch, only if people use it: comment views, bring-your-own-key, a Firefox build.
 

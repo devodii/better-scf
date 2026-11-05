@@ -33,7 +33,7 @@ Your stance, shortlist, notes, read state, navigation state and settings. Nothin
 
 In the extension's own storage (not the site's `localStorage`):
 
-- IndexedDB database `better-scf`: parsed submissions, projects and rounds; your review state (stance, shortlist, note, last opened, open count); navigation state; your chat history per submission; cached Horizon summaries; resolved avatar URLs; and which projects you own.
+- IndexedDB database `better-scf`: parsed submissions, projects and rounds; your review state (stance, shortlist, note, last opened, open count); navigation state; your chat history per submission; cached Horizon summaries; and resolved avatar URLs.
 - `chrome.storage.local`: feature settings, the random client id, the schema version and last-sync times.
 
 Cached data expires after its time to live (hours for submissions, minutes for Horizon, days for avatars). The popup has a "clear cache" action, and removing the extension deletes all of it.
