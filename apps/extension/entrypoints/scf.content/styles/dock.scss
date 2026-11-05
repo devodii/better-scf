@@ -1,0 +1,16 @@
+[data-bscf="dock-slot"] {
+  position: fixed;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 45;
+  width: min(40rem, calc(100vw - 1.5rem));
+  transform: translateX(-50%);
+
+  @media (min-width: 40rem) {
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 76rem) {
+    width: min(40rem, calc(100vw - 48rem));
+  }
+}
