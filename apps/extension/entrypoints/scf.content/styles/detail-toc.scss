@@ -1,0 +1,25 @@
+[data-bscf-toc] {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  align-self: stretch;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 40rem) {
+    top: 6rem;
+  }
+
+  @media (min-width: 80rem) {
+    position: fixed;
+    top: var(--bscf-toc-top, 7rem);
+    right: 1rem;
+    width: 15rem;
+    margin: 0;
+  }
+}
+
+[data-bscf-toc-room] {
+  @media (min-width: 80rem) {
+    padding-right: 17rem;
+  }
+}
