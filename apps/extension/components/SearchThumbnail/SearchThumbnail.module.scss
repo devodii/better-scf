@@ -1,0 +1,29 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  overflow: hidden;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-muted-chip);
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback {
+  color: var(--bscf-text-muted);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+}
