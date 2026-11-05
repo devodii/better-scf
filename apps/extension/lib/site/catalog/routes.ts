@@ -111,6 +111,14 @@ export const routes = [
     needsLogin: true,
   },
   {
+    id: 'my-project',
+    path: '/dashboard/projects/:projectId',
+    title: 'My Project',
+    description: 'Dashboard page of one of your own projects.',
+    keywords: ['project details', 'project dashboard', 'own project page'],
+    needsLogin: true,
+  },
+  {
     id: 'tasks',
     path: '/dashboard/tasks',
     title: 'Tasks',
