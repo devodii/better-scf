@@ -8,6 +8,22 @@ Hard dates: SCF #46 panel review is Nov 11 to Nov 18, community vote is Nov 23 t
 
 ---
 
+## Scope update (2026-11-05): supersedes any conflicting section below
+
+This build is for the community. Where this section and a later section disagree, this section wins.
+
+1. **Owner mode is removed entirely** (§0 principle 2, §6.7, the `lib/owner` code, the writing-hint word lists, owner settings, `isOwnedByUser` use). Nothing in the extension audits, scores or hints at anyone's own submission. The extension stays factual and the same for everyone.
+2. **Data source:** the extension reads what each page already delivered (`docs/site-recon.md`), plus the site's own backend through the assistant's data tool on a user request (item 7). No per-card prefetching (§5.4 request rules are replaced by this).
+3. **Dashboard search** on `/dashboard/award-rounds` (and `/dashboard/projects`): a search field to the right of the page heading. Typing shows a spinner, then results replace the Open Rounds and Completed Rounds sections (animated, reduced-motion aware). Clearing the field (or Escape) restores the default page. Results come from the projects index (one cached read of the public `/projects` payload) and are project cards linking to `/project/<slug>`.
+4. **Completed Rounds cards** get a tag with the number awarded and the total awarded (from the round list payload). Tracks began with SCF #41 and no data source exposes them, so no track counts are shown on round cards.
+5. **Navigation memory** works on every carousel and grid across the dashboard and the public projects page (`docs/site-recon.md`, dashboard map), not only the round page.
+6. **The AI dock is on every page** of the site, with proper keyboard focus states (a visible outline from the tokens on every interactive element), a conversation that survives navigation, and quick prompts that depend on the page kind.
+7. **Assistant tools** are a registry the model can use, not hardcoded behaviors: a routes catalog (every known path with a description and keywords, plus rounds and projects discovered from page data) behind a `navigate` tool; an endpoints catalog behind a read-only `backend_get` tool that calls the site's own backend with the user's current session (`docs/site-recon.md`, auth section); `search_projects`; `read_page`; `list_routes` and `list_endpoints` so the model can discover what exists. New routes and endpoints are added as catalog data, not new code. Tools run in the browser; the server only forwards the tool definitions the client declares.
+8. **Every component has a Storybook story**, including new ones, each in its own folder (`<Name>/<Name>.tsx`, `<Name>.module.scss`, `<Name>.stories.tsx`, `index.ts`).
+9. **Privacy:** the session token never leaves the browser except to the site's own backend; tool results (the user's own data the assistant fetched) are sent to our server and the model only when the user asked the assistant; `docs/privacy.md` says so.
+
+---
+
 ## 0. Principles (non negotiable)
 
 1. Factual, not judgmental. Every badge a reviewer sees must be something they could verify by clicking. No scores, no "quality" indicators, no mismatch flags, no AI-slop meters on other people's submissions. The author of this extension has a submission in the same round; anything that looks like it nudges votes is a liability.
