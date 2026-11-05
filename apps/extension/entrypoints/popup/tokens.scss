@@ -1,0 +1,29 @@
+:root {
+  --color-bg: rgb(255 255 255);
+  --color-surface: rgb(255 255 255);
+  --color-text: rgb(26 26 31);
+  --color-text-muted: rgb(107 107 118);
+  --color-primary: rgb(59 59 214);
+  --color-border: rgb(201 201 209);
+  --color-danger: rgb(198 40 40);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --radius-md: 0.375rem;
+  --duration-fast: 120ms;
+  --font-sm: 0.75rem;
+  --font-md: 0.8125rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: rgb(23 23 28);
+    --color-surface: rgb(23 23 28);
+    --color-text: rgb(236 236 241);
+    --color-text-muted: rgb(154 154 166);
+    --color-primary: rgb(124 124 245);
+    --color-border: rgb(58 58 68);
+    --color-danger: rgb(239 122 122);
+  }
+}
