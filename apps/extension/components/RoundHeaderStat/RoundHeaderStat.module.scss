@@ -1,0 +1,48 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.value {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--bscf-font-display);
+  font-size: 1.5rem;
+  font-weight: var(--bscf-font-display-weight);
+  line-height: 1.2;
+}
+
+.trigger {
+  @include reset-button;
+  @include focus-ring;
+
+  min-height: 2.75rem;
+  border-bottom: 0.0625rem dotted var(--bscf-text-muted);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+
+  @media (min-width: 40rem) {
+    min-height: 0;
+  }
+
+  &:hover {
+    color: var(--bscf-accent-yellow);
+  }
+}
