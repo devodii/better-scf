@@ -17,14 +17,11 @@ export type CallKind = 'json' | 'rsc' | 'server-action' | 'other';
 export interface RecordedCall {
   page: string;
   method: string;
-  /** Host plus path with ids replaced and query values dropped. */
   pattern: string;
   status: number;
   kind: CallKind;
   contentType: string;
-  /** Request header names that survived the sensitive-header filter. Names only. */
   requestHeaderNames: string[];
-  /** Keys and types of the JSON body; null when the body is not JSON. */
   shape: Shape | null;
   count: number;
 }
@@ -69,7 +66,6 @@ function bullets(items: readonly string[], limit = 12): string[] {
   return shown;
 }
 
-/** Markdown summary for `docs/site-recon.md`, ending with the open questions of spec section 12. */
 export function renderSummary(report: ReconReport): string {
   const lines: string[] = [`# Site recon: ${report.site}`, '', '## Pages', ''];
   for (const page of report.pages) {

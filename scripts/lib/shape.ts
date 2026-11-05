@@ -1,6 +1,5 @@
 import { placeholderFor } from './url-pattern';
 
-/** A response shape: keys and types only, never values. */
 export type Shape = string | Shape[] | { [key: string]: Shape };
 
 const MAX_DEPTH = 6;
@@ -31,11 +30,6 @@ function typeName(shape: Shape): string {
   return Array.isArray(shape) ? 'array' : 'object';
 }
 
-/**
- * Describes the structure of a parsed JSON value as keys and primitive type names. Object keys
- * that are really ids (record ids, addresses, numbers) are replaced with their placeholder, so
- * the shape holds no value that identifies anything.
- */
 export function describeShape(value: unknown, depth = 0): Shape {
   if (value === null) return 'null';
   if (Array.isArray(value)) {
@@ -57,7 +51,6 @@ export function describeShape(value: unknown, depth = 0): Shape {
   return typeof value;
 }
 
-/** Lists the dotted key paths in a shape whose key name matches the pattern. */
 export function findKeyPaths(shape: Shape, pattern: RegExp, prefix = ''): string[] {
   if (typeof shape === 'string') return [];
   if (Array.isArray(shape)) {

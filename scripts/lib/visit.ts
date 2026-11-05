@@ -2,16 +2,13 @@ import type { PageSpec } from './cli';
 
 export const NAVIGATION_TIMEOUT_MS = 45_000;
 
-/** The part of a Playwright page the visiting loop needs; kept narrow so tests can fake it. */
 export interface Navigable {
   setDefaultTimeout(timeout: number): void;
   goto(url: string, options: { waitUntil: 'networkidle' }): Promise<unknown>;
 }
 
 export interface VisitHooks<TPage extends Navigable> {
-  /** Called right before the navigation starts, so traffic of the page is attributed to it. */
   beforeNavigate(spec: PageSpec): void;
-  /** Called after the page reached network idle. */
   onPage(page: TPage, spec: PageSpec): Promise<void>;
 }
 
@@ -26,7 +23,6 @@ export interface VisitResult {
   skipped: SkippedPage[];
 }
 
-/** Holds the name of the page being visited. Set before navigation, read by response listeners. */
 export interface PageTracker {
   begin(name: string): void;
   current(): string;
@@ -54,11 +50,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((done) => setTimeout(done, ms));
 }
 
-/**
- * Visits the pages one at a time, in the order given, with a pause between them. One navigation
- * per page, then wait for the network to go idle; a failure is reported and the run moves on.
- * No retries, no link following, no scrolling or clicking.
- */
 export async function visitWith<TPage extends Navigable>(
   page: TPage,
   pages: readonly PageSpec[],

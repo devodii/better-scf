@@ -8,10 +8,8 @@ const SENSITIVE_HEADERS = new Set([
   'x-xsrf-token',
 ]);
 
-// Any header whose name suggests a credential is dropped as well, not only the ones listed above.
 const SENSITIVE_HEADER_NAME = /token|secret|session|csrf|xsrf|api-?key|auth|cookie/i;
 
-/** Returns a copy of the headers without cookies, credentials and anything credential-like. */
 export function stripSensitiveHeaders(headers: Record<string, string>): Record<string, string> {
   const kept: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers)) {
@@ -41,10 +39,9 @@ export interface ScrubResult {
   counts: ScrubCounts;
 }
 
-// The left boundary keeps "box.com/foo" or "cat.me/x" from matching "x.com" or "t.me" mid-word.
+// The lookbehind keeps "box.com/foo" from matching as "x.com/foo".
 const PROFILE_LINK =
   /(?<![\w.-])((?:https?:\/\/)?(?:www\.)?(?:github\.com|x\.com|twitter\.com|t\.me|linkedin\.com\/in|discord\.gg))\/?[^/"'?#\s<>)]+/gi;
-// An attribute value: double quoted, single quoted or unquoted.
 const ATTR_VALUE = String.raw`(?:"[^"]*"|'[^']*'|[^\s>"']+)`;
 const SECRET_QUERY = /([?&;](?:token|key|sig|signature|auth|session|code|secret)=)[^&"'\s<>]+/gi;
 const JWT = /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*/g;
@@ -53,12 +50,6 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Replaces personal data in saved HTML with placeholders. It removes scripts and hidden inputs,
- * blanks input values, and replaces emails, Stellar addresses, record ids, profile links,
- * token-like query values, image sources and any literal strings the human passes (names that no
- * pattern can recognise). The output is still reviewed by the human before it is committed.
- */
 export function scrubHtml(html: string, literals: readonly string[] = []): ScrubResult {
   const counts: ScrubCounts = {
     scripts: 0,
@@ -95,7 +86,6 @@ export function scrubHtml(html: string, literals: readonly string[] = []): Scrub
     counts.inputValues += 1;
     return `${open}${close}`;
   });
-  // data-* values often hold ids, names or JSON; the attribute names stay as selector evidence.
   out = out.replace(new RegExp(`(\\sdata-[\\w:.-]+\\s*=\\s*)${ATTR_VALUE}`, 'gi'), (_m, head) => {
     counts.dataAttributes += 1;
     return `${head}""`;
@@ -126,7 +116,6 @@ export function scrubHtml(html: string, literals: readonly string[] = []): Scrub
       return `${head}src="https://example.invalid/image.png"`;
     },
   );
-  // SVG <image href="..."> (also the legacy xlink:href form).
   out = out.replace(
     new RegExp(`(<image\\b[^>]*?\\s(?:xlink:)?href\\s*=\\s*)${ATTR_VALUE}`, 'gi'),
     (_m, head) => {
@@ -134,7 +123,6 @@ export function scrubHtml(html: string, literals: readonly string[] = []): Scrub
       return `${head}"https://example.invalid/image.png"`;
     },
   );
-  // CSS url(...) inside inline style attributes (background images and the like).
   out = out.replace(
     new RegExp(`(\\sstyle\\s*=\\s*)(${ATTR_VALUE})`, 'gi'),
     (_m, head: string, value: string) => {

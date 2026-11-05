@@ -16,11 +16,6 @@ export interface CliOptions {
   redact: string[];
 }
 
-/**
- * Parses `name=https://communityfund.stellar.org/path` arguments. Only https URLs on the site
- * are accepted and the number of pages is capped, so a typo cannot send the browser elsewhere or
- * turn a run into a crawl. The pause between pages cannot go below two seconds.
- */
 export function parseCli(argv: readonly string[]): CliOptions {
   const { values, positionals } = parseArgs({
     args: argv.filter((arg) => arg !== '--'),
