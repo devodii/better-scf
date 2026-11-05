@@ -11,6 +11,7 @@ import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import searchCss from '../styles/dashboard-search.scss?inline';
 
 const ROW = 'data-bscf-search-row';
+const HEADING = 'data-bscf-search-heading';
 const BAR = 'data-bscf-search-bar';
 const RESULTS = 'data-bscf-search-results';
 const SECTION = 'data-bscf-search-section';
@@ -33,7 +34,7 @@ interface View {
 interface Page {
   heading: Element;
   anchor: Element;
-  row: Element | null;
+  row: Element;
   bar: HTMLElement;
   results: HTMLElement;
   barUi: MountedUi | null;
@@ -283,7 +284,8 @@ export const feature: Feature = {
     const detach = (): void => {
       if (!page) return;
       for (const node of page.marked) node.removeAttribute(SECTION);
-      page.row?.removeAttribute(ROW);
+      page.row.removeAttribute(ROW);
+      page.heading.removeAttribute(HEADING);
       page.barUi?.remove();
       page.resultsUi?.remove();
       page.bar.remove();
@@ -294,12 +296,14 @@ export const feature: Feature = {
     const attach = (): void => {
       const heading = findHeading(region, headingText);
       const anchor = heading ? findAnchor(heading, region) : null;
-      if (!heading || !anchor) {
+      const row = heading?.parentElement;
+      if (!heading || !anchor || !row) {
         warn('heading not found');
         return;
       }
-      const row = anchor === heading ? null : heading.parentElement;
       const bar = ownBox('search-bar', BAR);
+      const gap = Number.parseFloat(getComputedStyle(row).rowGap);
+      if (gap > 0) bar.style.setProperty('--bscf-site-gap', `${gap}px`);
       const results = ownBox('search-results', RESULTS);
       const mine: Page = {
         heading,
@@ -312,9 +316,10 @@ export const feature: Feature = {
         resultsState: 'closed',
         marked: new Set(),
       };
-      row?.setAttribute(ROW, '');
+      row.setAttribute(ROW, '');
+      heading.setAttribute(HEADING, '');
       heading.after(bar);
-      (row ? anchor : bar).after(results);
+      (anchor === heading ? bar : anchor).after(results);
       page = mine;
       if (shown) {
         setSections('gone');
