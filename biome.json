@@ -11,6 +11,7 @@
       "!**/.profile",
       "!**/.playwright-mcp",
       "!tests/fixtures",
+      "!apps/extension/entrypoints/scf.content/styles/tokens.scss",
       "!pnpm-lock.yaml",
       "!**/*.md",
       "!**/*.yaml",
