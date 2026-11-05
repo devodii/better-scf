@@ -12,6 +12,7 @@ import {
   type ToolSet,
   tool,
 } from 'ai';
+import dayjs from 'dayjs';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import {
@@ -134,7 +135,7 @@ export function createChatRoute(deps: ChatRouteDeps) {
     cacheHit: boolean,
   ): void => {
     deps.log({
-      ts: new Date(now()).toISOString(),
+      ts: dayjs(now()).toISOString(),
       clientId,
       submissionId: body.submissionId,
       promptId: body.promptId ?? 'free',

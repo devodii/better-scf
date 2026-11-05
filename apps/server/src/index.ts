@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { createAnswerCache } from './ai/cache.js';
+import { createMemoryCache } from './ai/cache.js';
 import { type Env, loadEnv } from './env.js';
 import { client } from './middleware/client.js';
 import { origin } from './middleware/origin.js';
@@ -14,15 +14,15 @@ import {
 } from './routes/chat.js';
 import { createHealthRoute } from './routes/health.js';
 
-export const SERVER_VERSION = '0.1.0';
+const SERVER_VERSION = '0.1.0';
 
 const IP_DAILY_CAP = 120;
 
-export interface AppDeps extends Partial<Omit<ChatRouteDeps, 'now'>> {
+interface AppDeps extends Partial<Omit<ChatRouteDeps, 'now'>> {
   now?: () => number;
 }
 
-export function createApp(env: Env, deps: AppDeps = {}) {
+function createApp(env: Env, deps: AppDeps = {}) {
   const app = new Hono();
 
   app.route('/health', createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }));
@@ -51,7 +51,7 @@ export function createApp(env: Env, deps: AppDeps = {}) {
     '/chat',
     createChatRoute({
       getModel: deps.getModel ?? createModelFactory(env),
-      cache: deps.cache ?? createAnswerCache(),
+      cache: deps.cache ?? createMemoryCache(),
       log: deps.log ?? logChatEntry,
       ...(deps.now ? { now: deps.now } : {}),
     }),

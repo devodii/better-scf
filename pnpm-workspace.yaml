@@ -6,7 +6,5 @@ packages:
 allowBuilds:
   # sass watch mode uses prebuilt platform packages; the install script is only a fallback.
   '@parcel/watcher': false
-  # native SQLite binding for the server's optional answer cache (downloads a prebuilt binary).
-  better-sqlite3: true
   # downloads/links the platform binary used by vite, tsx, tsup and wxt.
   esbuild: true
