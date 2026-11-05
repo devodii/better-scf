@@ -1,5 +1,6 @@
 import { defineBackground } from 'wxt/utils/define-background';
+import { createRepoProvider, createRpcHandlers, getClientId, registerRpcHandlers } from '../lib/db';
 
 export default defineBackground(() => {
-  // Listeners (IndexedDB owner, RPC handlers, fetch proxy) are registered here by later tasks.
+  registerRpcHandlers(createRpcHandlers({ getRepo: createRepoProvider(), getClientId }));
 });
