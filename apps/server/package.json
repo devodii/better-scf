@@ -5,9 +5,9 @@
   "description": "Hono server behind the in-page AI chat.",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
-    "build": "tsup src/index.ts --format esm --target node22 --clean",
-    "start": "node dist/index.js",
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "build": "tsup --entry.index src/server.ts --out-dir dist --format esm --target node22 --clean",
+    "start": "node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

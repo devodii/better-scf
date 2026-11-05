@@ -6,6 +6,6 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     passWithNoTests: true,
-    projects: ['apps/extension', 'apps/server', 'packages/shared'],
+    projects: ['apps/extension', 'apps/server', 'packages/shared', 'scripts'],
   },
 });
