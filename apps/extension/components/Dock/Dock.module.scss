@@ -1,0 +1,89 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  color: var(--bscf-text);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.field {
+  flex: 1;
+}
+
+.root .input {
+  height: 3rem;
+  padding-inline-start: 1.25rem;
+  border-radius: 62.5rem;
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 40%);
+}
+
+.root .action {
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 40%);
+}
+
+.root .prompts {
+  display: none;
+}
+
+.isExpanded .prompts {
+  display: flex;
+}
+
+@media (min-width: 76rem) {
+  .root .prompts {
+    display: flex;
+  }
+}
+
+.panel {
+  overflow: hidden;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: 1rem;
+  background: var(--bscf-surface);
+  box-shadow: 0 0.25rem 1.5rem rgb(0 0 0 / 50%);
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  max-height: min(60vh, 24rem);
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @media (max-width: 39.9375rem) {
+    max-height: 50vh;
+    padding: 0.75rem;
+  }
+}
+
+.empty {
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+}
+
+.error {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 0.0625rem solid var(--bscf-site-toastify-color-error);
+  border-radius: var(--bscf-radius-chip);
+  color: var(--bscf-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
