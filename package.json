@@ -16,6 +16,7 @@
     "format": "biome check --write .",
     "typecheck": "pnpm -r typecheck && tsc --noEmit",
     "tokens": "tsx scripts/scrape-tokens.ts",
+    "tokens:attach": "BSCF_CDP=http://127.0.0.1:9333 tsx scripts/scrape-tokens.ts round=https://communityfund.stellar.org/dashboard/award-rounds/recxrSMYwAl8vcglg submission=https://communityfund.stellar.org/dashboard/submissions/recVDIsC4yhuv9oun award-rounds=https://communityfund.stellar.org/dashboard/award-rounds",
     "recon": "tsx scripts/recon.ts"
   },
   "devDependencies": {
