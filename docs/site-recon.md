@@ -40,3 +40,55 @@ How the data reaches the page on communityfund.stellar.org. Method: one gentle p
 3. Carousel: Swiper (button driven, `swiper-slide-active`); the grid is the in-place "See All".
 4. Chrome's `Origin` on content script fetches to our server: unverified, test with the first server call.
 5. Model and cap: defaults stay.
+
+## Dashboard map (logged in, 2026-11-05)
+
+| Path | Page | Carousels and grids | Data it carries |
+|---|---|---|---|
+| `/dashboard/award-rounds` | Award Rounds | Open Rounds (1 slide), Completed Rounds (45 slides, "See All") | round list payload with per-round stats (below) |
+| `/dashboard/award-rounds/<recId>` | one round | Received submissions carousel and the in-place "See All" grid | submission records (see the data model above) |
+| `/dashboard/submissions/<recId>` | one submission | none | project object and the proposal DOM |
+| `/dashboard/projects` | My Projects | 2 carousels (2 and 3 slides), 2 "See All" | the user's projects and submissions |
+| `/dashboard/tasks` | Tasks | none | |
+| `/dashboard/tiers` | Verified Members | 2 carousels (4 slides each) | `GET /backend/dashboard/tier/request`, `tier_nomination` |
+| `/dashboard/delegate-trust` | Delegates and Trust | none | `GET /backend/dashboard/vote/trust`, `tier/request`, `tier_nomination` |
+| `/dashboard/vote` | Community Vote | none | `GET /backend/dashboard/vote_history/nqg_graph`, `vote/delegate` |
+| `/dashboard/voting-history` | Community Vote History | none | `GET /backend/dashboard/vote_history/your_voting_statistics/<round>`, `nqg_graph` |
+| `/dashboard/analytics` | Analytics | one horizontally scrolling region | `GET /backend/dashboard/analytics/insights`, `analytics/all-rounds`; subpage `/dashboard/analytics/how-nqg-works` |
+| `/dashboard/account` | Account | none | the account form (`/backend/dashboard/user`) |
+| `/projects` (public) | Funded projects | 6 category carousels (134, 99, 23, 112, 104, 59 slides), "See All" each, a Search field and a select | all 528 projects in the inline payload |
+| `/project/<slug>` | a project | | |
+| `/awards`, `/governance`, `/` | public marketing pages | | |
+
+Dashboard pages without a carousel need only scroll restoration. Carousels are Swiper instances (`.swiper`, `.swiper-slide`, `.swiper-slide-active`) driven by a pair of yellow round buttons; there is no anchor on a slide.
+
+## Auth for the backend
+
+- `GET /api/auth/session` returns `{ user, expires, accessToken }` for the logged-in user. `accessToken` is opaque.
+- Every `/backend/...` call needs `Authorization: Bearer <accessToken>`; cookies alone get `401 Missing Authorization header token`. The site's own frontend does exactly this.
+- The extension's data tool does the same, in the content script only: the token is read at call time, used only against `https://communityfund.stellar.org/backend/...`, never stored, logged, put in a message, or sent to our server, to the model or to any other host. Only GET, only allow-listed paths.
+
+## Backend endpoints seen (all GET, same origin, bearer token)
+
+- `/backend/dashboard/user`: `airtableUser{...}`, `sanityUser{...}` (account details; personal)
+- `/backend/dashboard/user/email_status`: `{ emailStatus }`
+- `/backend/dashboard/form_items/essential`: `{ rounds[{key,value,type,phase,roundNumber}], interestFormProjects[...], assignedProjects[...] }`
+- `/backend/dashboard/tier/request`: `{ buttonLabel, disabled, blockingReasons[], votingPowerThreshold, requestType, targetTier }`
+- `/backend/dashboard/tier_nomination`: `{ tierNominations[], selfTierNominations[], threshold{navigator,pilot,round} }`
+- `/backend/dashboard/vote/trust`, `/backend/dashboard/vote/delegate`: arrays
+- `/backend/dashboard/vote_history/nqg_graph`: `{ nqgOverTime[[round, ...]] }`
+- `/backend/dashboard/vote_history/your_voting_statistics/<round>`: neuron scores and `totalNQGScore`
+- `/backend/dashboard/analytics/insights`: `{ generatedAt, global{headline, trends[], anomalies[], alerts[]}, perRound[{round, summary, highlights[], concerns[], tags[]}], roundsIncluded[] }`
+- `/backend/dashboard/analytics/all-rounds`: `{ computedAt, roundsIncluded[32..45], series{ categoryMix, delegationHealth, fundingTrends[{round, avgBudget, medianBudget, totalAwardedUSD}], neuronBreakdown, participation, powerConcentration, projectFunnel[{round, submissionsCount, awardedCount}], repeatSubmitters, reputationTrend, trustGraphTrend, trustLossTrend, voteQualityTrend, voterCohort, votingHistoryTrend } }`
+
+## Round stats (already in the round list page payload, no request)
+
+Each round record: `{ id, name ("SCF #45"), type, phase ("Submission" | "Ended"), roundNumber, description, dates{...}, imageUrl, stats{ appliedSubmissions, awardedSubmissions, totalAwardedUSD, totalPaidUSD, totalPaidXLM, submissionsCount, usersCount }, scfVersion, submissions[] }`. The two numbers on a Completed Rounds card are `submissionsCount` (box icon) and `usersCount` (person icon). Example SCF #45: 218 submissions, 366 users, 40 awarded, $4,043,616 awarded.
+
+## Tracks
+
+Tracks began with SCF #41. No data source exposes them: `awardType` is `Build` on every record, rounds have no track field, the analytics series have none. The only signal is per submission (the on-chain metric section, see the heuristic above). So track counts per round cannot be computed without opening every submission. Do not show track counts on round cards; a track chip is shown only on a submission the user has opened, labeled as derived.
+
+## Projects index (public `/projects` payload, no auth)
+
+The page embeds all 528 projects in an inline script: `{ id, slug, title, category, thumbnail{url}, lastAwardedRound }`, about 177 KB. `/project/<slug>` is the project page. Categories: Applications, Developer Tooling, Education and Community, End-User Application, Financial Protocols, Infrastructure and Services. The dashboard search reads this once (one document request, cached for 6 hours in IndexedDB, started by the first keystroke) and searches it locally.
