@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { CHAT_LIMITS } from './constants';
 
-/** Data models of spec section 5.3. Everything scraped is nullable; parsers never throw. */
-
 export const trackSchema = z.enum(['open', 'integration', 'rfp', 'unknown']);
 export type Track = z.infer<typeof trackSchema>;
 
@@ -70,7 +68,6 @@ export const submissionSchema = z.object({
   stellarAccounts: z.array(z.string()),
   stellarContracts: z.array(z.string()),
   sections: z.array(sectionSchema),
-  /** sha256 of normalized body text, used by the chat cache. */
   contentHash: z.string(),
   fetchedAt: z.number(),
 });
@@ -87,13 +84,11 @@ export const projectSchema = z.object({
 export type Project = z.infer<typeof projectSchema>;
 
 export const roundSchema = z.object({
-  /** For example "46". */
   id: z.string().min(1),
   name: z.string(),
   phases: z.array(
     z.object({
       name: z.string(),
-      /** Epoch ms parsed from the visible date; null when the cell says TBD. */
       startsAt: z.number().nullable(),
       endsAt: z.number().nullable(),
     }),
@@ -114,7 +109,6 @@ export const reviewStateSchema = z.object({
 export type ReviewState = z.infer<typeof reviewStateSchema>;
 
 export const navStateSchema = z.object({
-  /** pathname + search */
   routeKey: z.string().min(1),
   scrollY: z.number(),
   carouselIndex: z.number().int().nonnegative(),
@@ -135,19 +129,15 @@ export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
 export const horizonSummarySchema = z.object({
   accountId: z.string().min(1),
-  /** ISO date of account creation, when Horizon reports it. */
   createdAt: nullableString,
   lastModifiedLedger: z.number().int().nonnegative().nullable(),
-  /** Native balance as the string Horizon returns, for example "100.0000000". */
   xlmBalance: nullableString,
   trustlines: z.number().int().nonnegative().nullable(),
-  /** ISO time of the last activity, when known. */
   lastActiveAt: nullableString,
   fetchedAt: z.number(),
 });
 export type HorizonSummary = z.infer<typeof horizonSummarySchema>;
 
-/** What the extension sends the server about the page: the context document and its identity. */
 export const proposalContextSchema = z.object({
   submissionId: z.string().min(1).max(CHAT_LIMITS.maxIdChars),
   contentHash: z.string().min(1).max(CHAT_LIMITS.maxIdChars),
@@ -158,7 +148,6 @@ export type ProposalContext = z.infer<typeof proposalContextSchema>;
 
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-/** Never throws: returns a tagged result. */
 export function parseWith<T>(schema: z.ZodType<T>, input: unknown): ParseResult<T> {
   const result = schema.safeParse(input);
   if (result.success) return { ok: true, data: result.data };

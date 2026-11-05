@@ -2,11 +2,9 @@ import { z } from 'zod';
 import { CHAT_LIMITS } from './constants';
 import { type ParseResult, parseWith, proposalContextSchema } from './models';
 
-/** The model API rejects empty text blocks, so blank content is a validation error. */
 const nonBlank = (value: string): boolean => value.trim().length > 0;
 const NON_BLANK_MESSAGE = 'content must not be empty or whitespace-only';
 
-/** User turns are capped at 2000 characters, assistant turns (replayed history) at 6000. */
 export const chatRequestMessageSchema = z.discriminatedUnion('role', [
   z.object({
     role: z.literal('user'),
@@ -22,15 +20,9 @@ export const chatRequestMessageSchema = z.discriminatedUnion('role', [
 ]);
 export type ChatRequestMessage = z.infer<typeof chatRequestMessageSchema>;
 
-/** Body of POST /v1/chat (spec 7.2, 7.6). */
 export const chatRequestSchema = proposalContextSchema.extend({
   messages: z.array(chatRequestMessageSchema).min(1).max(CHAT_LIMITS.maxMessages),
-  /**
-   * Id of a quick prompt (constants.ts); absent for free text.
-   * NOTE for the server (task 10): this schema only checks the shape. The server
-   * must bind promptId to its text (findQuickPrompt(promptId).text equals the last
-   * user message) before using it as a summary-cache key.
-   */
+  // Shape only: the server must check findQuickPrompt(promptId).text equals the last user message before using promptId as a cache key.
   promptId: z.string().min(1).max(CHAT_LIMITS.maxPromptIdChars).optional(),
 });
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
@@ -46,12 +38,10 @@ export const chatErrorCodeSchema = z.enum([
 ]);
 export type ChatErrorCode = z.infer<typeof chatErrorCodeSchema>;
 
-/** JSON error body of every non-streaming failure. Never carries stack traces or request content. */
 export const chatErrorSchema = z.object({
   error: z.object({
     code: chatErrorCodeSchema,
     message: z.string(),
-    /** Seconds until retry is sensible; mirrors the Retry-After header. */
     retryAfterSeconds: z.number().int().nonnegative().optional(),
   }),
 });

@@ -275,7 +275,6 @@ export function createRevalidator(): Revalidate {
     if (cached && !cached.stale) return { value: cached.value, refresh: null };
 
     const existing = inFlight.get(options.key);
-    // cast: callers of one key always pass the same T
     let refresh = existing as Promise<T | null> | undefined;
     if (!refresh) {
       refresh = (async () => {
@@ -320,7 +319,6 @@ export function createMirror(ttl?: MirrorTtl): Mirror<unknown> {
   const loading = new Map<string, Promise<unknown>>();
   const view = (entry: unknown): unknown => {
     if (!ttl) return entry;
-    // cast: ttl mirrors only ever hold Cached values
     const cached = entry as Cached<unknown>;
     return { ...cached, stale: isStale(cached.fetchedAt, ttl.ttlMs, clock()) };
   };

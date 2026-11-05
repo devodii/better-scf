@@ -141,7 +141,6 @@ export function buildRoundContext(
   let included = 0;
   for (const item of items) {
     const line = `- ${normalizeText(item.title)} | by ${normalizeText(item.byLine) || 'not stated'} | budget ${formatUsd(item.budgetUsd)} | track ${item.track}`;
-    // reserve room for the "N more" note appended below
     if (line.length + 1 > maxChars - document.length - 80) break;
     document += `\n${line}`;
     included += 1;

@@ -4,7 +4,5 @@ export default defineContentScript({
   matches: ['https://communityfund.stellar.org/*'],
   runAt: 'document_idle',
   cssInjectionMode: 'ui',
-  main() {
-    // Route detection and feature mounting (shadow root UIs) are added by later tasks.
-  },
+  main() {},
 });

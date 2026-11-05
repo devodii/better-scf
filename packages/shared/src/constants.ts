@@ -1,20 +1,13 @@
-/** Extension version sent as `X-BSCF-Version`. Keep in step with the extension's package.json. */
+/** Keep in step with the root package.json version. */
 export const EXTENSION_VERSION = '0.1.0';
 
 export const CHAT_LIMITS = {
   maxMessages: 20,
-  /** Cap on a `user` message. */
   maxUserMessageChars: 2000,
-  /**
-   * Cap on an `assistant` message. Replies are replayed as history on follow-ups
-   * (spec 7.1, 7.3) and maxTokens is 900 (spec 7.6, about 3000-3600 characters),
-   * so this stays well above that.
-   */
   maxAssistantMessageChars: 6000,
   maxContextChars: 24000,
   maxIdChars: 128,
   maxPromptIdChars: 64,
-  /** Questions per client id per day (spec 7.6); shown in the 429 message. */
   dailyQuestionsPerClient: 40,
 } as const;
 
@@ -24,11 +17,9 @@ export interface QuickPrompt {
   /** Stable id: part of the server's summary-cache key, never rename. */
   readonly id: string;
   readonly scope: QuickPromptScope;
-  /** Exact text sent as the user message. */
   readonly text: string;
 }
 
-/** Neutral extraction prompts (spec 7.4). Nothing here asks for a rating of feasibility, risk or quality. */
 export const QUICK_PROMPTS: readonly QuickPrompt[] = [
   { id: 'summarize-5', scope: 'submission', text: 'Summarize in 5 bullets' },
   {
