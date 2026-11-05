@@ -222,6 +222,12 @@ export function loadProjectsIndex(): Promise<boolean> {
   return loading;
 }
 
+export function reloadProjectsIndex(): Promise<boolean> {
+  failed = false;
+  retryAt = 0;
+  return loadProjectsIndex();
+}
+
 function tokenize(query: string): string[] {
   const tokens = new Set<string>();
   for (const token of fold(query).split(/\s+/)) {
