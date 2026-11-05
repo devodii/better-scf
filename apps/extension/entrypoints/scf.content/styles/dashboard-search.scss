@@ -1,0 +1,68 @@
+@keyframes bscf-search-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+}
+
+@keyframes bscf-search-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+}
+
+html [data-bscf-search-row] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+[data-bscf-search-bar] {
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 26rem;
+  margin-block: 0.5rem;
+  margin-inline-start: auto;
+}
+
+[data-bscf-search-results] {
+  display: block;
+  min-width: 0;
+  margin-block: 1.5rem;
+}
+
+[data-bscf-search-results="open"] {
+  animation: bscf-search-in 200ms ease-out;
+}
+
+[data-bscf-search-results="closing"] {
+  animation: bscf-search-out 160ms ease-in forwards;
+  pointer-events: none;
+}
+
+html [data-bscf-search-results="closed"] {
+  display: none;
+}
+
+[data-bscf-search-section="out"] {
+  animation: bscf-search-out 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+[data-bscf-search-section="in"] {
+  animation: bscf-search-in 200ms ease-out;
+}
+
+html [data-bscf-search-section="gone"] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html [data-bscf-search-results],
+  html [data-bscf-search-section] {
+    animation: none;
+  }
+}
