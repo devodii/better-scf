@@ -1,0 +1,23 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(opacity);
+
+  display: inline-flex;
+  align-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  max-width: 100%;
+  border-radius: var(--bscf-radius-chip);
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+}
