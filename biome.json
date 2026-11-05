@@ -8,7 +8,6 @@
       "!**/.wxt",
       "!**/dist",
       "!**/coverage",
-      "!**/.profile",
       "!**/.playwright-mcp",
       "!tests/fixtures",
       "!apps/extension/entrypoints/scf.content/styles/tokens.scss",

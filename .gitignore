@@ -10,9 +10,6 @@ node_modules/
 # Static Storybook build, written by `pnpm build-storybook`.
 /apps/extension/storybook-static/
 
-# Story screenshot index, written by `pnpm shots:stories` next to its pw-shot-story-*.png files.
-/docs/verification/stories.html
-
 # Build output of the server, written by tsup (`pnpm --filter server build`).
 /apps/server/dist/
 
@@ -20,9 +17,6 @@ node_modules/
 .env
 .env.*
 !.env.example
-
-# Persistent browser profile of the recon and token scripts (holds a logged-in session).
-/.profile/
 
 # Playwright MCP session logs, written to the directory the session was launched from.
 .playwright-mcp/

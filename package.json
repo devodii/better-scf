@@ -14,21 +14,11 @@
     "build": "pnpm -r build",
     "lint": "biome check --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
     "format": "biome check --write --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true .",
-    "typecheck": "pnpm -r typecheck && tsc --noEmit",
-    "tokens": "tsx scripts/scrape-tokens.ts",
-    "tokens:attach": "BSCF_CDP=http://127.0.0.1:9333 tsx scripts/scrape-tokens.ts round=https://communityfund.stellar.org/dashboard/award-rounds/recxrSMYwAl8vcglg submission=https://communityfund.stellar.org/dashboard/submissions/recVDIsC4yhuv9oun award-rounds=https://communityfund.stellar.org/dashboard/award-rounds",
-    "recon": "tsx scripts/recon.ts",
+    "typecheck": "pnpm -r typecheck",
     "storybook": "pnpm --filter extension storybook",
-    "build-storybook": "pnpm --filter extension build-storybook",
-    "shots:stories": "pnpm build-storybook && tsx scripts/shots-stories.ts"
+    "build-storybook": "pnpm --filter extension build-storybook"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.5",
-    "@types/node": "^22.20.5",
-    "playwright": "^1.64.1",
-    "shared": "workspace:*",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "zod": "^4.6.7"
+    "@biomejs/biome": "^2.6.5"
   }
 }

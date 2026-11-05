@@ -19,8 +19,6 @@
 !**/.env.example
 
 # Local agent/tool scratch, not needed by the build.
-.profile
-**/.profile
 work
 docs
 *.log
