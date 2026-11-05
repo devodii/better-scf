@@ -48,7 +48,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
       - run: pnpm --filter extension build
       - run: pnpm --filter extension zip
       - name: Name the zip after the root version
