@@ -37,3 +37,5 @@ pw-shot-*.png
 
 # macOS Finder metadata.
 .DS_Store
+# Local contact sheet of the verification screenshots, regenerated with them.
+docs/verification/index.html
