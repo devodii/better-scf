@@ -53,7 +53,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` runs the extension (WXT, with hot reload in a managed Chrome) and the server in parallel. Copy `apps/extension/.env.example` and `apps/server/.env.example` to `.env` in each app first; the server needs an Anthropic key for local chat. Other root scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`. To produce the release zip: `pnpm --filter extension zip`.
+`pnpm dev` runs the extension (WXT, with hot reload in a managed Chrome) and the server in parallel. Copy `apps/extension/.env.example` and `apps/server/.env.example` to `.env` in each app first; the server needs an Anthropic key for local chat. Other root scripts: `pnpm build`, `pnpm lint`, `pnpm typecheck`. To produce the release zip: `pnpm --filter extension zip`.
 
 ### Design tokens
 
@@ -61,7 +61,7 @@ Injected UI uses only tokens scraped from the live site, so it looks native. `pn
 
 ### Selectors
 
-All DOM selectors live in one module, `apps/extension/lib/site/selectors.ts`, nowhere else. Each is checked against a saved page fixture in a test. Prefer `data-*` attributes, ARIA roles and heading text over class names, which the site generates. `pnpm recon` runs `scripts/recon.ts` to record how the site loads its data; the findings go in `docs/site-recon.md`.
+All DOM selectors live in one module, `apps/extension/lib/site/selectors.ts`, nowhere else. Prefer `data-*` attributes, ARIA roles and heading text over class names, which the site generates. `pnpm recon` runs `scripts/recon.ts` to record how the site loads its data; the findings go in `docs/site-recon.md`.
 
 ### Layout and CI
 
