@@ -1,0 +1,103 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  color: var(--bscf-text);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 0.0625rem solid var(--bscf-muted-chip);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.empty {
+  margin: 0;
+  padding: 0.5rem;
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(background-color);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--bscf-radius-chip);
+  text-align: start;
+
+  &:hover {
+    background: var(--bscf-muted-chip);
+  }
+}
+
+.text {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+}
+
+.clear {
+  @include reset-button;
+  @include focus-ring;
+
+  flex: none;
+  align-self: flex-start;
+  min-height: 2.75rem;
+  margin: 0 0.5rem 0.5rem;
+  padding: 0 0.5rem;
+  color: var(--bscf-link);
+  font-size: 0.875rem;
+  text-decoration: underline;
+
+  &:hover:not(:disabled) {
+    color: var(--bscf-accent-yellow);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+}

@@ -1,0 +1,70 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+@keyframes rise {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+}
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chip {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(border-color, color, background-color);
+
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: 62.5rem;
+  background: var(--bscf-bg);
+  color: var(--bscf-text);
+  font-size: 0.875rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: start;
+  animation: rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:nth-child(2) {
+    animation-delay: 40ms;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 80ms;
+  }
+
+  &:nth-child(n + 4) {
+    animation-delay: 120ms;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--bscf-accent-yellow);
+    color: var(--bscf-accent-yellow);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+
+  @media (min-width: 48rem) {
+    min-height: 2rem;
+    padding: 0.375rem 0.875rem;
+  }
+}

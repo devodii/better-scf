@@ -1,0 +1,96 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+@keyframes caret {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--bscf-text);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+
+  p,
+  ul,
+  ol,
+  pre {
+    margin: 0;
+  }
+
+  a {
+    @include focus-ring;
+
+    color: var(--bscf-link);
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--bscf-accent-yellow);
+    }
+  }
+
+  strong {
+    font-weight: 700;
+  }
+
+  code {
+    padding: 0.0625rem 0.3125rem;
+    border-radius: 0.25rem;
+    background: var(--bscf-muted-chip);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em;
+  }
+}
+
+.heading {
+  font-weight: 700;
+}
+
+.list {
+  padding-inline-start: 1.25rem;
+
+  li + li {
+    margin-top: 0.25rem;
+  }
+}
+
+.pre {
+  max-width: 100%;
+  padding: 0.625rem 0.75rem;
+  overflow-x: auto;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-muted-chip);
+
+  code {
+    padding: 0;
+    background: none;
+    white-space: pre;
+  }
+}
+
+.isStreaming {
+  > :last-child:not(ul, ol, pre)::after,
+  > :is(ul, ol):last-child > li:last-child::after {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    margin-inline-start: 0.2em;
+    vertical-align: -0.15em;
+    border-radius: 0.125rem;
+    background: var(--bscf-accent-yellow);
+    opacity: 0.75;
+    animation: caret 1s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+}

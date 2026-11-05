@@ -1,0 +1,86 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+@keyframes pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+.root {
+  @include base;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.375rem 0.625rem;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: var(--bscf-radius-chip);
+  background: color-mix(in srgb, var(--bscf-muted-chip) 50%, transparent);
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.125rem;
+  border-radius: 50%;
+  animation: pop 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.done .mark {
+  background: var(--bscf-accent-yellow);
+  color: var(--bscf-bg);
+}
+
+.error {
+  border-color: var(--bscf-site-toastify-color-error);
+}
+
+.error .mark {
+  background: var(--bscf-site-toastify-color-error);
+  color: var(--bscf-text);
+}
+
+.running > :first-child {
+  margin-top: 0.125rem;
+  color: var(--bscf-accent-yellow);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.outcome {
+  position: absolute;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.detail {
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+}

@@ -1,0 +1,172 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+$duration: var(--bscf-assistant-duration, 320ms);
+$ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
+
+.root {
+  @include base;
+
+  position: fixed;
+  inset: 1.5rem 0 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-bottom: 0;
+  border-radius: 1rem 1rem 0 0;
+  background: var(--bscf-surface);
+  box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 50%);
+  color: var(--bscf-text);
+  visibility: hidden;
+  transform: translateY(100%);
+  transition:
+    transform $duration $ease,
+    visibility 0s linear $duration;
+
+  &[data-dragging] {
+    transition: none;
+  }
+}
+
+.isOpen {
+  visibility: visible;
+  transform: translateY(var(--assistant-drag, 0px));
+  transition:
+    transform $duration $ease,
+    visibility 0s linear 0s;
+}
+
+.handle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75rem;
+  cursor: grab;
+  touch-action: none;
+}
+
+.grip {
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 62.5rem;
+  background: var(--bscf-text-muted);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem 0.75rem;
+  border-bottom: 0.0625rem solid var(--bscf-muted-chip);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.context {
+  @include truncate;
+
+  min-width: 0;
+  margin-inline-end: auto;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-muted-chip);
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.history {
+  position: absolute;
+  inset: 0;
+  background: var(--bscf-surface);
+  visibility: hidden;
+  transform: translateX(100%);
+  transition:
+    transform $duration $ease,
+    visibility 0s linear $duration;
+}
+
+.history.isOpen {
+  visibility: visible;
+  transform: none;
+  transition:
+    transform $duration $ease,
+    visibility 0s linear 0s;
+}
+
+@media (min-width: 48rem) {
+  .root {
+    inset: var(--assistant-top, 0) 0 0 auto;
+    width: var(--bscf-assistant-width, 25rem);
+    border: 0;
+    border-left: 0.0625rem solid var(--bscf-muted-chip);
+    border-radius: 0;
+    box-shadow: -0.5rem 0 2rem rgb(0 0 0 / 35%);
+    transform: translateX(100%);
+  }
+
+  .isOpen {
+    transform: none;
+  }
+
+  .handle {
+    display: none;
+  }
+
+  .header {
+    padding-top: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    opacity: 0;
+    transform: none;
+    transition:
+      opacity 120ms linear,
+      visibility 0s linear 120ms;
+  }
+
+  .root.isOpen {
+    opacity: 1;
+    transition:
+      opacity 120ms linear,
+      visibility 0s linear 0s;
+  }
+
+  .root.isOpen[data-dragging] {
+    transform: translateY(var(--assistant-drag, 0px));
+  }
+
+  .history {
+    opacity: 0;
+    transform: none;
+    transition:
+      opacity 120ms linear,
+      visibility 0s linear 120ms;
+  }
+
+  .history.isOpen {
+    opacity: 1;
+    transition:
+      opacity 120ms linear,
+      visibility 0s linear 0s;
+  }
+}
