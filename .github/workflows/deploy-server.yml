@@ -45,7 +45,8 @@ jobs:
     steps:
       - name: Skip when Railway is not configured
         if: env.RAILWAY_CONFIGURED != 'true'
-        run: echo "Skipped: RAILWAY_TOKEN is not set, nothing was deployed." >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "Skipped: RAILWAY_TOKEN is not set, nothing was deployed." >> "$GITHUB_STEP_SUMMARY"
       - if: env.RAILWAY_CONFIGURED == 'true'
         uses: actions/checkout@v4
       - if: env.RAILWAY_CONFIGURED == 'true'
