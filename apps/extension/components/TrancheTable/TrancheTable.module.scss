@@ -1,0 +1,72 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  min-width: 0;
+  max-width: 100%;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-surface);
+  color: var(--bscf-text);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.4;
+
+  tr + tr {
+    border-top: 0.0625rem solid var(--bscf-muted-chip);
+  }
+}
+
+.caption {
+  padding: 0.75rem 0.75rem 0.25rem;
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.head,
+.headAmount {
+  padding: 0.5rem 0.75rem;
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.headAmount,
+.amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.title {
+  padding: 0.625rem 0.75rem;
+  font-weight: 400;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.amount {
+  padding: 0.625rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.missing {
+  color: var(--bscf-text-muted);
+}
+
+.empty {
+  @include base;
+
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+}
