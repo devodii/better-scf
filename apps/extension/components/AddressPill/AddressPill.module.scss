@@ -1,0 +1,33 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.pill {
+  position: relative;
+
+  @media (max-width: 639.98px) {
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -0.75rem -0.25rem;
+    }
+  }
+}
+
+.contract {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.kind {
+  font-weight: 500;
+}
+
+.address {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--bscf-text-muted);
+  overflow-wrap: anywhere;
+}
