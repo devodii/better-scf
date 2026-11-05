@@ -1,0 +1,17 @@
+[data-bscf="reviewer-bar-slot"] {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 0.75rem;
+  z-index: 40;
+  max-width: calc(100vw - 1.5rem);
+
+  @media (min-width: 40rem) {
+    left: 1rem;
+  }
+}
+
+[data-bscf="reviewer-bar-team-slot"] {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
