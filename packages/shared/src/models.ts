@@ -1,31 +1,31 @@
 import { z } from 'zod';
 import { CHAT_LIMITS, PAGE_KINDS } from './constants';
 
-export const trackSchema = z.enum(['open', 'integration', 'rfp', 'unknown']);
+const trackSchema = z.enum(['open', 'integration', 'rfp', 'unknown']);
 export type Track = z.infer<typeof trackSchema>;
 
-export const stanceSchema = z.enum(['none', 'support', 'unsure', 'against']);
+const stanceSchema = z.enum(['none', 'support', 'unsure', 'against']);
 export type Stance = z.infer<typeof stanceSchema>;
 
-export const pageKindSchema = z.enum(PAGE_KINDS);
+const pageKindSchema = z.enum(PAGE_KINDS);
 export type PageKind = z.infer<typeof pageKindSchema>;
 
 const usd = z.number().nullable();
 const nullableString = z.string().nullable();
 
-export const deliverableSchema = z.object({
+const deliverableSchema = z.object({
   title: z.string(),
   totalUsd: usd,
 });
 
-export const trancheSchema = z.object({
+const trancheSchema = z.object({
   index: z.number().int().nonnegative(),
   title: z.string(),
   totalUsd: usd,
   deliverables: z.array(deliverableSchema),
 });
 
-export const teamMemberSchema = z.object({
+const teamMemberSchema = z.object({
   name: z.string(),
   role: nullableString,
   github: nullableString,
@@ -33,14 +33,14 @@ export const teamMemberSchema = z.object({
   linkedin: nullableString,
 });
 
-export const submissionLinksSchema = z.object({
+const submissionLinksSchema = z.object({
   website: nullableString,
   architecture: nullableString,
   github: nullableString,
   video: nullableString,
 });
 
-export const sectionSchema = z.object({
+const sectionSchema = z.object({
   id: z.string(),
   title: z.string(),
   anchorY: z.number().optional(),
@@ -156,12 +156,3 @@ export function parseWith<T>(schema: z.ZodType<T>, input: unknown): ParseResult<
     error: result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
   };
 }
-
-export const parseSubmission = (input: unknown): ParseResult<Submission> =>
-  parseWith(submissionSchema, input);
-export const parseReviewState = (input: unknown): ParseResult<ReviewState> =>
-  parseWith(reviewStateSchema, input);
-export const parseNavState = (input: unknown): ParseResult<NavState> =>
-  parseWith(navStateSchema, input);
-export const parseHorizonSummary = (input: unknown): ParseResult<HorizonSummary> =>
-  parseWith(horizonSummarySchema, input);

@@ -77,7 +77,7 @@ export interface Repo {
   clearAll(): Promise<void>;
 }
 
-export function defaultReview(submissionId: string): ReviewState {
+function defaultReview(submissionId: string): ReviewState {
   return {
     submissionId,
     stance: 'none',
@@ -88,7 +88,7 @@ export function defaultReview(submissionId: string): ReviewState {
   };
 }
 
-export function createRepo(db: Db): Repo {
+function createRepo(db: Db): Repo {
   const now = Date.now;
 
   async function readOne<S extends StoreName, T>(

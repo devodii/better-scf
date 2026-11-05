@@ -59,7 +59,7 @@ export interface QuickPrompt {
   readonly text: string;
 }
 
-export const QUICK_PROMPTS: readonly QuickPrompt[] = [
+const QUICK_PROMPTS: readonly QuickPrompt[] = [
   { id: 'summarize-5', scope: 'submission', text: 'Summarize in 5 bullets' },
   {
     id: 'deliverables-tranches',

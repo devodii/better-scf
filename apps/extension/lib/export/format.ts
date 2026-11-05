@@ -1,6 +1,6 @@
 import type { Submission } from 'shared';
 
-export const NOTE_MAX_CHARS = 200;
+const NOTE_MAX_CHARS = 200;
 
 export function formatBudget(usd: number | null): string {
   if (usd === null || !Number.isFinite(usd)) return 'n/a';

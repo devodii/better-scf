@@ -215,7 +215,7 @@ export function pageRoot(doc: Document): Element {
   return doc.querySelector('main') ?? doc.body;
 }
 
-export function readHeadings(root: ParentNode): string[] {
+function readHeadings(root: ParentNode): string[] {
   const headings: string[] = [];
   for (const heading of root.querySelectorAll('h1, h2, h3')) {
     if (!isReadable(heading) || insideOwnNode(heading)) continue;
@@ -237,7 +237,7 @@ export function readPageSnapshot(doc: Document = document): PageSnapshot {
   };
 }
 
-export function buildPageContext(
+function buildPageContext(
   snapshot: PageSnapshot,
   maxChars: number = CHAT_LIMITS.maxContextChars,
 ): string {

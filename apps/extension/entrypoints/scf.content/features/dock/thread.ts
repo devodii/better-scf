@@ -49,7 +49,7 @@ function activityText(name: string, input: unknown): string {
   }
 }
 
-export function runningActivity(message: UIMessage): string | undefined {
+function runningActivity(message: UIMessage): string | undefined {
   for (let index = message.parts.length - 1; index >= 0; index -= 1) {
     const part = message.parts[index];
     if (
@@ -67,7 +67,7 @@ export function toolIsReady(message: UIMessage): boolean {
   return message.parts.some((part) => isToolUIPart(part) && part.state === 'input-available');
 }
 
-export function messageText(message: UIMessage): string {
+function messageText(message: UIMessage): string {
   const texts: string[] = [];
   for (const part of message.parts) {
     if (part.type === 'text' && part.text.trim() !== '') texts.push(part.text);

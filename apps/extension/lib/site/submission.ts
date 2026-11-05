@@ -144,7 +144,7 @@ function slug(text: string): string {
   );
 }
 
-export function parseUsd(text: string): number | null {
+function parseUsd(text: string): number | null {
   const match = AMOUNT.exec(text);
   const digits = match?.[1];
   if (digits === undefined) return null;

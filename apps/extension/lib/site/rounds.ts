@@ -10,9 +10,6 @@ import {
   ROUNDS_RECORD_START,
 } from './selectors/rounds';
 
-// Tracks began with SCF #41, but no payload field exposes them (awardType is "Build" everywhere), so this is never used for display.
-export const TRACKS_START_ROUND = 41;
-
 const count = z.number().finite().catch(0);
 
 const roundStatsSchema = z.object({
@@ -30,7 +27,7 @@ const roundDateSchema = z.object({
   close: z.string().catch(''),
 });
 
-export const roundRecordSchema = z.object({
+const roundRecordSchema = z.object({
   id: z.string().startsWith('rec'),
   name: z.string().transform((name) => name.trim()),
   roundNumber: z.number().int(),
@@ -43,24 +40,10 @@ export const roundRecordSchema = z.object({
 });
 
 export type RoundRecord = z.infer<typeof roundRecordSchema>;
-export type RoundStats = z.infer<typeof roundStatsSchema>;
 
 export interface RoundCardMatch {
   card: Element;
   record: RoundRecord;
-}
-
-let debugEnabled = false;
-const reported = new Set<string>();
-
-export function setRoundsDebug(enabled: boolean): void {
-  debugEnabled = enabled;
-}
-
-function debug(selector: string): void {
-  if (!debugEnabled || reported.has(selector)) return;
-  reported.add(selector);
-  console.debug(`[better-scf] rounds: no match for ${selector}`);
 }
 
 function decodeFlight(scripts: readonly string[]): string {
@@ -117,7 +100,6 @@ export function parseRoundsPayload(scripts: readonly string[]): RoundRecord[] {
       seen.add(result.data.id);
       rounds.push(result.data);
     }
-    if (rounds.length === 0) debug('roundsPayload');
     return rounds;
   } catch {
     return [];
@@ -145,14 +127,6 @@ function cardRoundNumber(card: Element): number | null {
   return found;
 }
 
-export function readRoundCardNumber(card: Element): number | null {
-  try {
-    return cardRoundNumber(card);
-  } catch {
-    return null;
-  }
-}
-
 export function mapRoundCards(root: ParentNode, rounds: readonly RoundRecord[]): RoundCardMatch[] {
   const matches: RoundCardMatch[] = [];
   try {
@@ -172,7 +146,6 @@ export function mapRoundCards(root: ParentNode, rounds: readonly RoundRecord[]):
         break;
       }
     }
-    if (matches.length === 0) debug('roundCards');
   } catch {
     return [];
   }

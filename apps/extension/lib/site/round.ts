@@ -46,7 +46,7 @@ const nullableBoolean = z
   .nullable()
   .catch(null);
 
-export const submissionSummarySchema = submissionSchema
+const submissionSummarySchema = submissionSchema
   .pick({ id: true, title: true, status: true })
   .extend({
     project: nullableString,
@@ -225,7 +225,7 @@ function parseDay(text: string | undefined): dayjs.Dayjs | null {
   return day.isValid() ? day : null;
 }
 
-export function parsePhaseDates(text: string): Pick<RoundPhase, 'startsAt' | 'endsAt'> {
+function parsePhaseDates(text: string): Pick<RoundPhase, 'startsAt' | 'endsAt'> {
   try {
     const parts = text.trim().split(PHASE_RANGE_SEPARATOR);
     const start = parseDay(parts[0]?.trim());
@@ -239,7 +239,7 @@ export function parsePhaseDates(text: string): Pick<RoundPhase, 'startsAt' | 'en
   }
 }
 
-function findPhaseTable(root: ParentNode): Element | null {
+export function findPhaseTable(root: ParentNode): Element | null {
   for (const table of root.querySelectorAll(PHASE_TABLE)) {
     const headers = Array.from(table.querySelectorAll(PHASE_HEADER_CELL), (th) =>
       norm(th.textContent),
@@ -310,7 +310,7 @@ function findByline(card: Element): Element | null {
   return null;
 }
 
-export function cardFromViewButton(button: Element): Element | null {
+function cardFromViewButton(button: Element): Element | null {
   try {
     let node = button.parentElement;
     for (let i = 0; node && i < CARD_MAX_DEPTH; i++) {

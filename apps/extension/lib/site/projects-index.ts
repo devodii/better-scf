@@ -106,18 +106,6 @@ let checkedAt = 0;
 let failure: ProjectsIndexError | null = null;
 let retryAt = 0;
 let loading: Promise<boolean> | null = null;
-let debugEnabled = false;
-let reported = false;
-
-export function setProjectsIndexDebug(enabled: boolean): void {
-  debugEnabled = enabled;
-}
-
-function debug(): void {
-  if (!debugEnabled || reported) return;
-  reported = true;
-  console.debug('[better-scf] projects: no match for flightRecords');
-}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -178,7 +166,7 @@ function toEntry(raw: string): ProjectRecord | null {
   };
 }
 
-export function parseProjectRecords(html: string): ProjectRecord[] {
+function parseProjectRecords(html: string): ProjectRecord[] {
   try {
     const stream = decodeFlight(html);
     const seen = new Set<string>();
@@ -227,10 +215,7 @@ async function fetchProjects(): Promise<FetchOutcome> {
     });
     if (!response.ok) return { ok: false, error: ProjectsIndexError.unavailable(response.status) };
     const projects = parseProjectRecords(await response.text());
-    if (projects.length === 0) {
-      debug();
-      return { ok: false, error: ProjectsIndexError.unreadable() };
-    }
+    if (projects.length === 0) return { ok: false, error: ProjectsIndexError.unreadable() };
     return { ok: true, record: { key: PROJECT_INDEX_KEY, projects, fetchedAt: Date.now() } };
   } catch (cause) {
     return { ok: false, error: ProjectsIndexError.unavailable(cause) };

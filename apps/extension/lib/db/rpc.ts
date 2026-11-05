@@ -75,7 +75,7 @@ export type RpcOutput<K extends RpcType> = GetReturnType<RpcProtocol[K]>;
 
 const idSchema = z.string().min(1);
 
-export const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
+const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
   getSubmission: idSchema,
   putSubmissions: z.array(submissionSchema),
   listSubmissionsByRound: idSchema,

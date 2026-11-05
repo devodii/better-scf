@@ -1,7 +1,7 @@
 import { openBetterScfDb } from '@/lib/db';
 import { exportCsv, exportMarkdown } from '@/lib/export';
 
-export const REPOSITORY_URL = 'https://github.com/devodii/better-scf';
+const REPOSITORY_URL = 'https://github.com/devodii/better-scf';
 
 export interface RoundOption {
   id: string;

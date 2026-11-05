@@ -1,28 +1,13 @@
 import dayjs from 'dayjs';
 import { RoundHeader } from '../../../components/RoundHeader';
 import type { RoundHeaderTrackCounts } from '../../../components/RoundHeaderTracks';
-import { type RoundPhase, readRoundPhases } from '../../../lib/site/round';
-import {
-  PHASE_HEADER_CELL,
-  PHASE_HEADER_TEXTS,
-  PHASE_TABLE,
-} from '../../../lib/site/selectors/round';
+import { findPhaseTable, type RoundPhase, readRoundPhases } from '../../../lib/site/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import headerCss from '../styles/round-header.scss?inline';
 
 const BAR = 'data-bscf-round-header-bar';
 const ROUND_NUMBER = /#\s*(\d+)/;
-
-function findPhaseTable(region: Element): Element | null {
-  for (const table of region.querySelectorAll(PHASE_TABLE)) {
-    const headers = Array.from(table.querySelectorAll(PHASE_HEADER_CELL), (th) =>
-      (th.textContent ?? '').trim().toLowerCase(),
-    );
-    if (PHASE_HEADER_TEXTS.every((text) => headers.includes(text))) return table;
-  }
-  return null;
-}
 
 function when(verb: string, at: number, now: dayjs.Dayjs): string {
   const days = dayjs(at).startOf('day').diff(now.startOf('day'), 'day');

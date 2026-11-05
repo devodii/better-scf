@@ -9,7 +9,7 @@ export interface DetectedAddresses {
   contracts: string[];
 }
 
-export function isValidStrkey(value: string, kind: StrkeyKind): boolean {
+function isValidStrkey(value: string, kind: StrkeyKind): boolean {
   return kind === 'account' ? StrKey.isValidEd25519PublicKey(value) : StrKey.isValidContract(value);
 }
 

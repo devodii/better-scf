@@ -202,8 +202,6 @@ export const routes = [
   },
 ] as const satisfies readonly RouteEntry[];
 
-export type RouteId = (typeof routes)[number]['id'];
-
 const STOP = new Set([
   'the',
   'a',

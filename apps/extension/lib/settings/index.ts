@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { defineStorageItem } from '../db/storage';
 
-export const settingsSchema = z.object({
+const settingsSchema = z.object({
   navigationMemory: z.boolean().default(true),
   trackChips: z.boolean().default(true),
   awardedChip: z.boolean().default(true),

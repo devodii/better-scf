@@ -17,7 +17,6 @@ export const CARD_BYLINE_PREFIX = 'By ';
 export const CARD_MAX_DEPTH = 6;
 export const CARD_CHIP = 'div';
 export const CARD_BUDGET = /^\$\s*([\d,]+(?:\.\d+)?)\s*([KkMm])?$/;
-export const CARD_ROUND = /^SCF #\d+$/;
 
 export const PHASE_TABLE = 'table';
 export const PHASE_HEADER_CELL = 'th';

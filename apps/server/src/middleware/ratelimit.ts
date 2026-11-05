@@ -13,14 +13,14 @@ export interface RateLimitOptions {
   getIp?: (c: Context) => string;
 }
 
-export const CLIENT_HEADER = 'x-bscf-client';
+const CLIENT_HEADER = 'x-bscf-client';
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * 60_000;
 const SWEEP_EVERY = 500;
 
 // Proxies append the connecting address to X-Forwarded-For: only the rightmost entry is trusted, the leftmost can be forged.
-export function clientIpFromRequest(c: Context): string {
+function clientIpFromRequest(c: Context): string {
   const forwarded = c.req.header('x-forwarded-for');
   if (forwarded) {
     const parts = forwarded
@@ -42,7 +42,7 @@ export interface RateLimiter {
   check(clientId: string, ip: string): Decision;
 }
 
-export function createRateLimiter(limits: RateLimits, now: () => number = Date.now): RateLimiter {
+function createRateLimiter(limits: RateLimits, now: () => number = Date.now): RateLimiter {
   const clients = new Map<string, number[]>();
   const ips = new Map<string, number[]>();
   let global: number[] = [];

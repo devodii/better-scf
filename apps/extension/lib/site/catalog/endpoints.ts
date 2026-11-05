@@ -191,7 +191,7 @@ export const endpoints = [
   },
 ] as const satisfies readonly EndpointEntry[];
 
-export const blocked = [
+const blocked = [
   {
     id: 'form-items-users',
     method: 'GET',
@@ -260,8 +260,6 @@ export const blocked = [
   },
 ] as const satisfies readonly BlockedEntry[];
 
-export type EndpointId = (typeof endpoints)[number]['id'];
-
 const BACKEND_PREFIX = '/backend/dashboard/';
 
 const compiled = endpoints.map((endpoint: EndpointEntry) => ({
@@ -274,7 +272,7 @@ const compiledBlocked = blocked.map((entry: BlockedEntry) => ({
   regex: patternToRegex(entry.path),
 }));
 
-export function findEndpoint(id: string): EndpointEntry | undefined {
+function findEndpoint(id: string): EndpointEntry | undefined {
   return compiled.find((item) => item.endpoint.id === id)?.endpoint;
 }
 
@@ -284,7 +282,7 @@ export function buildEndpointPath(id: string, params: PathParams = {}): string |
   return fillPattern(endpoint.path, params);
 }
 
-export function isBlockedBackendRequest(method: string, path: string): boolean {
+function isBlockedBackendRequest(method: string, path: string): boolean {
   const upper = method.toUpperCase();
   return compiledBlocked.some((item) => item.method === upper && item.regex.test(path));
 }

@@ -3,7 +3,7 @@ import type { HorizonSummary } from 'shared';
 import { z } from 'zod';
 import { isValidAccountId } from './detect';
 
-export const HORIZON_URL = 'https://horizon.stellar.org';
+const HORIZON_URL = 'https://horizon.stellar.org';
 const REQUEST_TIMEOUT_MS = 8000;
 
 export type FetchLike = (input: string, init?: { signal?: AbortSignal }) => Promise<Response>;

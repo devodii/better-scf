@@ -37,7 +37,7 @@ export type Env = z.infer<typeof envSchema>;
 
 export type EnvResult = { ok: true; env: Env } | { ok: false; message: string };
 
-export function parseEnv(source: Record<string, string | undefined>): EnvResult {
+function parseEnv(source: Record<string, string | undefined>): EnvResult {
   const present: Record<string, string> = {};
   for (const [key, value] of Object.entries(source)) {
     if (value !== undefined && value.trim() !== '') {

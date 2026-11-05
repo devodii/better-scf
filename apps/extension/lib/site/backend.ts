@@ -139,7 +139,7 @@ let active = 0;
 let blockedUntil = 0;
 let backoffMs = 0;
 
-export function findEndpointByPath(path: string): EndpointEntry | undefined {
+function findEndpointByPath(path: string): EndpointEntry | undefined {
   return compiled.find(({ regex }) => matchPath(regex, path))?.endpoint;
 }
 

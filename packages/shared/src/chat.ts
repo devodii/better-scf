@@ -11,7 +11,7 @@ const boundedJson = (maxChars: number) =>
     .refine((value) => jsonLength(value) <= maxChars, `must be at most ${maxChars} characters`);
 
 const toolIdSchema = z.string().min(1).max(CHAT_LIMITS.maxIdChars);
-export const toolNameSchema = z.string().regex(TOOL_NAME_PATTERN);
+const toolNameSchema = z.string().regex(TOOL_NAME_PATTERN);
 
 export const chatToolDeclarationSchema = z.object({
   name: toolNameSchema,
@@ -67,7 +67,7 @@ const dynamicToolPartSchema = z.intersection(
   toolInvocationSchema,
 );
 
-export const chatRequestMessageSchema = z.discriminatedUnion('role', [
+const chatRequestMessageSchema = z.discriminatedUnion('role', [
   z.object({
     id: toolIdSchema,
     role: z.literal('user'),
@@ -126,7 +126,7 @@ export function messageText(message: ChatRequestMessage): string {
   return message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('');
 }
 
-export const chatErrorCodeSchema = z.enum([
+const chatErrorCodeSchema = z.enum([
   'bad_request',
   'forbidden_origin',
   'missing_client',
@@ -137,7 +137,7 @@ export const chatErrorCodeSchema = z.enum([
 ]);
 export type ChatErrorCode = z.infer<typeof chatErrorCodeSchema>;
 
-export const chatErrorSchema = z.object({
+const chatErrorSchema = z.object({
   error: z.object({
     code: chatErrorCodeSchema,
     message: z.string(),
@@ -146,15 +146,6 @@ export const chatErrorSchema = z.object({
 });
 export type ChatError = z.infer<typeof chatErrorSchema>;
 
-export const healthResponseSchema = z.object({
-  ok: z.boolean(),
-  version: z.string(),
-  model: z.string(),
-});
-export type HealthResponse = z.infer<typeof healthResponseSchema>;
-
-export const parseChatRequest = (input: unknown): ParseResult<ChatRequest> =>
-  parseWith(chatRequestSchema, input);
 export const parseChatError = (input: unknown): ParseResult<ChatError> =>
   parseWith(chatErrorSchema, input);
 

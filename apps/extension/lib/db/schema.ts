@@ -11,8 +11,8 @@ import type {
 import { z } from 'zod';
 import { DbError } from './errors';
 
-export const DB_NAME = 'better-scf';
-export const DB_VERSION = 3;
+const DB_NAME = 'better-scf';
+const DB_VERSION = 3;
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -30,7 +30,7 @@ export const TTL_MS = {
 
 export const PROJECT_INDEX_KEY = 'all';
 
-export const projectIndexEntrySchema = z.object({
+const projectIndexEntrySchema = z.object({
   id: z.string().min(1),
   slug: z.string().min(1),
   title: z.string(),
@@ -129,7 +129,7 @@ const MIGRATIONS: readonly Migration[] = [
   },
 ];
 
-export function migrate(db: Db, oldVersion: number, newVersion: number = DB_VERSION): void {
+function migrate(db: Db, oldVersion: number, newVersion: number = DB_VERSION): void {
   for (let version = oldVersion; version < newVersion; version += 1) {
     const step = MIGRATIONS[version];
     if (!step) throw DbError.missingMigration(version);

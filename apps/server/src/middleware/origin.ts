@@ -8,7 +8,7 @@ export interface OriginOptions {
 const EXTENSION_ORIGIN = /^chrome-extension:\/\/([a-p]{32})$/;
 const LOCALHOST_ORIGIN = /^http:\/\/localhost(:\d{1,5})?$/;
 
-export function isAllowedOrigin(origin: string | undefined, options: OriginOptions): boolean {
+function isAllowedOrigin(origin: string | undefined, options: OriginOptions): boolean {
   if (origin === undefined) {
     return false;
   }
