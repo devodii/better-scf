@@ -11,7 +11,7 @@ import type {
 import { z } from 'zod';
 
 export const DB_NAME = 'better-scf';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -25,7 +25,27 @@ export const TTL_MS = {
   avatars: 7 * DAY_MS,
   ownership: 24 * HOUR_MS,
   navstate: 30 * MINUTE_MS,
+  projectIndex: 6 * HOUR_MS,
 } as const;
+
+export const PROJECT_INDEX_KEY = 'all';
+
+export const projectIndexEntrySchema = z.object({
+  id: z.string().min(1),
+  slug: z.string().min(1),
+  title: z.string(),
+  category: z.string(),
+  thumbnail: z.string().nullable(),
+  lastAwardedRound: z.number().nullable(),
+});
+export type ProjectIndexEntry = z.infer<typeof projectIndexEntrySchema>;
+
+export const projectIndexRecordSchema = z.object({
+  key: z.literal(PROJECT_INDEX_KEY),
+  projects: z.array(projectIndexEntrySchema),
+  fetchedAt: z.number(),
+});
+export type ProjectIndexRecord = z.infer<typeof projectIndexRecordSchema>;
 
 export const avatarRecordSchema = z.object({
   handleKey: z.string().min(1),
@@ -60,6 +80,7 @@ export interface BetterScfDb extends DBSchema {
   horizon: { key: string; value: HorizonSummary; indexes: { fetchedAt: number } };
   avatars: { key: string; value: AvatarRecord };
   ownership: { key: string; value: OwnershipRecord };
+  projectIndex: { key: string; value: ProjectIndexRecord };
 }
 
 export type StoreName = StoreNames<BetterScfDb>;
@@ -75,6 +96,7 @@ export const STORE_NAMES = [
   'horizon',
   'avatars',
   'ownership',
+  'projectIndex',
 ] as const satisfies readonly StoreName[];
 
 export const CACHE_STORE_NAMES = [
@@ -85,6 +107,7 @@ export const CACHE_STORE_NAMES = [
   'horizon',
   'avatars',
   'ownership',
+  'projectIndex',
 ] as const satisfies readonly StoreName[];
 
 type Migration = (db: Db) => void;
@@ -107,6 +130,9 @@ const MIGRATIONS: readonly Migration[] = [
     db.createObjectStore('horizon', { keyPath: 'accountId' }).createIndex('fetchedAt', 'fetchedAt');
     db.createObjectStore('avatars', { keyPath: 'handleKey' });
     db.createObjectStore('ownership', { keyPath: 'projectId' });
+  },
+  (db) => {
+    db.createObjectStore('projectIndex', { keyPath: 'key' });
   },
 ];
 

@@ -28,6 +28,9 @@ import {
   type OwnershipRecord,
   openBetterScfDb,
   ownershipRecordSchema,
+  PROJECT_INDEX_KEY,
+  type ProjectIndexRecord,
+  projectIndexRecordSchema,
   STORE_NAMES,
   type StoreName,
   TTL_MS,
@@ -71,6 +74,9 @@ export interface Repo {
 
   getOwnership(projectId: string): Promise<Cached<OwnershipRecord> | null>;
   putOwnership(ownership: OwnershipRecord): Promise<void>;
+
+  getProjectIndex(): Promise<Cached<ProjectIndexRecord> | null>;
+  putProjectIndex(index: ProjectIndexRecord): Promise<void>;
 
   clearCache(): Promise<void>;
   clearAll(): Promise<void>;
@@ -226,6 +232,14 @@ export function createRepo(db: Db): Repo {
     },
     async putOwnership(ownership) {
       await db.put('ownership', ownership);
+    },
+
+    async getProjectIndex() {
+      const value = await readOne('projectIndex', PROJECT_INDEX_KEY, projectIndexRecordSchema);
+      return value && toCached(value, value.fetchedAt, TTL_MS.projectIndex);
+    },
+    async putProjectIndex(index) {
+      await db.put('projectIndex', index);
     },
 
     clearCache: () => clearStores(CACHE_STORE_NAMES),

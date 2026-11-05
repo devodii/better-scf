@@ -28,6 +28,8 @@ import {
   avatarRecordSchema,
   type OwnershipRecord,
   ownershipRecordSchema,
+  type ProjectIndexRecord,
+  projectIndexRecordSchema,
   TTL_MS,
 } from './schema';
 
@@ -64,6 +66,9 @@ export interface RpcProtocol {
   getOwnership(projectId: string): Cached<OwnershipRecord> | null;
   putOwnership(ownership: OwnershipRecord): void;
 
+  getProjectIndex(): Cached<ProjectIndexRecord> | null;
+  putProjectIndex(index: ProjectIndexRecord): void;
+
   clearCache(): void;
   getClientId(): string;
 }
@@ -98,6 +103,8 @@ export const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
   putAvatar: avatarRecordSchema,
   getOwnership: idSchema,
   putOwnership: ownershipRecordSchema,
+  getProjectIndex: z.undefined(),
+  putProjectIndex: projectIndexRecordSchema,
   clearCache: z.undefined(),
   getClientId: z.undefined(),
 };
@@ -141,6 +148,8 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
     putAvatar: async (avatar) => (await repo()).putAvatar(avatar),
     getOwnership: async (id) => (await repo()).getOwnership(id),
     putOwnership: async (ownership) => (await repo()).putOwnership(ownership),
+    getProjectIndex: async () => (await repo()).getProjectIndex(),
+    putProjectIndex: async (index) => (await repo()).putProjectIndex(index),
     clearCache: async () => (await repo()).clearCache(),
     getClientId: () => deps.getClientId(),
   };
@@ -183,6 +192,9 @@ export interface RpcClient {
   peekHorizon(accountId: string): Cached<HorizonSummary> | undefined;
   getHorizon(accountId: string): Promise<Cached<HorizonSummary> | null>;
   putHorizon(summary: HorizonSummary): Promise<void>;
+
+  getProjectIndex(): Promise<Cached<ProjectIndexRecord> | null>;
+  putProjectIndex(index: ProjectIndexRecord): Promise<void>;
 
   clearCache(): Promise<void>;
   clearMirrors(): void;
@@ -249,6 +261,11 @@ export function createRpcClient(
     async putHorizon(summary) {
       await messenger.sendMessage('putHorizon', summary);
       horizon.set(summary.accountId, fresh(summary, summary.fetchedAt));
+    },
+
+    getProjectIndex: () => messenger.sendMessage('getProjectIndex', undefined),
+    async putProjectIndex(index) {
+      await messenger.sendMessage('putProjectIndex', index);
     },
 
     async clearCache() {
