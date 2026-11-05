@@ -1,0 +1,21 @@
+@use "tokens" as t;
+
+div[data-bscf-grid-hidden] {
+  display: none;
+}
+
+[data-bscf-grid-focus] {
+  outline: 0.1875rem solid t.$bscf-accent-yellow;
+  outline-offset: 0.25rem;
+  scroll-margin-top: 10rem;
+}
+
+[data-bscf-grid-bar] {
+  position: relative;
+  z-index: 5;
+
+  @media (min-width: 40rem) {
+    position: sticky;
+    top: 6rem;
+  }
+}
