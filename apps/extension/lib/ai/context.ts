@@ -1,4 +1,4 @@
-import { CHAT_LIMITS, type Submission } from 'shared';
+import { CHAT_LIMITS, type PageKind, type ProposalContext, type Submission } from 'shared';
 
 export interface SectionText {
   id: string;
@@ -8,8 +8,31 @@ export interface SectionText {
 
 export type RoundListItem = Pick<Submission, 'id' | 'title' | 'byLine' | 'budgetUsd' | 'track'>;
 
+export interface PageSnapshot {
+  kind: PageKind;
+  path: string;
+  title: string;
+  headings: string[];
+}
+
 const TRUNCATION_MARK = '\n[truncated]';
 const MIN_PARTIAL_SECTION_CHARS = 200;
+const OWN_PREFIX = 'data-bscf';
+const MAX_HEADINGS = 40;
+const MAX_HEADING_CHARS = 120;
+const MAX_TITLE_CHARS = 200;
+const SKIPPED_TAGS = new Set([
+  'script',
+  'style',
+  'noscript',
+  'template',
+  'input',
+  'textarea',
+  'select',
+  'option',
+  'svg',
+  'iframe',
+]);
 
 function normalizeText(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
@@ -149,4 +172,92 @@ export function buildRoundContext(
     document += `\n[${items.length - included} more submissions not listed]`;
   }
   return cap(document, maxChars);
+}
+
+export function detectPageKind(pathname: string): PageKind {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  if (/^\/dashboard\/award-rounds\/[^/]+$/.test(path)) return 'round';
+  if (path === '/dashboard/award-rounds') return 'rounds';
+  if (/^\/dashboard\/submissions\/[^/]+$/.test(path)) return 'submission';
+  if (path === '/dashboard/analytics' || path.startsWith('/dashboard/analytics/')) {
+    return 'analytics';
+  }
+  if (path === '/dashboard' || path.startsWith('/dashboard/')) return 'dashboard';
+  if (path === '/projects' || path.startsWith('/project/')) return 'projects';
+  if (path === '/' || path === '/awards' || path === '/governance') return 'public';
+  return 'other';
+}
+
+function hasOwnAttribute(element: Element): boolean {
+  for (const name of element.getAttributeNames()) {
+    if (name.startsWith(OWN_PREFIX)) return true;
+  }
+  return false;
+}
+
+export function isReadable(element: Element): boolean {
+  return (
+    !SKIPPED_TAGS.has(element.localName) &&
+    !hasOwnAttribute(element) &&
+    element.getAttribute('aria-hidden') !== 'true' &&
+    element.checkVisibility()
+  );
+}
+
+function insideOwnNode(element: Element): boolean {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    if (hasOwnAttribute(node)) return true;
+  }
+  return false;
+}
+
+export function pageRoot(doc: Document): Element {
+  return doc.querySelector('main') ?? doc.body;
+}
+
+export function readHeadings(root: ParentNode): string[] {
+  const headings: string[] = [];
+  for (const heading of root.querySelectorAll('h1, h2, h3')) {
+    if (!isReadable(heading) || insideOwnNode(heading)) continue;
+    const text = normalizeText(heading.textContent ?? '');
+    if (text === '') continue;
+    headings.push(text.slice(0, MAX_HEADING_CHARS));
+    if (headings.length === MAX_HEADINGS) break;
+  }
+  return headings;
+}
+
+export function readPageSnapshot(doc: Document = document): PageSnapshot {
+  const path = doc.location.pathname;
+  return {
+    kind: detectPageKind(path),
+    path,
+    title: normalizeText(doc.title).slice(0, MAX_TITLE_CHARS),
+    headings: readHeadings(pageRoot(doc)),
+  };
+}
+
+export function buildPageContext(
+  snapshot: PageSnapshot,
+  maxChars: number = CHAT_LIMITS.maxContextChars,
+): string {
+  const lines = [
+    `# ${snapshot.title || 'Untitled page'}`,
+    `Page: ${snapshot.kind}`,
+    `Path: ${snapshot.path}`,
+  ];
+  if (snapshot.headings.length > 0) {
+    lines.push('## HEADINGS', ...snapshot.headings.map((heading) => `- ${heading}`));
+  }
+  return cap(lines.join('\n'), maxChars);
+}
+
+export async function buildPageRequest(snapshot: PageSnapshot): Promise<ProposalContext> {
+  const context = buildPageContext(snapshot);
+  return {
+    submissionId: `page:${snapshot.path}`.slice(0, CHAT_LIMITS.maxIdChars),
+    contentHash: await computeContentHash([{ id: 'page', title: snapshot.title, text: context }]),
+    page: snapshot.kind,
+    context,
+  };
 }
