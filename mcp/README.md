@@ -5,3 +5,9 @@ Loaded by `work` through `--mcp-dir <repo>/mcp`. Servers connect only when a ses
 - `playwright.json`: the browser for visual checks and screenshots (`docs/verification/pw-shot-*.png`, gitignored).
   Deviation from the team template: no `--sandbox`, by the decision of the repository owner for unattended runs.
   Roles use this config as it is and never edit it.
+- `storybook.json`: the Storybook MCP (`@storybook/addon-mcp`), served by the Storybook dev server at `http://localhost:6006/mcp`.
+  Start `pnpm storybook` and wait until it answers before launching the session; a session started without it never gets the `mcp__storybook__*` tools, and starting Storybook later does not fix that session.
+  Unverified: this JSON form is a translation of the documented `npx mcp-add --type http` CLI form.
+  The test toolset is off because no test addon is installed.
+
+Story screenshots: `pnpm shots:stories [filter ...]` builds Storybook, screenshots every story (or those whose id, title or name contains a filter) into `docs/verification/pw-shot-story-<id>.png`, and writes the index `docs/verification/stories.html`. Both are gitignored.
