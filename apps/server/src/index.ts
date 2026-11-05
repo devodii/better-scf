@@ -1,21 +1,36 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { createAnswerCache } from './ai/cache.js';
 import { type Env, loadEnv } from './env.js';
 import { client } from './middleware/client.js';
 import { origin } from './middleware/origin.js';
+import { createRateLimit } from './middleware/ratelimit.js';
+import {
+  type ChatRouteDeps,
+  chatErrorShape,
+  createChatRoute,
+  createModelFactory,
+  logChatEntry,
+} from './routes/chat.js';
 import { createHealthRoute } from './routes/health.js';
 
 // Keep in sync with package.json (a test asserts it).
 export const SERVER_VERSION = '0.1.0';
 
-export function createApp(env: Env) {
+const IP_DAILY_CAP = 120;
+
+export interface AppDeps extends Partial<Omit<ChatRouteDeps, 'now'>> {
+  now?: () => number;
+}
+
+export function createApp(env: Env, deps: AppDeps = {}) {
   const app = new Hono();
 
   // Open to any origin: deploy checks call it.
   app.route('/health', createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }));
 
-  // Guarded routes live under /v1. Order: origin, client, (rate limit, added by a later task), handler.
   const v1 = new Hono();
+  v1.use('/chat', chatErrorShape);
   v1.use(
     origin({
       allowedExtensionIds: env.ALLOWED_EXTENSION_IDS,
@@ -23,6 +38,26 @@ export function createApp(env: Env) {
     }),
   );
   v1.use(client);
+  v1.use(
+    createRateLimit({
+      limits: {
+        clientPerMinute: env.BURST_PER_MINUTE,
+        clientPerDay: env.DAILY_CAP_PER_CLIENT,
+        ipPerDay: IP_DAILY_CAP,
+        globalPerDay: env.GLOBAL_DAILY_CAP,
+      },
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  );
+  v1.route(
+    '/chat',
+    createChatRoute({
+      getModel: deps.getModel ?? createModelFactory(env),
+      cache: deps.cache ?? createAnswerCache(),
+      log: deps.log ?? logChatEntry,
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  );
   app.route('/v1', v1);
 
   app.notFound((c) => c.json({ error: 'not_found' }, 404));
