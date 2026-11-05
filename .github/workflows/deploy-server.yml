@@ -1,0 +1,85 @@
+name: Deploy server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/server/**"
+      - "packages/shared/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a deployment mid flight; a newer one queues behind it.
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter server build
+
+  deploy:
+    name: Deploy to Railway
+    needs: check
+    # Only from the default branch of this repository (also covers manual dispatch on other refs).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      RAILWAY_CONFIGURED: ${{ secrets.RAILWAY_TOKEN != '' }}
+      # Public base URL of the deployed server, a repository variable (no trailing slash).
+      SERVER_URL: ${{ vars.SERVER_URL }}
+    steps:
+      - name: Skip when Railway is not configured
+        if: env.RAILWAY_CONFIGURED != 'true'
+        run: echo "Skipped: RAILWAY_TOKEN is not set, nothing was deployed." >> "$GITHUB_STEP_SUMMARY"
+      - if: env.RAILWAY_CONFIGURED == 'true'
+        uses: actions/checkout@v4
+      - if: env.RAILWAY_CONFIGURED == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install Railway CLI
+        if: env.RAILWAY_CONFIGURED == 'true'
+        run: npm i -g @railway/cli@4
+      - name: Deploy
+        if: env.RAILWAY_CONFIGURED == 'true'
+        # Runs from the repository root: the Dockerfile needs the root as its build context.
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service better-scf-server --detach
+      - name: Wait for /health
+        if: env.RAILWAY_CONFIGURED == 'true'
+        run: |
+          if [ -z "$SERVER_URL" ]; then
+            echo "Repository variable SERVER_URL is not set; cannot poll /health." >&2
+            exit 1
+          fi
+          # `railway up --detach` returns before the new build is live, so the old
+          # instance may answer first; the window is up to 60 seconds either way.
+          for _ in $(seq 1 12); do
+            if curl --fail --silent --show-error "${SERVER_URL%/}/health"; then
+              echo
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "No healthy /health response within 60 seconds." >&2
+          exit 1

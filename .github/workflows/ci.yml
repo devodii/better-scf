@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # Reads the pnpm version from the root package.json `packageManager` field.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  build-extension:
+    name: Build extension
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Public build-time value (repository variable). An unset variable is an empty string,
+      # which `new URL()` in wxt.config.ts rejects, so fall back to localhost here (CI builds are not released).
+      WXT_SERVER_URL: ${{ vars.WXT_SERVER_URL || 'http://localhost:8787' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter extension build
+      - run: pnpm --filter extension zip
+      - name: Name the zip after the root version
+        id: zip
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          zip_path="$(ls apps/extension/.output/*-chrome.zip | head -n 1)"
+          test -n "$zip_path"
+          cp "$zip_path" "better-scf-${version}.zip"
+          echo "name=better-scf-${version}.zip" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.zip.outputs.name }}
+          path: ${{ steps.zip.outputs.name }}
+          if-no-files-found: error
+          retention-days: 14
+
+  build-server:
+    name: Build and smoke-start server
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter server build
+      - name: Smoke start and check /health
+        env:
+          PORT: "8787"
+          # Fake values only; the smoke test never calls the model.
+          ANTHROPIC_API_KEY: ci-fake-key
+          ALLOWED_EXTENSION_IDS: abcdefghijklmnopabcdefghijklmnop
+          NODE_ENV: production
+        run: |
+          pnpm --filter server start > server.log 2>&1 &
+          server_pid=$!
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/health"; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          kill "$server_pid" 2>/dev/null || true
+          if [ "$ok" -ne 1 ]; then
+            echo "Server did not answer /health within 30 seconds" >&2
+            cat server.log >&2
+            exit 1
+          fi
+
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail on Anthropic key shaped strings
+        # Key shape (prefix plus 20 or more key characters), so docs that name the prefix do not trip it.
+        run: |
+          if git grep -nE 'sk-ant-[A-Za-z0-9_-]{20,}'; then
+            echo "An Anthropic key shaped string is committed." >&2
+            exit 1
+          fi
