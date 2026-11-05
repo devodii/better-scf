@@ -1,0 +1,25 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.trigger {
+  @include reset-button;
+  @include focus-ring;
+
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  border-radius: var(--bscf-radius-chip);
+
+  @media (min-width: 40rem) {
+    min-height: 0;
+  }
+}
+
+.chip {
+  @include quick-transition(opacity);
+
+  .trigger:hover & {
+    opacity: 0.85;
+  }
+}
