@@ -1,4 +1,4 @@
-import { type DBSchema, type IDBPDatabase, openDB, type StoreNames } from 'idb';
+import { type DBSchema, type IDBPDatabase, openDB, type StoreNames, unwrap } from 'idb';
 import type {
   ChatMessage,
   HorizonSummary,
@@ -11,7 +11,7 @@ import type {
 import { z } from 'zod';
 
 export const DB_NAME = 'better-scf';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -23,7 +23,6 @@ export const TTL_MS = {
   rounds: 1 * HOUR_MS,
   horizon: 10 * MINUTE_MS,
   avatars: 7 * DAY_MS,
-  ownership: 24 * HOUR_MS,
   navstate: 30 * MINUTE_MS,
   projectIndex: 6 * HOUR_MS,
 } as const;
@@ -55,13 +54,6 @@ export const avatarRecordSchema = z.object({
 });
 export type AvatarRecord = z.infer<typeof avatarRecordSchema>;
 
-export const ownershipRecordSchema = z.object({
-  projectId: z.string().min(1),
-  ownedByMe: z.literal(true),
-  checkedAt: z.number(),
-});
-export type OwnershipRecord = z.infer<typeof ownershipRecordSchema>;
-
 export interface BetterScfDb extends DBSchema {
   submissions: {
     key: string;
@@ -79,7 +71,6 @@ export interface BetterScfDb extends DBSchema {
   };
   horizon: { key: string; value: HorizonSummary; indexes: { fetchedAt: number } };
   avatars: { key: string; value: AvatarRecord };
-  ownership: { key: string; value: OwnershipRecord };
   projectIndex: { key: string; value: ProjectIndexRecord };
 }
 
@@ -95,7 +86,6 @@ export const STORE_NAMES = [
   'chat',
   'horizon',
   'avatars',
-  'ownership',
   'projectIndex',
 ] as const satisfies readonly StoreName[];
 
@@ -106,7 +96,6 @@ export const CACHE_STORE_NAMES = [
   'navstate',
   'horizon',
   'avatars',
-  'ownership',
   'projectIndex',
 ] as const satisfies readonly StoreName[];
 
@@ -129,10 +118,13 @@ const MIGRATIONS: readonly Migration[] = [
     );
     db.createObjectStore('horizon', { keyPath: 'accountId' }).createIndex('fetchedAt', 'fetchedAt');
     db.createObjectStore('avatars', { keyPath: 'handleKey' });
-    db.createObjectStore('ownership', { keyPath: 'projectId' });
   },
   (db) => {
     db.createObjectStore('projectIndex', { keyPath: 'key' });
+  },
+  (db) => {
+    const native = unwrap(db);
+    if (native.objectStoreNames.contains('ownership')) native.deleteObjectStore('ownership');
   },
 ];
 

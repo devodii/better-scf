@@ -25,9 +25,7 @@ import {
   type Db,
   isStale,
   type OpenOptions,
-  type OwnershipRecord,
   openBetterScfDb,
-  ownershipRecordSchema,
   PROJECT_INDEX_KEY,
   type ProjectIndexRecord,
   projectIndexRecordSchema,
@@ -71,9 +69,6 @@ export interface Repo {
 
   getAvatar(handleKey: string): Promise<Cached<AvatarRecord> | null>;
   putAvatar(avatar: AvatarRecord): Promise<void>;
-
-  getOwnership(projectId: string): Promise<Cached<OwnershipRecord> | null>;
-  putOwnership(ownership: OwnershipRecord): Promise<void>;
 
   getProjectIndex(): Promise<Cached<ProjectIndexRecord> | null>;
   putProjectIndex(index: ProjectIndexRecord): Promise<void>;
@@ -224,14 +219,6 @@ export function createRepo(db: Db): Repo {
     },
     async putAvatar(avatar) {
       await db.put('avatars', avatar);
-    },
-
-    async getOwnership(projectId) {
-      const value = await readOne('ownership', projectId, ownershipRecordSchema);
-      return value && toCached(value, value.checkedAt, TTL_MS.ownership);
-    },
-    async putOwnership(ownership) {
-      await db.put('ownership', ownership);
     },
 
     async getProjectIndex() {

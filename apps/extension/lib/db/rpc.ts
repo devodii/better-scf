@@ -26,8 +26,6 @@ import { type Cached, createMirror, type Mirror, type Repo } from './repo';
 import {
   type AvatarRecord,
   avatarRecordSchema,
-  type OwnershipRecord,
-  ownershipRecordSchema,
   type ProjectIndexRecord,
   projectIndexRecordSchema,
   TTL_MS,
@@ -62,9 +60,6 @@ export interface RpcProtocol {
 
   getAvatar(handleKey: string): Cached<AvatarRecord> | null;
   putAvatar(avatar: AvatarRecord): void;
-
-  getOwnership(projectId: string): Cached<OwnershipRecord> | null;
-  putOwnership(ownership: OwnershipRecord): void;
 
   getProjectIndex(): Cached<ProjectIndexRecord> | null;
   putProjectIndex(index: ProjectIndexRecord): void;
@@ -101,8 +96,6 @@ export const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
   putHorizon: horizonSummarySchema,
   getAvatar: idSchema,
   putAvatar: avatarRecordSchema,
-  getOwnership: idSchema,
-  putOwnership: ownershipRecordSchema,
   getProjectIndex: z.undefined(),
   putProjectIndex: projectIndexRecordSchema,
   clearCache: z.undefined(),
@@ -146,8 +139,6 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
     putHorizon: async (summary) => (await repo()).putHorizon(summary),
     getAvatar: async (key) => (await repo()).getAvatar(key),
     putAvatar: async (avatar) => (await repo()).putAvatar(avatar),
-    getOwnership: async (id) => (await repo()).getOwnership(id),
-    putOwnership: async (ownership) => (await repo()).putOwnership(ownership),
     getProjectIndex: async () => (await repo()).getProjectIndex(),
     putProjectIndex: async (index) => (await repo()).putProjectIndex(index),
     clearCache: async () => (await repo()).clearCache(),
