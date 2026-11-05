@@ -34,6 +34,15 @@ const FEATURES: readonly { key: FeatureKey; label: string }[] = [
 
 type Status = { text: string; error: boolean } | null;
 
+function isHttpUrl(value: string): boolean {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [clientId, setClientId] = useState('');
@@ -99,14 +108,9 @@ export function App() {
 
   const saveServer = (): void => {
     const value = serverDraft.trim();
-    if (value) {
-      try {
-        const { protocol } = new URL(value);
-        if (protocol !== 'http:' && protocol !== 'https:') throw new Error('protocol');
-      } catch {
-        report('Enter a valid http(s) URL.', true);
-        return;
-      }
+    if (value && !isHttpUrl(value)) {
+      report('Enter a valid http(s) URL.', true);
+      return;
     }
     change('serverUrlOverride', value.replace(/\/+$/, ''));
     report(value ? 'Server URL saved.' : 'Server URL override removed.');
