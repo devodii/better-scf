@@ -1,14 +1,20 @@
 import { getToolName, isToolUIPart, type UIMessage } from 'ai';
 import type { ChatMessage, PageKind } from 'shared';
-import type { DockMessageItem } from '../../../../components/Dock';
+import type { AssistantActivityStatus } from '../../../../components/AssistantActivity';
+import type { AssistantMessageItem, AssistantPart } from '../../../../components/AssistantMessage';
+import type { AssistantNotice } from '../../../../components/AssistantMessages';
+import { ChatTransportError } from '../../../../lib/ai/transport';
+import { assertNever, isAppError } from '../../../../lib/errors';
 import type { PageData } from '../../../../lib/site/store';
 
 export const SITE_THREAD = 'site';
 
 const CLIP_CHARS = 60;
+const DETAIL_CHARS = 120;
+const GENERIC_ERROR = 'Something went wrong while asking. Please try again.';
 
-function clip(text: string): string {
-  return text.length > CLIP_CHARS ? `${text.slice(0, CLIP_CHARS)}…` : text;
+function clip(text: string, max = CLIP_CHARS): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 function readString(input: unknown, key: string): string | null {
@@ -21,7 +27,7 @@ function activityText(name: string, input: unknown): string {
   switch (name) {
     case 'navigate': {
       const target = readString(input, 'target');
-      return target ? `Taking you to ${clip(target)}...` : 'Taking you there...';
+      return target ? `Taking you to ${clip(target)}` : 'Taking you there';
     }
     case 'backend_get': {
       const endpoint = readString(input, 'endpoint');
@@ -31,21 +37,21 @@ function activityText(name: string, input: unknown): string {
               .replace(/[-_/.:]+/g, ' ')
               .replace(/\s+/g, ' ')
               .trim(),
-          )}...`
-        : 'Looking up your data...';
+          )}`
+        : 'Looking up your data';
     }
     case 'search_projects': {
       const query = readString(input, 'query');
-      return query ? `Searching projects for ${clip(query)}...` : 'Searching projects...';
+      return query ? `Searching projects for ${clip(query)}` : 'Searching projects';
     }
     case 'read_page':
-      return 'Reading this page...';
+      return 'Reading this page';
     case 'list_routes':
-      return 'Checking the site map...';
+      return 'Checking the site map';
     case 'list_endpoints':
-      return 'Checking what data is available...';
+      return 'Checking what data is available';
     default:
-      return 'Working on it...';
+      return 'Working on it';
   }
 }
 
@@ -79,23 +85,58 @@ export function storedText(message: UIMessage): string {
   return messageText(message) || runningActivity(message) || '';
 }
 
-export function toItems(messages: readonly UIMessage[], isBusy: boolean): DockMessageItem[] {
-  const items: DockMessageItem[] = [];
+function toolDetail(errorText: string): string {
+  const separator = errorText.indexOf(': ');
+  return clip(separator === -1 ? errorText : errorText.slice(separator + 2), DETAIL_CHARS);
+}
+
+function toParts(message: UIMessage): AssistantPart[] {
+  const parts: AssistantPart[] = [];
+  message.parts.forEach((part, index) => {
+    const id = `${message.id}:${index}`;
+    if (part.type === 'text') {
+      if (part.text.trim() !== '') parts.push({ kind: 'text', id, text: part.text });
+      return;
+    }
+    if (!isToolUIPart(part)) return;
+    let status: AssistantActivityStatus = 'running';
+    let detail: string | undefined;
+    if (part.state === 'output-available') status = 'done';
+    else if (part.state === 'output-error') {
+      status = 'error';
+      detail = toolDetail(part.errorText);
+    }
+    parts.push({
+      kind: 'activity',
+      id: part.toolCallId,
+      text: activityText(getToolName(part), part.input),
+      status,
+      detail,
+    });
+  });
+  return parts;
+}
+
+export function toItems(messages: readonly UIMessage[], isBusy: boolean): AssistantMessageItem[] {
+  const items: AssistantMessageItem[] = [];
   messages.forEach((message, index) => {
     const isLast = index === messages.length - 1;
     if (message.role === 'user') {
-      items.push({ id: message.id, role: 'user', text: messageText(message) });
+      items.push({
+        id: message.id,
+        role: 'user',
+        parts: [{ kind: 'text', id: `${message.id}:0`, text: messageText(message) }],
+      });
       return;
     }
     if (message.role !== 'assistant') return;
-    const text = messageText(message);
-    const activity = isLast && isBusy ? runningActivity(message) : undefined;
+    const parts = toParts(message);
     const isStreaming = isLast && isBusy;
-    if (text === '' && !activity && !isStreaming) return;
-    items.push({ id: message.id, role: 'assistant', text, activity, isStreaming });
+    if (parts.length === 0 && !isStreaming) return;
+    items.push({ id: message.id, role: 'assistant', parts, isStreaming });
   });
   if (isBusy && messages.at(-1)?.role === 'user') {
-    items.push({ id: 'pending', role: 'assistant', text: '', isStreaming: true });
+    items.push({ id: 'pending', role: 'assistant', parts: [], isStreaming: true });
   }
   return items;
 }
@@ -104,10 +145,50 @@ export function toUiMessage(row: ChatMessage): UIMessage {
   return { id: row.id, role: row.role, parts: [{ type: 'text', text: row.content }] };
 }
 
+export function describeError(error: Error): AssistantNotice {
+  if (error instanceof ChatTransportError) {
+    switch (error.kind) {
+      case 'rate-limited':
+      case 'daily-limit':
+        return { tone: 'limit', text: error.userMessage() };
+      case 'global-cap':
+      case 'server':
+      case 'network':
+        return { tone: 'error', text: error.userMessage() };
+      default:
+        return assertNever(error.kind);
+    }
+  }
+  return { tone: 'error', text: isAppError(error) ? error.userMessage() : GENERIC_ERROR };
+}
+
 export function subjectOf(page: PageData): string | null {
   if (page.kind === 'submission') return page.page?.submission.title.trim() || null;
   if (page.kind === 'round') return page.roundName;
   return null;
+}
+
+export function contextLabelFor(kind: PageKind, subject: string | null): string {
+  switch (kind) {
+    case 'submission':
+      return subject ? clip(subject) : 'This submission';
+    case 'round':
+      return subject ?? 'This round';
+    case 'rounds':
+      return 'Funding rounds';
+    case 'dashboard':
+      return 'SCF dashboard';
+    case 'projects':
+      return 'Funded projects';
+    case 'analytics':
+      return 'Funding analytics';
+    case 'public':
+      return 'Stellar Community Fund';
+    case 'other':
+      return 'This page';
+    default:
+      return kind satisfies never;
+  }
 }
 
 export function placeholderFor(kind: PageKind, subject: string | null): string {

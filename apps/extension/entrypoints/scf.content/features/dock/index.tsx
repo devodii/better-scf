@@ -1,17 +1,19 @@
 import type { UIMessage } from 'ai';
 import dayjs from 'dayjs';
-import { type ChatMessage, quickPromptsFor } from 'shared';
-import { Dock } from '../../../../components/Dock';
-import type { DockHistoryItem } from '../../../../components/DockHistory';
-import type { DockPromptItem } from '../../../../components/DockPrompts';
+import { CHAT_LIMITS, type ChatMessage, quickPromptsFor } from 'shared';
+import { Assistant } from '../../../../components/Assistant';
+import type { AssistantHistoryItem } from '../../../../components/AssistantHistory';
+import type { AssistantPromptItem } from '../../../../components/AssistantPrompts';
 import { detectPageKind } from '../../../../lib/ai/context';
 import { type BscfChat, type ChatPageRequest, createBscfChat } from '../../../../lib/ai/transport';
-import { isAppError } from '../../../../lib/errors';
 import type { Feature, FeatureContext } from '../../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
 import dockCss from '../../styles/dock.scss?inline';
+import { createPagePush, measureTopBar } from './push';
 import { createRequestSource } from './request';
 import {
+  contextLabelFor,
+  describeError,
   placeholderFor,
   SITE_THREAD,
   storedText,
@@ -22,10 +24,9 @@ import {
 } from './thread';
 
 const DEFAULT_SERVER_URL = 'http://localhost:8787';
-const GENERIC_ERROR = 'Something went wrong while asking. Please try again.';
 const RENDER_THROTTLE_MS = 50;
 const HISTORY_LIMIT = 30;
-const SLOT = 'dock-slot';
+const OPEN_KEY = 'bscf:assistant-open';
 
 const NO_PAGE: ChatPageRequest = {
   submissionId: 'page:/',
@@ -49,6 +50,29 @@ function afterHydration(signal: AbortSignal): Promise<boolean> {
   });
 }
 
+function readOpen(): boolean {
+  try {
+    return sessionStorage.getItem(OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeOpen(isOpen: boolean): void {
+  try {
+    if (isOpen) sessionStorage.setItem(OPEN_KEY, '1');
+    else sessionStorage.removeItem(OPEN_KEY);
+  } catch {
+    return;
+  }
+}
+
+function isToggleShortcut(event: KeyboardEvent): boolean {
+  return (
+    event.code === 'KeyA' && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+  );
+}
+
 async function mountDock(context: FeatureContext): Promise<() => void> {
   const { page, settings, store, signal, warn } = context;
   const threadKey = page.kind === 'submission' ? page.submissionId : SITE_THREAD;
@@ -67,9 +91,11 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
   const stored = new Map<string, ChatMessage>(rows.map((row) => [row.id, row]));
   let lastStamp = rows.at(-1)?.createdAt ?? 0;
   let value = '';
-  let isExpanded = false;
+  let isOpen = readOpen();
+  let hasUnread = false;
+  let topOffset = 0;
   let isHistoryOpen = false;
-  let historyItems: DockHistoryItem[] = [];
+  let historyItems: AssistantHistoryItem[] = [];
   let seenPath = location.pathname;
   let pageRequest = NO_PAGE;
   let session: BscfChat | null = null;
@@ -77,15 +103,10 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
   let starting = false;
   let closed = false;
   let ui: MountedUi | null = null;
+  const push = createPagePush();
 
   const isBusy = (): boolean =>
     session?.chat.status === 'submitted' || session?.chat.status === 'streaming';
-
-  const errorText = (): string | undefined => {
-    const error = session?.chat.error;
-    if (!error) return undefined;
-    return isAppError(error) ? error.userMessage() : GENERIC_ERROR;
-  };
 
   const persist = (message: UIMessage, promptId?: string): void => {
     if (message.role !== 'user' && message.role !== 'assistant') return;
@@ -114,32 +135,34 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
   const view = () => {
     const kind = detectPageKind(location.pathname);
     const busy = isBusy();
+    const error = session?.chat.error;
     return (
-      <Dock
+      <Assistant
+        isOpen={isOpen}
+        onOpenChange={setOpen}
+        hasUnread={hasUnread}
+        topOffset={topOffset}
+        contextLabel={contextLabelFor(kind, subject)}
         value={value}
         onValueChange={(next) => {
           value = next;
           render();
         }}
         onSubmit={() => void submit(value)}
+        onStop={() => void session?.chat.stop()}
         placeholder={placeholderFor(kind, subject)}
+        maxLength={CHAT_LIMITS.maxUserMessageChars}
         status={busy ? 'streaming' : 'idle'}
-        isExpanded={isExpanded}
-        onExpandedChange={(next) => {
-          isExpanded = next;
-          if (!next) isHistoryOpen = false;
-          render();
-        }}
+        messages={toItems(session?.chat.messages ?? restored, busy)}
+        notice={error ? describeError(error) : undefined}
+        prompts={quickPromptsFor(kind)}
+        onPromptSelect={(prompt) => void submit(prompt.text, prompt)}
         isHistoryOpen={isHistoryOpen}
         onHistoryOpenChange={(next) => {
           isHistoryOpen = next;
           render();
           if (next) void loadHistory();
         }}
-        messages={toItems(session?.chat.messages ?? restored, busy)}
-        error={errorText()}
-        prompts={quickPromptsFor(kind)}
-        onPromptSelect={(prompt) => void submit(prompt.text, prompt)}
         historyItems={historyItems}
         onHistorySelect={(item) => {
           value = item.text;
@@ -153,6 +176,20 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
 
   function render(): void {
     if (!closed) ui?.render(view());
+  }
+
+  function setOpen(next: boolean): void {
+    if (closed || next === isOpen) return;
+    isOpen = next;
+    writeOpen(next);
+    if (next) {
+      hasUnread = false;
+      topOffset = measureTopBar();
+    } else {
+      isHistoryOpen = false;
+    }
+    push.set(next, true);
+    render();
   }
 
   async function loadHistory(): Promise<void> {
@@ -209,7 +246,10 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
 
   function onStatus(): void {
     if (closed) return;
-    if (session?.chat.status === 'ready') persistLast();
+    if (session?.chat.status === 'ready') {
+      persistLast();
+      if (!isOpen && session.chat.messages.at(-1)?.role === 'assistant') hasUnread = true;
+    }
     render();
   }
 
@@ -231,12 +271,11 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
     return created;
   }
 
-  async function submit(text: string, prompt?: DockPromptItem): Promise<void> {
+  async function submit(text: string, prompt?: AssistantPromptItem): Promise<void> {
     const question = text.trim();
     if (question === '' || starting || isBusy() || closed) return;
     starting = true;
     value = '';
-    isExpanded = true;
     isHistoryOpen = false;
     render();
     try {
@@ -264,23 +303,31 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
     }
   }
 
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (!isToggleShortcut(event)) return;
+    event.preventDefault();
+    setOpen(!isOpen);
+  };
+
   const style = document.createElement('style');
   style.setAttribute(OWN_ATTRIBUTE, 'dock');
   style.textContent = dockCss;
   (document.head ?? document.documentElement).append(style);
 
-  const slot = document.createElement('div');
-  slot.setAttribute(OWN_ATTRIBUTE, SLOT);
-  document.body.append(slot);
+  if (isOpen) {
+    topOffset = measureTopBar();
+    push.set(true, false);
+  }
 
-  const handle = await context.mount({ anchor: slot, children: view() });
+  const handle = await context.mount({ anchor: document.body, children: view() });
   if (!handle) {
-    slot.remove();
+    push.release();
     style.remove();
     return () => {};
   }
   ui = handle;
 
+  window.addEventListener('keydown', onKeyDown);
   context.onMutation(() => {
     if (location.pathname === seenPath) return;
     seenPath = location.pathname;
@@ -289,10 +336,11 @@ async function mountDock(context: FeatureContext): Promise<() => void> {
 
   return () => {
     closed = true;
+    window.removeEventListener('keydown', onKeyDown);
     persistLast();
     dropSession();
+    push.release();
     ui?.remove();
-    slot.remove();
     style.remove();
   };
 }
