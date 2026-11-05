@@ -1,0 +1,27 @@
+# Dependencies are installed inside the image from the lockfile.
+**/node_modules
+
+# Version control.
+.git
+
+# Build and tooling output regenerated in the image.
+**/dist
+**/.output
+**/.wxt
+**/coverage
+
+# Secrets and local config.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Local agent/tool scratch, not needed by the build.
+.profile
+**/.profile
+work
+docs
+*.log
+.DS_Store
