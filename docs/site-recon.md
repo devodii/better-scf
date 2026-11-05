@@ -92,3 +92,40 @@ Tracks began with SCF #41. No data source exposes them: `awardType` is `Build` o
 ## Projects index (public `/projects` payload, no auth)
 
 The page embeds all 528 projects in an inline script: `{ id, slug, title, category, thumbnail{url}, lastAwardedRound }`, about 177 KB. `/project/<slug>` is the project page. Categories: Applications, Developer Tooling, Education and Community, End-User Application, Financial Protocols, Infrastructure and Services. The dashboard search reads this once (one document request, cached for 6 hours in IndexedDB, started by the first keystroke) and searches it locally.
+
+## Complete backend inventory (from the site's own JavaScript bundles, 2026-11-05)
+
+Source: the 67 route chunks the dashboard pages reference, searched for backend paths and their HTTP methods; response shapes checked with one read each. Everything is under `https://communityfund.stellar.org/backend/`, bearer token required.
+
+### Reads the assistant may use (GET)
+
+| Path | Holds |
+|---|---|
+| `dashboard/user` | the user's account (personal: name, email, discord, links) |
+| `dashboard/user/email_status` | `{ emailStatus }` |
+| `dashboard/form_items/essential` | the user's rounds, interest-form projects and assigned projects |
+| `dashboard/tier/request` | the user's tier request state: button label, blocking reasons, voting power threshold, target tier |
+| `dashboard/tier_nomination` | tier nominations (own and self) and the thresholds per tier |
+| `dashboard/vote/trust` | the user's trusted users |
+| `dashboard/vote/delegate` | the user's delegates (list of ids) |
+| `dashboard/vote/category_delegate` | delegation per category (object, empty when none) |
+| `dashboard/vote/quarterly_category_delegate` | `{ integration_track[], open_track[], rfp_track[] }`: the quarterly delegation per track |
+| `dashboard/vote_history/nqg_graph` | `{ nqgOverTime[[round, ...]] }` |
+| `dashboard/vote_history/your_voting_statistics/<round>` | the user's neuron scores and `totalNQGScore` for a round |
+| `dashboard/analytics/rounds` | `{ rounds[{ round, computedAt }] }` |
+| `dashboard/analytics/round/<round>` | per-round analytics: awarded count, average and median budget, budget buckets, category breakdown, community size, voters, delegation network, Lorenz curve, neuron breakdown and deep dive (and `submissionDetails[]` in older rounds) |
+| `dashboard/analytics/all-rounds` | the series across rounds (see above) |
+| `dashboard/analytics/insights` | generated insights and per-round summaries |
+
+### Not for the assistant
+
+- `dashboard/form_items/users`: a directory of about 6000 users (`{ key, value }`); bulk personal data, never exposed to the model.
+- Writes, never called by the extension: `POST dashboard/tier/request`, `POST dashboard/tier_nomination` and `dashboard/tier_nomination/<id>`, `POST dashboard/tier_upgrade`, `POST` and `GET dashboard/vote/delegate` (the POST changes delegation), `PATCH dashboard/user`, `POST dashboard/project/<id>`, `POST dashboard/media/signature`, `POST dashboard/wallet_address` and `dashboard/wallet_address/challenge`.
+
+### Pages not backed by a backend call
+
+Round, submission, projects and round-list data come inside the page payload (above). `dashboard/projects/<id>` and `dashboard/submissions/<id>` are page routes, not API paths.
+
+### Tracks
+
+`quarterly_category_delegate` is the only place tracks appear: delegation is per track (`integration_track`, `open_track`, `rfp_track`). There is no per-submission or per-round track field in any response, including `analytics/round/<n>`.
