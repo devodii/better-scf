@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { Toggle } from '@/components/Toggle';
-import { createRpcClient, getClientId } from '@/lib/db';
 import { type FeatureKey, type Settings, settingsItem } from '@/lib/settings';
 import styles from './App.module.scss';
 import type { ExportFormat, RoundOption } from './exportData';
@@ -9,27 +8,32 @@ import type { ExportFormat, RoundOption } from './exportData';
 const PRIVACY_URL = 'https://github.com/devodii/better-scf/blob/main/docs/privacy.md';
 const LONG_PRESS_MS = 700;
 
-const FEATURES: readonly { key: FeatureKey; label: string }[] = [
-  { key: 'navigationMemory', label: 'Remember scroll and carousel position' },
-  { key: 'trackChips', label: 'Track chips on cards' },
-  { key: 'awardedChip', label: 'Previously awarded chip' },
-  { key: 'commentsChip', label: 'Comments chip' },
-  { key: 'avatarStack', label: 'Team avatars on cards' },
-  { key: 'readState', label: 'Unread dot on cards' },
-  { key: 'showOpenedInsteadOfUnread', label: 'Show opened instead of unread' },
-  { key: 'shortlistAndStance', label: 'Shortlist star and stance' },
-  { key: 'coverNormalization', label: 'Uniform cover images' },
-  { key: 'hoverZoom', label: 'Hover zoom on covers' },
-  { key: 'gridTools', label: 'Grid toolbar (filter, sort, search)' },
-  { key: 'keyboardShortcuts', label: 'Keyboard shortcuts' },
-  { key: 'roundHeader', label: 'Round header summary' },
-  { key: 'tableOfContents', label: 'Table of contents' },
-  { key: 'trancheSummary', label: 'Tranche summary' },
-  { key: 'addressPills', label: 'Stellar address pills' },
-  { key: 'reviewerBar', label: 'Reviewer bar' },
-  { key: 'teamAvatars', label: 'Team section avatars' },
-  { key: 'imageLightbox', label: 'Image lightbox' },
-  { key: 'aiDock', label: 'AI dock' },
+const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
+  {
+    label: 'Card badges and team',
+    keys: ['trackChips', 'awardedChip', 'commentsChip', 'avatarStack'],
+  },
+  { label: 'Load tracks and teams', keys: ['loadProposalPages'] },
+  {
+    label: 'Review tools',
+    keys: ['readState', 'shortlistAndStance', 'reviewerBar', 'keyboardShortcuts'],
+  },
+  { label: 'Search and filters', keys: ['gridTools'] },
+  {
+    label: 'Page polish',
+    keys: [
+      'roundHeader',
+      'tableOfContents',
+      'trancheSummary',
+      'addressPills',
+      'teamAvatars',
+      'imageLightbox',
+      'coverNormalization',
+      'hoverZoom',
+    ],
+  },
+  { label: 'Remember my place', keys: ['navigationMemory'] },
+  { label: 'AI assistant', keys: ['aiDock'] },
 ];
 
 type Status = { text: string; error: boolean } | null;
@@ -45,7 +49,6 @@ function isHttpUrl(value: string): boolean {
 
 export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [clientId, setClientId] = useState('');
   const [status, setStatus] = useState<Status>(null);
   const [rounds, setRounds] = useState<RoundOption[] | null>(null);
   const [roundId, setRoundId] = useState('');
@@ -58,7 +61,6 @@ export function App() {
       setSettings(value);
       setServerDraft(value.serverUrlOverride);
     });
-    void getClientId().then(setClientId);
   }, []);
 
   const change = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
@@ -66,16 +68,17 @@ export function App() {
     void settingsItem.update((current) => ({ ...current, [key]: value }));
   }, []);
 
-  const report = (text: string, error = false): void => setStatus({ text, error });
-
-  const clearCache = async (): Promise<void> => {
-    try {
-      await createRpcClient().clearCache();
-      report('Cache cleared.');
-    } catch {
-      report('Could not clear the cache.', true);
-    }
+  const setGroup = (keys: readonly FeatureKey[], value: boolean): void => {
+    setSettings((current) =>
+      current ? { ...current, ...Object.fromEntries(keys.map((key) => [key, value])) } : current,
+    );
+    void settingsItem.update((current) => ({
+      ...current,
+      ...Object.fromEntries(keys.map((key) => [key, value])),
+    }));
   };
+
+  const report = (text: string, error = false): void => setStatus({ text, error });
 
   const openExport = async (): Promise<void> => {
     if (rounds) return;
@@ -137,13 +140,13 @@ export function App() {
         </span>
       </header>
 
-      <section className={styles.section} aria-label="Features">
-        {FEATURES.map(({ key, label }) => (
+      <section className={styles.features} aria-label="Features">
+        {GROUPS.map(({ label, keys }) => (
           <Toggle
-            key={key}
+            key={label}
             label={label}
-            checked={settings[key]}
-            onChange={(value) => change(key, value)}
+            checked={keys.some((key) => settings[key])}
+            onChange={(value) => setGroup(keys, value)}
           />
         ))}
       </section>
@@ -154,7 +157,7 @@ export function App() {
             Export my review
           </button>
         ) : rounds.length === 0 ? (
-          <p className={styles.muted}>Nothing to export yet. Browse a round on the site first.</p>
+          <p className={styles.muted}>Nothing to export yet. Browse a round first.</p>
         ) : (
           <>
             <select
@@ -180,43 +183,13 @@ export function App() {
               <button
                 type="button"
                 className={styles.button}
-                onClick={() => runExport('markdown', 'download')}
-              >
-                Download .md
-              </button>
-              <button
-                type="button"
-                className={styles.button}
-                onClick={() => runExport('csv', 'copy')}
-              >
-                Copy CSV
-              </button>
-              <button
-                type="button"
-                className={styles.button}
                 onClick={() => runExport('csv', 'download')}
               >
-                Download .csv
+                Download CSV
               </button>
             </div>
-            <Toggle
-              label="Add repository link to export"
-              checked={settings.includeRepositoryLink}
-              onChange={(value) => change('includeRepositoryLink', value)}
-            />
           </>
         )}
-      </section>
-
-      <section className={styles.section} aria-label="Advanced">
-        <Toggle
-          label="Debug logging"
-          checked={settings.debugLogging}
-          onChange={(value) => change('debugLogging', value)}
-        />
-        <button type="button" className={styles.button} onClick={clearCache}>
-          Clear cache
-        </button>
         {showServer && (
           <div className={styles.row}>
             <input
@@ -234,15 +207,13 @@ export function App() {
       </section>
 
       <footer className={styles.footer}>
-        <span className={styles.muted}>Client ID: {clientId}</span>
+        <p className={status?.error ? styles.error : styles.muted} role="status" aria-live="polite">
+          {status?.text}
+        </p>
         <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
           Privacy
         </a>
       </footer>
-
-      <p className={status?.error ? styles.error : styles.muted} role="status" aria-live="polite">
-        {status?.text}
-      </p>
     </main>
   );
 }
