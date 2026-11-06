@@ -25,6 +25,15 @@
   flex: 1;
 }
 
+.hidden {
+  position: absolute;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .track {
   @include quick-transition(background-color, box-shadow);
 

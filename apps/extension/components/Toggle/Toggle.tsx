@@ -7,6 +7,7 @@ export interface ToggleProps extends Omit<
   "onChange" | "onClick" | "children" | "role" | "type"
 > {
   label: string;
+  hideLabel?: boolean;
   checked: boolean;
   onChange: (checked: boolean) => void;
   ref?: Ref<HTMLButtonElement>;
@@ -14,6 +15,7 @@ export interface ToggleProps extends Omit<
 
 export function Toggle({
   label,
+  hideLabel = false,
   checked,
   onChange,
   className,
@@ -30,7 +32,9 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       {...rest}
     >
-      <span className={styles.label}>{label}</span>
+      <span className={clsx(styles.label, hideLabel && styles.hidden)}>
+        {label}
+      </span>
       <span className={styles.track} aria-hidden="true">
         <span className={styles.thumb} />
       </span>

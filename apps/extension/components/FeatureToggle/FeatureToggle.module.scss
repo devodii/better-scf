@@ -1,0 +1,56 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trigger {
+  @include reset-button;
+  @include type-control;
+  @include focus-ring(var(--bscf-accent-yellow, var(--color-primary)));
+
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.25rem 0;
+  color: var(--bscf-text, var(--color-text));
+  text-align: left;
+}
+
+.label {
+  min-width: 0;
+}
+
+.chevron {
+  @include quick-transition(transform);
+
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--bscf-text-muted, var(--color-text-muted));
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.switch {
+  flex: none;
+  width: auto;
+}
+
+.description {
+  margin: 0;
+  padding: 0.125rem 3.25rem 0.5rem 0;
+  color: var(--bscf-text-muted, var(--color-text-muted));
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}

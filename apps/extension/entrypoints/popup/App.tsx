@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SERVER_URLS } from "shared";
 import { browser } from "wxt/browser";
-import { Toggle } from "@/components/Toggle";
+import { FeatureToggle } from "@/components/FeatureToggle";
 import { type FeatureKey, type Settings, settingsItem } from "@/lib/settings";
 import styles from "./App.module.scss";
 import type { ExportFormat, RoundOption } from "./exportData";
@@ -11,14 +11,27 @@ const PRIVACY_URL =
 const FEEDBACK_URL = "https://forms.gle/7kSGNQQVGbaiaKq9A";
 const LONG_PRESS_MS = 700;
 
-const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
+const GROUPS: readonly {
+  label: string;
+  description: string;
+  keys: readonly FeatureKey[];
+}[] = [
   {
     label: "Card badges and team",
+    description:
+      "Adds small labels to each proposal card: its track (Open, Integration or RFP), whether it won funding, how many comments it has, and who is on the team.",
     keys: ["trackChips", "awardedChip", "commentsChip", "avatarStack"],
   },
-  { label: "Load tracks and teams", keys: ["loadProposalPages"] },
+  {
+    label: "Load tracks and teams",
+    description:
+      "To show tracks and teams on cards, the extension quietly opens each proposal in the background using your own login. Turn this off if you would rather it did not open pages for you. Cards then show less.",
+    keys: ["loadProposalPages"],
+  },
   {
     label: "Review tools",
+    description:
+      "Mark proposals as read, shortlist the ones you like and note whether you support them. Comes with a review bar and keyboard shortcuts. Everything stays on your device.",
     keys: [
       "readState",
       "shortlistAndStance",
@@ -26,9 +39,16 @@ const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
       "keyboardShortcuts",
     ],
   },
-  { label: "Search and filters", keys: ["gridTools"] },
+  {
+    label: "Search and filters",
+    description:
+      "Search the proposals in a round, then filter or sort them by track, status, budget or your own marks.",
+    keys: ["gridTools"],
+  },
   {
     label: "Proposal pages",
+    description:
+      "Makes a single proposal easier to read: a contents list, a tranche summary, tidy wallet addresses, team photos, click-to-enlarge images and a share button.",
     keys: [
       "tableOfContents",
       "trancheSummary",
@@ -40,9 +60,24 @@ const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
       "hoverZoom",
     ],
   },
-  { label: "Round page header", keys: ["roundHeader"] },
-  { label: "Return to where you left off", keys: ["navigationMemory"] },
-  { label: "AI assistant", keys: ["aiDock"] },
+  {
+    label: "Round page header",
+    description:
+      "Shows the round's key dates and numbers at the top of a round page.",
+    keys: ["roundHeader"],
+  },
+  {
+    label: "Return to where you left off",
+    description:
+      "When you go back to a list, it takes you to the exact spot you left, including the proposal you were on.",
+    keys: ["navigationMemory"],
+  },
+  {
+    label: "AI assistant",
+    description:
+      "A chat for asking questions about rounds and proposals. When you ask, your question and the text of the page you are on are sent to our server to get an answer. Turn it off to remove the chat.",
+    keys: ["aiDock"],
+  },
 ];
 
 type Status = { text: string; error: boolean } | null;
@@ -171,10 +206,11 @@ export function App() {
       </header>
 
       <section className={styles.features} aria-label="Features">
-        {GROUPS.map(({ label, keys }) => (
-          <Toggle
+        {GROUPS.map(({ label, description, keys }) => (
+          <FeatureToggle
             key={label}
             label={label}
+            description={description}
             checked={keys.some((key) => settings[key])}
             onChange={(value) => setGroup(keys, value)}
           />
