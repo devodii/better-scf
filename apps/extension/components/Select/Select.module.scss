@@ -41,6 +41,11 @@
   }
 }
 
+.trigger.isActive {
+  border-color: var(--bscf-accent-yellow);
+  color: var(--bscf-accent-yellow);
+}
+
 .value {
   @include truncate;
 }
@@ -121,4 +126,19 @@
 .list:focus-visible .isActive {
   outline: 0.125rem solid var(--bscf-accent-yellow);
   outline-offset: -0.125rem;
+}
+
+.group {
+  padding: 0.5rem 0.75rem 0.25rem;
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &:not(:first-child) {
+    margin-top: 0.25rem;
+    border-top: 0.0625rem solid var(--bscf-muted-chip);
+    padding-top: 0.75rem;
+  }
 }

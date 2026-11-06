@@ -1,51 +1,67 @@
 import clsx from 'clsx';
-import { type KeyboardEvent, type ToggleEvent, useEffect, useId, useRef, useState } from 'react';
+import {
+  Fragment,
+  type KeyboardEvent,
+  type ToggleEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import styles from './Select.module.scss';
 
 export interface SelectOption<T extends string> {
   value: T;
   label: string;
+  group?: string;
 }
 
-export interface SelectProps<T extends string> {
+interface SelectBaseProps<T extends string> {
   label: string;
-  value: T;
   options: readonly SelectOption<T>[];
-  onChange: (next: T) => void;
   className?: string | undefined;
 }
 
-export function Select<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  className,
-}: SelectProps<T>) {
+export interface SingleSelectProps<T extends string> extends SelectBaseProps<T> {
+  multiple?: false;
+  value: T;
+  onChange: (next: T) => void;
+}
+
+export interface MultiSelectProps<T extends string> extends SelectBaseProps<T> {
+  multiple: true;
+  values: readonly T[];
+  onValuesChange: (next: T[]) => void;
+}
+
+export type SelectProps<T extends string> = SingleSelectProps<T> | MultiSelectProps<T>;
+
+export function Select<T extends string>(props: SelectProps<T>) {
+  const { label, options, className } = props;
   const id = useId();
   const anchor = `--bscf-select${id}`;
   const panel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const selectedIndex = Math.max(
+  const picked: readonly T[] = props.multiple ? props.values : [props.value];
+  const firstPicked = Math.max(
     0,
-    options.findIndex((option) => option.value === value),
+    options.findIndex((option) => picked.includes(option.value)),
   );
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(selectedIndex);
-  const current = options[selectedIndex];
+  const [active, setActive] = useState(firstPicked);
 
   useEffect(() => {
     const element = panel.current;
     if (!element || element.matches(':popover-open') === open) return;
     if (open) {
-      setActive(selectedIndex);
+      setActive(firstPicked);
       element.showPopover();
       list.current?.focus();
     } else {
       element.hidePopover();
     }
-  }, [open, selectedIndex]);
+  }, [open, firstPicked]);
 
   const handleToggle = (event: ToggleEvent<HTMLDivElement>): void => {
     const next = event.newState === 'open';
@@ -55,7 +71,16 @@ export function Select<T extends string>({
 
   const choose = (index: number): void => {
     const option = options[index];
-    if (option) onChange(option.value);
+    if (!option) return;
+    if (props.multiple) {
+      props.onValuesChange(
+        props.values.includes(option.value)
+          ? props.values.filter((value) => value !== option.value)
+          : [...props.values, option.value],
+      );
+      return;
+    }
+    props.onChange(option.value);
     setOpen(false);
   };
 
@@ -86,24 +111,36 @@ export function Select<T extends string>({
     }
   };
 
+  const summary = props.multiple
+    ? props.values.length === 0
+      ? label
+      : `${label} · ${props.values.length}`
+    : options.find((option) => option.value === props.value)?.label;
+
   return (
     <div className={clsx(styles.root, className)}>
-      <span className={styles.label} id={`${id}-label`}>
-        {label}
-      </span>
+      {!props.multiple && (
+        <span className={styles.label} id={`${id}-label`}>
+          {label}
+        </span>
+      )}
       <button
         ref={trigger}
         type="button"
-        className={styles.trigger}
+        className={clsx(
+          styles.trigger,
+          props.multiple && props.values.length > 0 && styles.isActive,
+        )}
         style={{ anchorName: anchor }}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-labelledby={`${id}-label ${id}-value`}
+        aria-label={props.multiple ? label : undefined}
+        aria-labelledby={props.multiple ? undefined : `${id}-label ${id}-value`}
         onClick={() => setOpen(!open)}
         onKeyDown={handleTriggerKey}
       >
         <span id={`${id}-value`} className={styles.value}>
-          {current?.label}
+          {summary}
         </span>
         <svg
           className={clsx(styles.chevron, open && styles.isOpen)}
@@ -130,38 +167,45 @@ export function Select<T extends string>({
           role="listbox"
           tabIndex={-1}
           className={styles.list}
-          aria-labelledby={`${id}-label`}
+          aria-label={label}
+          aria-multiselectable={props.multiple ? true : undefined}
           aria-activedescendant={`${id}-option-${active}`}
           onKeyDown={handleListKey}
         >
           {options.map((option, index) => (
-            <button
-              type="button"
-              tabIndex={-1}
-              key={option.value}
-              id={`${id}-option-${index}`}
-              role="option"
-              aria-selected={option.value === value}
-              className={clsx(styles.option, index === active && styles.isActive)}
-              onPointerMove={() => setActive(index)}
-              onClick={() => choose(index)}
-            >
-              <span className={styles.optionLabel}>{option.label}</span>
-              {option.value === value && (
-                <svg
-                  className={styles.check}
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3.5 8.5l3 3 6-7" />
-                </svg>
+            <Fragment key={option.value}>
+              {option.group !== undefined && option.group !== options[index - 1]?.group && (
+                <div className={styles.group} aria-hidden="true">
+                  {option.group}
+                </div>
               )}
-            </button>
+              <button
+                type="button"
+                tabIndex={-1}
+                id={`${id}-option-${index}`}
+                role="option"
+                aria-selected={picked.includes(option.value)}
+                className={clsx(styles.option, index === active && styles.isActive)}
+                onPointerMove={() => setActive(index)}
+                onClick={() => choose(index)}
+              >
+                <span className={styles.optionLabel}>{option.label}</span>
+                {picked.includes(option.value) && (
+                  <svg
+                    className={styles.check}
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                )}
+              </button>
+            </Fragment>
           ))}
         </div>
       </div>
