@@ -16,13 +16,22 @@
 
 .header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: 1rem;
+}
+
+.logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
 }
 
 .version {
@@ -90,6 +99,12 @@
   a {
     color: var(--bscf-link);
   }
+}
+
+.links {
+  display: flex;
+  flex: none;
+  gap: var(--space-3);
 }
 
 .muted {

@@ -6,6 +6,7 @@ import styles from './App.module.scss';
 import type { ExportFormat, RoundOption } from './exportData';
 
 const PRIVACY_URL = 'https://github.com/devodii/better-scf/blob/main/docs/privacy.md';
+const FEEDBACK_URL = 'https://forms.gle/REPLACE_WITH_FORM_ID';
 const LONG_PRESS_MS = 700;
 
 const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
@@ -130,7 +131,10 @@ export function App() {
   return (
     <main className={styles.root}>
       <header className={styles.header}>
-        <h1 className={styles.title}>better-scf</h1>
+        <h1 className={styles.title}>
+          <img className={styles.logo} src="/icon/48.png" alt="" />
+          better-scf
+        </h1>
         <span
           className={styles.version}
           onPointerDown={startPress}
@@ -211,9 +215,14 @@ export function App() {
         <p className={status?.error ? styles.error : styles.muted} role="status" aria-live="polite">
           {status?.text}
         </p>
-        <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
-          Privacy
-        </a>
+        <span className={styles.links}>
+          <a href={FEEDBACK_URL} target="_blank" rel="noreferrer noopener">
+            Suggest a feature
+          </a>
+          <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
+            Privacy
+          </a>
+        </span>
       </footer>
     </main>
   );
