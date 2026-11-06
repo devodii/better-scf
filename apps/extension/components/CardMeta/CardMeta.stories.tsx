@@ -2,30 +2,28 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { AvatarStackPerson } from '../AvatarStack';
 import { CardMeta } from './CardMeta';
 
-const PHOTO =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23b8a2ff'/%3E%3Ccircle cx='32' cy='25' r='12' fill='%23282630'/%3E%3Cpath d='M10 64c2-14 11-21 22-21s20 7 22 21z' fill='%23282630'/%3E%3C/svg%3E";
-
 const PEOPLE: readonly AvatarStackPerson[] = [
-  { name: 'Ada Lovelace', src: PHOTO, href: 'https://github.com/octocat' },
-  { name: 'Grace Hopper', href: 'https://x.com/stellarorg' },
-  { name: 'Alan Turing', href: 'https://github.com/torvalds' },
   {
-    name: 'Katherine Johnson',
-    src: 'data:image/png;base64,broken',
-    href: 'https://github.com/gaearon',
+    name: 'Ada Lovelace',
+    role: 'Founder',
+    href: 'https://www.linkedin.com/in/ada-lovelace',
   },
-  { name: 'Edsger Dijkstra', href: 'https://github.com/sindresorhus' },
-  { name: 'Barbara Liskov', href: 'https://github.com/tj' },
+  { name: 'Grace Hopper', role: 'Engineer' },
+  { name: 'Alan Turing', role: 'Research', href: 'https://www.linkedin.com/in/alan-turing' },
+  { name: 'Katherine Johnson', href: 'https://www.linkedin.com/in/katherine-johnson' },
+  { name: 'Edsger Dijkstra', role: 'Advisor' },
+  { name: 'Barbara Liskov', href: 'https://www.linkedin.com/in/barbara-liskov' },
 ];
 
 const TRACK = {
   label: 'Integration',
-  hint: 'Derived from the on-chain metric section of the submission you opened',
+  hint: "Derived from the proposal's on-chain metric section",
   variant: 'purple',
 } as const;
 
 const AWARDED = {
-  label: 'Awarded before · $120.0K',
+  label: 'Awarded before $120K',
+  shortLabel: 'Awarded $120K',
   hint: '3 awarded submissions',
   variant: 'yellow',
 } as const;
@@ -65,6 +63,14 @@ export const OpenTrack: Story = {
   },
 };
 
+export const RfpTrack: Story = {
+  args: {
+    track: { ...TRACK, label: 'RFP', variant: 'yellow' },
+    awarded: null,
+    people: [],
+  },
+};
+
 export const AwardedOnly: Story = { args: { track: null, people: [] } };
 
 export const PeopleOnly: Story = { args: { track: null, awarded: null } };
@@ -77,7 +83,7 @@ export const LongText: Story = {
   args: {
     awarded: {
       ...AWARDED,
-      label: 'Awarded before · $1.2M across many earlier rounds and tranches',
+      label: 'Awarded before $1.2M across many earlier rounds and tranches',
     },
   },
   decorators: [

@@ -1,18 +1,58 @@
 @use "@/entrypoints/scf.content/styles/mixins" as *;
 
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+}
+
 .root {
   @include base;
 
+  container-type: inline-size;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  max-width: 100%;
+  animation: reveal 220ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.fixed {
+  display: flex;
+  flex: none;
+}
+
+.shrinking {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.people {
+  flex: none;
+}
+
+.people.people > li + li {
+  margin-inline-start: -0.5rem;
+}
+
+.short {
+  display: none;
+}
+
+@container (max-width: 24rem) {
+  .full {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
 }
