@@ -3,11 +3,46 @@
   font-family: var(--bscf-font-body);
 }
 
+@mixin type-title {
+  font: var(--bscf-type-title);
+}
+
+@mixin type-body {
+  font: var(--bscf-type-body);
+}
+
+@mixin type-label {
+  font: var(--bscf-type-label);
+}
+
+@mixin type-meta {
+  font: var(--bscf-type-meta);
+}
+
+@mixin type-control {
+  font: var(--bscf-type-control);
+}
+
+@mixin type-chip {
+  font: var(--bscf-type-chip);
+}
+
+@mixin hairline($color: var(--bscf-border-lavender)) {
+  border: var(--bscf-border-hairline) solid $color;
+}
+
 @mixin focus-ring($color: var(--bscf-accent-yellow), $offset: 0.1875rem) {
   &:focus-visible,
   [data-force-focus] & {
     outline: 0.1875rem solid $color;
     outline-offset: $offset;
+  }
+}
+
+@mixin on-hover {
+  &:hover:not(:disabled),
+  [data-force-hover] &:not(:disabled) {
+    @content;
   }
 }
 
@@ -40,11 +75,12 @@
 
 @mixin floating($placement: top) {
   @include base;
+  @include hairline;
+  @include type-meta;
 
   inset: auto;
   margin: 0.375rem 0;
   overflow: visible;
-  border: 0.0625rem solid var(--bscf-muted-chip);
   background: var(--bscf-surface);
   color: var(--bscf-text);
 
