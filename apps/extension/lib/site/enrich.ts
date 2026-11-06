@@ -1,13 +1,12 @@
 import type { Submission } from 'shared';
 import { browser } from 'wxt/browser';
 import { z } from 'zod';
-import { createRpcClient } from '../db';
 import { settingsItem } from '../settings';
 import { SITE_ORIGIN } from './routes';
 import { parseSubmissionPage } from './submission';
 
 export const ENRICH_MIN_GAP_MS = 1200;
-export const ENRICH_MAX_PER_MINUTE = 12;
+export const ENRICH_MAX_PER_MINUTE = 24;
 const WINDOW_MS = 60_000;
 const BLOCK_MS = 15 * 60_000;
 const MAX_QUEUED = 3;
@@ -41,6 +40,7 @@ export interface EnrichedBuilder {
   role: string | null;
   linkedin: string | null;
   github: string | null;
+  x: string | null;
 }
 
 export interface Enrichment {
@@ -73,7 +73,6 @@ export function enrichBlockMessage(reason: EnrichBlock): string {
   return BLOCK_MESSAGES[reason];
 }
 
-const rpc = createRpcClient();
 const inflight = new Map<string, Promise<Enrichment | null>>();
 const blockListeners = new Set<(reason: EnrichBlock) => void>();
 let queued = 0;
@@ -83,11 +82,12 @@ export function toEnrichment(submission: Submission): Enrichment {
     id: submission.id,
     track: submission.track === 'unknown' ? null : submission.track,
     trackSource: submission.trackSource,
-    builders: submission.team.map(({ name, role, linkedin, github }) => ({
+    builders: submission.team.map(({ name, role, linkedin, github, x }) => ({
       name,
       role,
       linkedin,
       github,
+      x,
     })),
     builderCount: submission.team.length,
     awardedUsd: submission.totalAwardedUsd,
@@ -197,7 +197,6 @@ async function readResponse(response: Response, id: string): Promise<Enrichment 
     return null;
   }
   await recordOutcome(false);
-  await rpc.putSubmissions([page.submission]).catch(() => {});
   return toEnrichment(page.submission);
 }
 
@@ -225,8 +224,6 @@ async function fetchOne(id: string, signal: AbortSignal): Promise<Enrichment | n
 }
 
 async function run(id: string, signal: AbortSignal): Promise<Enrichment | null> {
-  const cached = await rpc.getSubmission(id).catch(() => null);
-  if (cached && !cached.stale) return toEnrichment(cached.value);
   if (signal.aborted || queued >= MAX_QUEUED) return null;
   queued += 1;
   try {

@@ -8,12 +8,12 @@ import { formatBudget, trackLabel } from '../../../lib/export/format';
 import type { Settings } from '../../../lib/settings';
 import {
   type EnrichBlock,
+  type EnrichedBuilder,
   type Enrichment,
   enrichBlockMessage,
   enrichSubmission,
   onEnrichBlock,
   readEnrichBlock,
-  toEnrichment,
 } from '../../../lib/site/enrich';
 import { findReceivedSection, mapRoundCards } from '../../../lib/site/round';
 import { SECTION_HEADING } from '../../../lib/site/selectors/round';
@@ -83,12 +83,19 @@ function githubOwner(url: string | null): string | null {
   }
 }
 
+function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
+  if (linkedin) return linkedin;
+  if (github) return `https://github.com/${encodeURIComponent(github)}`;
+  if (x) return `https://x.com/${encodeURIComponent(x)}`;
+  return null;
+}
+
 function builderPeople(facts: Enrichment): AvatarStackPerson[] {
-  const people: AvatarStackPerson[] = facts.builders.map(({ name, role, linkedin, github }) => ({
-    name,
-    role,
-    src: github ? githubAvatar(github) : null,
-    href: github ? `https://github.com/${encodeURIComponent(github)}` : linkedin,
+  const people: AvatarStackPerson[] = facts.builders.map((builder) => ({
+    name: builder.name,
+    role: builder.role,
+    src: builder.github ? githubAvatar(builder.github) : null,
+    href: profileHref(builder),
   }));
   const owner = githubOwner(facts.projectGithub);
   if (
@@ -153,7 +160,6 @@ export const feature: Feature = {
     const wantsMeta = settings.trackChips || settings.awardedChip || settings.avatarStack;
     const wantsReviews = settings.readState || settings.shortlistAndStance;
     const wantsCorner = wantsReviews || settings.coverNormalization;
-    const round = /#\s*(\d+)/.exec(page.roundName ?? '')?.[1];
 
     const enrichable = wantsMeta && settings.loadProposalPages;
 
@@ -466,7 +472,20 @@ export const feature: Feature = {
 
     async function runBatch(): Promise<void> {
       if (batch) return;
-      const ids = [...new Set([...entries.values()].map((entry) => entry.id))];
+      const center = window.innerHeight / 2;
+      const nearest = new Map<string, number>();
+      for (const entry of entries.values()) {
+        const box = entry.card.getBoundingClientRect();
+        const distance =
+          box.width === 0
+            ? Number.POSITIVE_INFINITY
+            : Math.abs((box.top + box.bottom) / 2 - center);
+        nearest.set(
+          entry.id,
+          Math.min(nearest.get(entry.id) ?? Number.POSITIVE_INFINITY, distance),
+        );
+      }
+      const ids = [...nearest.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
       const control = new AbortController();
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
@@ -530,6 +549,12 @@ export const feature: Feature = {
 
     sync();
     onMutation(sync);
+    if (enrichable) {
+      const start = window.setTimeout(() => {
+        if (!signal.aborted && !batch && loader.status === 'idle') void runBatch();
+      }, 1500);
+      signal.addEventListener('abort', () => window.clearTimeout(start), { once: true });
+    }
 
     if (enrichable) {
       const offBlock = onEnrichBlock(stopLoader);
@@ -542,19 +567,6 @@ export const feature: Feature = {
       );
     }
 
-    if (wantsMeta && round) {
-      store.send('listSubmissionsByRound', round).then(
-        (list) => {
-          if (signal.aborted) return;
-          for (const { value } of list) {
-            const data = toEnrichment(value);
-            if (data.track || data.builderCount > 0 || data.awardedUsd) facts.set(data.id, data);
-          }
-          for (const entry of entries.values()) placeMeta(entry);
-        },
-        (error: unknown) => warn('read submissions', error),
-      );
-    }
     if (wantsReviews) {
       const settle = (): void => {
         if (signal.aborted) return;
