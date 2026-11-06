@@ -60,6 +60,23 @@ pnpm dev
 | `pnpm build-storybook` | Static Storybook build. |
 | `pnpm --filter extension zip` | The release zip. |
 
+### Building with a server URL
+
+The assistant talks to the server at `WXT_SERVER_URL`, a public value baked into the build (never put a secret in a `WXT_` variable). The manifest gets a host permission for that host and no other server:
+
+```sh
+WXT_SERVER_URL=https://your-server.example.com pnpm --filter extension build
+WXT_SERVER_URL=https://your-server.example.com pnpm --filter extension zip
+```
+
+You can also put the line in `apps/extension/.env`.
+
+- `pnpm dev` (development mode): the host permission is `http://localhost/*` when no URL is set, otherwise the host of `WXT_SERVER_URL`.
+- Production build with a URL: only that host. A `localhost`, `127.0.0.1` or `[::1]` URL gets no permission in a production build.
+- Production build without a URL: no server permission; the assistant says the assistant server is not configured.
+
+The other host permission is `https://communityfund.stellar.org/*`. Horizon is fetched from the page's origin and `unavatar.io` is only an image, so neither needs a permission.
+
 ### Storybook
 
 Every UI component in `apps/extension/components/<Name>/` ships with its SCSS module and a story. Storybook is the design reference: run `pnpm storybook` to see each component and its states.
