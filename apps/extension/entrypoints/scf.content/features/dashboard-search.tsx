@@ -13,7 +13,8 @@ import searchCss from '../styles/dashboard-search.scss?inline';
 import {
   centerInView,
   currentEntry,
-  returningEntry,
+  isReturning,
+  markRestored,
   SEARCH_PREFIX,
   showRing,
   TTL_MS,
@@ -66,6 +67,7 @@ interface Page {
 
 const LOADING: View = { status: 'loading', matches: [], hasMore: false };
 const ERROR: View = { status: 'error', matches: [], hasMore: false };
+const QUIET: View = { status: 'ready', matches: [], hasMore: false };
 
 const norm = (text: string | null | undefined): string =>
   (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -140,9 +142,10 @@ export const feature: Feature = {
     const { page: pageData, region, onMutation, warn, signal } = context;
     if (pageData.kind !== 'roundList' && pageData.kind !== 'myProjects') return;
     const headingText = HEADING_TEXT[pageData.kind];
-    const returning = returningEntry();
-    const saved = returning ? readSearch(returning) : null;
-    if (!returning) writeSearch(currentEntry(), null);
+    const entry = currentEntry();
+    const note = (text: string): void => warn(`${text} [${entry}]`);
+    const saved = isReturning(entry, warn) ? readSearch(entry) : null;
+    if (!saved) note('no saved search to restore');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const style = document.createElement('style');
@@ -153,13 +156,24 @@ export const feature: Feature = {
     let page: Page | null = null;
     let raw = '';
     let term = '';
-    let view: View = LOADING;
+    let view: View = saved ? QUIET : LOADING;
     let isDebouncing = false;
     let shown = false;
     let focusWhenOpen = false;
     let closed = false;
-    let clicked: string | null = null;
+    let clicked: string | null = saved?.id ?? null;
     let reveal: SavedSearch | null = saved;
+    let restoring = saved !== null;
+    let resumed = false;
+    let touched = false;
+    const input = saved ? untilInput() : null;
+    input?.signal.addEventListener(
+      'abort',
+      () => {
+        restoring = false;
+      },
+      { once: true },
+    );
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
     let animationTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -315,6 +329,9 @@ export const feature: Feature = {
     }
 
     function handleChange(value: string): void {
+      touched = true;
+      reveal = null;
+      input?.abort();
       raw = value;
       clearTimeout(debounceTimer);
       const trimmed = value.trim();
@@ -342,6 +359,7 @@ export const feature: Feature = {
     };
 
     const persist = (): void => {
+      if (restoring) return;
       writeSearch(
         currentEntry(),
         raw.trim() === ''
@@ -350,9 +368,11 @@ export const feature: Feature = {
       );
     };
 
-    const settle = async (wanted: SavedSearch, shadow: ShadowRoot): Promise<void> => {
-      const own = untilInput();
-      const cancel = AbortSignal.any([signal, own.signal]);
+    const settle = async (
+      wanted: SavedSearch,
+      shadow: ShadowRoot,
+      cancel: AbortSignal,
+    ): Promise<void> => {
       const href = wanted.id === null ? null : PROJECT_HREF + wanted.id;
       const find = (): Element | null => {
         if (href === null) return null;
@@ -364,23 +384,50 @@ export const feature: Feature = {
       const tall = (): boolean =>
         document.documentElement.scrollHeight >= wanted.y + window.innerHeight;
       const ready = href === null ? tall : () => find() !== null;
-      try {
-        if (href === null && wanted.y <= 0) return;
-        await until(shadow, ready, cancel, performance.now() + WAIT_MS, false);
-        if (cancel.aborted) return;
-        for (const animation of page?.results.getAnimations() ?? []) animation.finish();
-        const link = find();
-        if (link) {
-          centerInView(link);
-          showRing(link);
-        } else if (href === null && tall()) {
-          window.scrollTo({ top: wanted.y, behavior: 'instant' });
-        } else {
-          warn('returned result not found');
-        }
-      } finally {
-        own.abort();
+      if (href === null && wanted.y <= 0) return;
+      await until(shadow, ready, cancel, performance.now() + WAIT_MS, false);
+      if (cancel.aborted) return;
+      for (const animation of page?.results.getAnimations() ?? []) animation.finish();
+      const link = find();
+      if (link) {
+        centerInView(link);
+        note(`scrolled to ${wanted.id}`);
+        showRing(link);
+        note('ring shown');
+      } else if (href === null && tall()) {
+        window.scrollTo({ top: wanted.y, behavior: 'instant' });
+        note(`scrolled to y ${wanted.y}`);
+      } else {
+        warn('returned result not found');
       }
+    };
+
+    const tryRestore = (): void => {
+      const wanted = reveal;
+      const ui = page?.resultsUi;
+      if (!wanted || !ui || !resumed || !input) return;
+      reveal = null;
+      settle(wanted, ui.shadow, AbortSignal.any([signal, input.signal]))
+        .catch((error: unknown) => warn('restore', error))
+        .finally(() => {
+          input.abort();
+          if (!closed) markRestored(entry);
+        });
+    };
+
+    const resume = (wanted: SavedSearch): void => {
+      void loadProjectsIndex().then(() => {
+        if (closed || touched) return;
+        shown = true;
+        search(wanted.q.trim());
+        note(`restored query "${wanted.q}"`);
+        if (page) {
+          setSections('gone');
+          setResults('open');
+        }
+        resumed = true;
+        tryRestore();
+      });
     };
 
     const detach = (): void => {
@@ -450,10 +497,7 @@ export const feature: Feature = {
           }
           mine.resultsUi = handle;
           handle.render(resultsView());
-          const wanted = reveal;
-          reveal = null;
-          if (wanted)
-            settle(wanted, handle.shadow).catch((error: unknown) => warn('restore', error));
+          tryRestore();
         })
         .catch((error: unknown) => warn('mount', error));
     };
@@ -469,8 +513,7 @@ export const feature: Feature = {
 
     if (saved) {
       raw = saved.q;
-      shown = true;
-      search(saved.q.trim());
+      resume(saved);
     }
 
     window.addEventListener('pagehide', persist, { signal });
@@ -480,6 +523,7 @@ export const feature: Feature = {
 
     return () => {
       closed = true;
+      input?.abort();
       clearTimeout(debounceTimer);
       clearTimeout(animationTimer);
       detach();

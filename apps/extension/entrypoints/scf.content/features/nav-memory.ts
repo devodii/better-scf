@@ -61,30 +61,58 @@ export const currentEntry = (): string =>
   window.navigation?.currentEntry?.key ?? location.pathname + location.search;
 const slideText = (slide: Element): string => clean(slide.textContent).slice(0, CARD_TEXT_CHARS);
 
-let pending: string | null = null;
-let ring: Ring | null = null;
+type Note = (scope: string) => void;
 
-export function returningEntry(): string | null {
-  const entry = currentEntry();
-  return pending === entry ? entry : null;
+let traversed: string | null = null;
+let moved = false;
+let ring: Ring | null = null;
+const restored = new Set<string>();
+
+function traversal(entry: string): { returning: boolean; why: string } {
+  if (restored.has(entry)) return { returning: false, why: 'already restored in this document' };
+  if (traversed === entry) return { returning: true, why: 'history traverse event' };
+  const activation = window.navigation?.activation;
+  if (activation) {
+    if ((activation.entry?.key ?? entry) !== entry) {
+      return { returning: false, why: 'entry created after the document loaded' };
+    }
+    return {
+      returning: activation.navigationType === 'traverse',
+      why: `activation ${activation.navigationType}`,
+    };
+  }
+  if (moved) return { returning: false, why: 'entry created after the document loaded' };
+  const [timing] = performance.getEntriesByType('navigation');
+  const type = timing instanceof PerformanceNavigationTiming ? timing.type : 'unknown';
+  return { returning: type === 'back_forward', why: `navigation timing ${type}` };
+}
+
+export function isReturning(entry: string, note: Note): boolean {
+  const { returning, why } = traversal(entry);
+  note(`returning: ${returning} (${why}) [${entry}]`);
+  return returning;
+}
+
+export function markRestored(entry: string): void {
+  restored.add(entry);
 }
 
 function trackTraversal(): void {
-  for (const entry of performance.getEntriesByType('navigation')) {
-    if (entry instanceof PerformanceNavigationTiming && entry.type === 'back_forward') {
-      pending = currentEntry();
+  const enter = (type: string | null | undefined): void => {
+    if (type === 'traverse') {
+      traversed = currentEntry();
+      restored.delete(traversed);
+      moved = true;
+    } else if (type === 'push') {
+      traversed = null;
+      moved = true;
     }
-  }
+  };
   const navigation = window.navigation;
   if (navigation) {
-    navigation.addEventListener('currententrychange', (event) => {
-      if (event.navigationType === 'traverse') pending = currentEntry();
-      else if (event.navigationType === 'push') pending = null;
-    });
+    navigation.addEventListener('currententrychange', (event) => enter(event.navigationType));
   } else {
-    window.addEventListener('popstate', () => {
-      pending = currentEntry();
-    });
+    window.addEventListener('popstate', () => enter('traverse'));
   }
 }
 
@@ -396,13 +424,17 @@ export const feature: Feature = {
           if (section?.toggle && !isOpen(section)) section.toggle.click();
         }
       }
+      warn(`restored ${wanted.length} sections [${key}]`);
       const wantedCard = saved.card;
       if (!wantedCard) {
         const fits = (): boolean =>
           document.documentElement.scrollHeight >= saved.y + window.innerHeight;
         if (saved.y <= 0) return;
         await until(region, fits, cancel, deadline, false);
-        if (!cancel.aborted && fits()) window.scrollTo({ top: saved.y, behavior: 'instant' });
+        if (!cancel.aborted && fits()) {
+          window.scrollTo({ top: saved.y, behavior: 'instant' });
+          warn(`scrolled to y ${saved.y} [${key}]`);
+        }
         return;
       }
       await until(
@@ -419,17 +451,22 @@ export const feature: Feature = {
         return;
       }
       showCard(region, wantedCard, element);
+      warn(`scrolled to card ${wantedCard.index} of "${wantedCard.section}" [${key}]`);
       showRing(element);
+      warn(`ring shown [${key}]`);
     };
 
     const begin = async (fresh: boolean): Promise<void> => {
       restoring?.abort();
       const entry = key;
-      const saved = pending === entry && !hasSearch(entry) ? readSaved(entry) : null;
+      if (!isReturning(entry, warn)) return;
+      if (hasSearch(entry)) {
+        warn(`search restore owns this entry [${entry}]`);
+        return;
+      }
+      const saved = readSaved(entry);
       if (!saved) {
-        queueMicrotask(() => {
-          if (pending === entry) pending = null;
-        });
+        warn(`no saved position [${entry}]`);
         return;
       }
       card = saved.card;
@@ -443,7 +480,7 @@ export const feature: Feature = {
         own.abort();
         if (restoring === own) restoring = null;
       }
-      if (!signal.aborted && pending === entry) pending = null;
+      if (!signal.aborted) markRestored(entry);
     };
 
     const persist = (): void => {
