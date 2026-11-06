@@ -1,41 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { browser } from 'wxt/browser';
-import { Toggle } from '@/components/Toggle';
-import { type FeatureKey, type Settings, settingsItem } from '@/lib/settings';
-import styles from './App.module.scss';
-import type { ExportFormat, RoundOption } from './exportData';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { browser } from "wxt/browser";
+import { Toggle } from "@/components/Toggle";
+import { type FeatureKey, type Settings, settingsItem } from "@/lib/settings";
+import styles from "./App.module.scss";
+import type { ExportFormat, RoundOption } from "./exportData";
 
-const PRIVACY_URL = 'https://github.com/devodii/better-scf/blob/main/docs/privacy.md';
-const FEEDBACK_URL = 'https://forms.gle/REPLACE_WITH_FORM_ID';
+const PRIVACY_URL =
+  "https://github.com/devodii/better-scf/blob/main/docs/privacy.md";
+const FEEDBACK_URL = "https://forms.gle/7kSGNQQVGbaiaKq9A";
 const LONG_PRESS_MS = 700;
 
 const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
   {
-    label: 'Card badges and team',
-    keys: ['trackChips', 'awardedChip', 'commentsChip', 'avatarStack'],
+    label: "Card badges and team",
+    keys: ["trackChips", "awardedChip", "commentsChip", "avatarStack"],
   },
-  { label: 'Load tracks and teams', keys: ['loadProposalPages'] },
+  { label: "Load tracks and teams", keys: ["loadProposalPages"] },
   {
-    label: 'Review tools',
-    keys: ['readState', 'shortlistAndStance', 'reviewerBar', 'keyboardShortcuts'],
-  },
-  { label: 'Search and filters', keys: ['gridTools'] },
-  {
-    label: 'Page polish',
+    label: "Review tools",
     keys: [
-      'roundHeader',
-      'tableOfContents',
-      'trancheSummary',
-      'addressPills',
-      'teamAvatars',
-      'imageLightbox',
-      'shareButton',
-      'coverNormalization',
-      'hoverZoom',
+      "readState",
+      "shortlistAndStance",
+      "reviewerBar",
+      "keyboardShortcuts",
     ],
   },
-  { label: 'Remember my place', keys: ['navigationMemory'] },
-  { label: 'AI assistant', keys: ['aiDock'] },
+  { label: "Search and filters", keys: ["gridTools"] },
+  {
+    label: "Page polish",
+    keys: [
+      "roundHeader",
+      "tableOfContents",
+      "trancheSummary",
+      "addressPills",
+      "teamAvatars",
+      "imageLightbox",
+      "shareButton",
+      "coverNormalization",
+      "hoverZoom",
+    ],
+  },
+  { label: "Remember my place", keys: ["navigationMemory"] },
+  { label: "AI assistant", keys: ["aiDock"] },
 ];
 
 type Status = { text: string; error: boolean } | null;
@@ -43,7 +49,7 @@ type Status = { text: string; error: boolean } | null;
 function isHttpUrl(value: string): boolean {
   try {
     const { protocol } = new URL(value);
-    return protocol === 'http:' || protocol === 'https:';
+    return protocol === "http:" || protocol === "https:";
   } catch {
     return false;
   }
@@ -53,9 +59,9 @@ export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const [rounds, setRounds] = useState<RoundOption[] | null>(null);
-  const [roundId, setRoundId] = useState('');
+  const [roundId, setRoundId] = useState("");
   const [showServer, setShowServer] = useState(false);
-  const [serverDraft, setServerDraft] = useState('');
+  const [serverDraft, setServerDraft] = useState("");
   const pressTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -65,14 +71,21 @@ export function App() {
     });
   }, []);
 
-  const change = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
-    setSettings((current) => (current ? { ...current, [key]: value } : current));
-    void settingsItem.update((current) => ({ ...current, [key]: value }));
-  }, []);
+  const change = useCallback(
+    <K extends keyof Settings>(key: K, value: Settings[K]) => {
+      setSettings((current) =>
+        current ? { ...current, [key]: value } : current,
+      );
+      void settingsItem.update((current) => ({ ...current, [key]: value }));
+    },
+    [],
+  );
 
   const setGroup = (keys: readonly FeatureKey[], value: boolean): void => {
     setSettings((current) =>
-      current ? { ...current, ...Object.fromEntries(keys.map((key) => [key, value])) } : current,
+      current
+        ? { ...current, ...Object.fromEntries(keys.map((key) => [key, value])) }
+        : current,
     );
     void settingsItem.update((current) => ({
       ...current,
@@ -80,49 +93,60 @@ export function App() {
     }));
   };
 
-  const report = (text: string, error = false): void => setStatus({ text, error });
+  const report = (text: string, error = false): void =>
+    setStatus({ text, error });
 
   const openExport = async (): Promise<void> => {
     if (rounds) return;
     try {
-      const { loadRounds } = await import('./exportData');
+      const { loadRounds } = await import("./exportData");
       const list = await loadRounds();
       setRounds(list);
-      setRoundId(list[0]?.id ?? '');
+      setRoundId(list[0]?.id ?? "");
     } catch {
-      report('Could not read saved reviews.', true);
+      report("Could not read saved reviews.", true);
     }
   };
 
-  const runExport = async (format: ExportFormat, action: 'copy' | 'download'): Promise<void> => {
+  const runExport = async (
+    format: ExportFormat,
+    action: "copy" | "download",
+  ): Promise<void> => {
     if (!settings || !roundId) return;
     try {
-      const data = await import('./exportData');
-      const text = await data.buildExport(roundId, format, settings.includeRepositoryLink);
-      if (action === 'copy') {
+      const data = await import("./exportData");
+      const text = await data.buildExport(
+        roundId,
+        format,
+        settings.includeRepositoryLink,
+      );
+      if (action === "copy") {
         await navigator.clipboard.writeText(text);
-        report('Copied to clipboard.');
+        report("Copied to clipboard.");
       } else {
         data.download(text, roundId, format);
-        report('Download started.');
+        report("Download started.");
       }
     } catch {
-      report('Export failed.', true);
+      report("Export failed.", true);
     }
   };
 
   const saveServer = (): void => {
     const value = serverDraft.trim();
     if (value && !isHttpUrl(value)) {
-      report('Enter a valid http(s) URL.', true);
+      report("Enter a valid http(s) URL.", true);
       return;
     }
-    change('serverUrlOverride', value.replace(/\/+$/, ''));
-    report(value ? 'Server URL saved.' : 'Server URL override removed.');
+    change("serverUrlOverride", value.replace(/\/+$/, ""));
+    report(value ? "Server URL saved." : "Server URL override removed.");
   };
 
   const startPress = (): void => {
-    pressTimer.current = window.setTimeout(() => setShowServer(true), LONG_PRESS_MS);
+    pressTimer.current = window.setTimeout(
+      () => setShowServer(true),
+      LONG_PRESS_MS,
+    );
   };
   const endPress = (): void => window.clearTimeout(pressTimer.current);
 
@@ -162,7 +186,9 @@ export function App() {
             Export my review
           </button>
         ) : rounds.length === 0 ? (
-          <p className={styles.muted}>Nothing to export yet. Browse a round first.</p>
+          <p className={styles.muted}>
+            Nothing to export yet. Browse a round first.
+          </p>
         ) : (
           <>
             <select
@@ -181,14 +207,14 @@ export function App() {
               <button
                 type="button"
                 className={styles.button}
-                onClick={() => runExport('markdown', 'copy')}
+                onClick={() => runExport("markdown", "copy")}
               >
                 Copy markdown
               </button>
               <button
                 type="button"
                 className={styles.button}
-                onClick={() => runExport('csv', 'download')}
+                onClick={() => runExport("csv", "download")}
               >
                 Download CSV
               </button>
@@ -204,7 +230,11 @@ export function App() {
               value={serverDraft}
               onChange={(event) => setServerDraft(event.target.value)}
             />
-            <button type="button" className={styles.button} onClick={saveServer}>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={saveServer}
+            >
               Save
             </button>
           </div>
@@ -212,7 +242,11 @@ export function App() {
       </section>
 
       <footer className={styles.footer}>
-        <p className={status?.error ? styles.error : styles.muted} role="status" aria-live="polite">
+        <p
+          className={status?.error ? styles.error : styles.muted}
+          role="status"
+          aria-live="polite"
+        >
           {status?.text}
         </p>
         <span className={styles.links}>
