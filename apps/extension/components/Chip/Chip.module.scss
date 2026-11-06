@@ -2,7 +2,9 @@
 
 .root {
   @include base;
+  @include type-chip;
 
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -10,20 +12,17 @@
   max-width: 100%;
   padding: 0.25rem 0.5rem;
   border-radius: var(--bscf-radius-chip);
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1;
 }
 
 .link {
   @include focus-ring;
-  @include quick-transition(opacity);
+  @include quick-transition(background-color);
 
   text-decoration: none;
   cursor: pointer;
 
-  &:hover {
-    opacity: 0.85;
+  @include on-hover {
+    background-color: color-mix(in srgb, currentcolor 32%, transparent);
   }
 }
 

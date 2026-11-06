@@ -46,6 +46,29 @@ export const LinkFocused: Story = {
   ],
 };
 
+export const LinkHover: Story = {
+  args: { children: 'Ada Lovelace', variant: 'purple', href: 'https://github.com/octocat' },
+  decorators: [
+    (Story) => (
+      <div data-force-hover>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Narrow390: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', maxWidth: '390px' }}>
+      <Chip variant="purple">Integration</Chip>
+      <Chip variant="olive">Open</Chip>
+      <Chip variant="yellow">RFP</Chip>
+      <Chip variant="muted">12 comments · 2d ago</Chip>
+      <Chip variant="olive">Awarded before · $120K across four earlier rounds</Chip>
+    </div>
+  ),
+};
+
 export const Row: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: '0.5rem' }}>
