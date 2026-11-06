@@ -16,7 +16,12 @@ import {
   onEnrichBlock,
   readEnrichBlock,
 } from '../../../lib/site/enrich';
-import { findReceivedSection, mapRoundCards, readRoundPhases } from '../../../lib/site/round';
+import {
+  findAwardedSection,
+  findReceivedSection,
+  mapRoundCards,
+  readRoundPhases,
+} from '../../../lib/site/round';
 import { onFacts, publishFacts, readFacts } from '../../../lib/site/round-facts';
 import { SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
@@ -64,8 +69,12 @@ function blankReview(submissionId: string): ReviewState {
   };
 }
 
-function trackHint(source: Submission['trackSource']): string | null {
+function trackHint(
+  source: Submission['trackSource'],
+  track: Submission['track'] | null,
+): string | null {
   if (source === 'api') return "From the site's track field";
+  if (source === 'heuristic' && track === 'rfp') return 'The proposal says it responds to an RFP';
   if (source === 'heuristic') return "Derived from the proposal's on-chain metric section";
   return null;
 }
@@ -117,7 +126,7 @@ function builderPeople(facts: Enrichment): AvatarStackPerson[] {
 function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaProps | null {
   if (!facts) return null;
   const props: CardMetaProps = {};
-  const hint = trackHint(facts.trackSource);
+  const hint = trackHint(facts.trackSource, facts.track);
   if (settings.trackChips && facts.track && hint) {
     props.track = {
       label: trackLabel(facts.track),
@@ -588,9 +597,12 @@ export const feature: Feature = {
       const section = findReceivedSection(region);
       if (!section) return;
       const live = new Set<Element>();
-      for (const { card, record } of mapRoundCards(section, records)) {
-        live.add(card);
-        if (!entries.has(card)) attach(card, record.id);
+      const awarded = findAwardedSection(region);
+      for (const where of awarded ? [awarded, section] : [section]) {
+        for (const { card, record } of mapRoundCards(where, records)) {
+          live.add(card);
+          if (!entries.has(card)) attach(card, record.id);
+        }
       }
       for (const entry of [...entries.values()]) if (!live.has(entry.card)) detach(entry);
       syncLoader(section);

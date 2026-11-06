@@ -293,6 +293,17 @@ export function findReceivedSection(root: ParentNode): Element | null {
   return null;
 }
 
+export function findAwardedSection(root: ParentNode): Element | null {
+  try {
+    for (const heading of root.querySelectorAll(SECTION_HEADING)) {
+      if (norm(heading.textContent) === AWARDED_HEADING_TEXT) return sectionOf(heading);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export function findFirstSubmissionSection(root: ParentNode): Element | null {
   try {
     for (const heading of root.querySelectorAll(SECTION_HEADING)) {
