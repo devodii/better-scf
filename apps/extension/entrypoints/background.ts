@@ -1,6 +1,8 @@
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
+import { registerBackgroundFetch } from '../lib/ai/background-fetch';
 import { createRepoProvider, createRpcHandlers, getClientId, registerRpcHandlers } from '../lib/db';
+import { settingsItem } from '../lib/settings';
 
 const SITE_PATTERN = 'https://communityfund.stellar.org/*';
 
@@ -21,7 +23,19 @@ async function injectIntoOpenTabs(): Promise<void> {
   }
 }
 
+function originOf(value: string): string[] {
+  try {
+    return value === '' ? [] : [new URL(value).origin];
+  } catch {
+    return [];
+  }
+}
+
 export default defineBackground(() => {
+  registerBackgroundFetch(async () => [
+    ...originOf(import.meta.env.WXT_SERVER_URL ?? ''),
+    ...originOf((await settingsItem.get()).serverUrlOverride),
+  ]);
   registerRpcHandlers(createRpcHandlers({ getRepo: createRepoProvider(), getClientId }));
   browser.runtime.onInstalled.addListener(() => void injectIntoOpenTabs());
 });

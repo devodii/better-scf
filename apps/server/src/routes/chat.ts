@@ -109,6 +109,16 @@ function corsHeaders(c: ChatContext): Record<string, string> {
     : { 'Access-Control-Allow-Origin': requestOrigin, Vary: 'Origin' };
 }
 
+const MAX_LOGGED_MESSAGE = 240;
+
+function describeModelError(error: unknown): string {
+  if (!(error instanceof Error)) return 'chat model error: unknown';
+  const status =
+    'statusCode' in error && typeof error.statusCode === 'number' ? error.statusCode : null;
+  const message = error.message.replace(/sk-[A-Za-z0-9_-]+/g, '[key]').slice(0, MAX_LOGGED_MESSAGE);
+  return `chat model error: ${error.name}${status === null ? '' : ` ${status}`}: ${message}`;
+}
+
 export function createChatRoute(deps: ChatRouteDeps) {
   const now = deps.now ?? Date.now;
   const record = (
@@ -167,7 +177,7 @@ export function createChatRoute(deps: ChatRouteDeps) {
         temperature: TEMPERATURE,
         abortSignal: c.req.raw.signal,
         onError: ({ error }) => {
-          console.error(`chat model error: ${error instanceof Error ? error.name : 'unknown'}`);
+          console.error(describeModelError(error));
         },
         onEnd: (event) => {
           record(clientId, body, {

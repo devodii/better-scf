@@ -4,6 +4,7 @@ import { CHAT_LIMITS, type ChatMessage, quickPromptsFor } from 'shared';
 import { Assistant } from '../../../../components/Assistant';
 import type { AssistantHistoryItem } from '../../../../components/AssistantHistory';
 import type { AssistantPromptItem } from '../../../../components/AssistantPrompts';
+import { createBackgroundFetch } from '../../../../lib/ai/background-fetch';
 import { detectPageKind } from '../../../../lib/ai/context';
 import {
   type BscfChat,
@@ -229,6 +230,7 @@ export function mountPanel(
     if (session) return session;
     const created = createBscfChat({
       serverUrl,
+      fetch: createBackgroundFetch(),
       getClientId: () => store.send('getClientId', undefined),
       getPageRequest: () => pageRequest,
     });
