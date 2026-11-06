@@ -7,6 +7,7 @@ import { AssistantMessages, type AssistantNotice } from '../AssistantMessages';
 import { AssistantPanel } from '../AssistantPanel';
 import type { AssistantPromptItem } from '../AssistantPrompts';
 import styles from './Assistant.module.scss';
+import { PANEL_SIDE, type PanelSide } from './side';
 
 export type AssistantStatus = 'idle' | 'streaming';
 
@@ -14,7 +15,7 @@ export interface AssistantProps {
   isOpen: boolean;
   onOpenChange: (next: boolean) => void;
   hasUnread?: boolean;
-  topOffset?: number;
+  side?: PanelSide;
   contextLabel: string;
   value: string;
   onValueChange: (next: string) => void;
@@ -50,7 +51,7 @@ export function Assistant({
   isOpen,
   onOpenChange,
   hasUnread = false,
-  topOffset = 0,
+  side = PANEL_SIDE,
   contextLabel,
   value,
   onValueChange,
@@ -91,13 +92,14 @@ export function Assistant({
         ref={launcher}
         isHidden={isOpen}
         hasUnread={hasUnread}
+        side={side}
         onClick={() => onOpenChange(true)}
       />
       <AssistantPanel
         isOpen={isOpen}
         onClose={() => onOpenChange(false)}
         contextLabel={contextLabel}
-        topOffset={topOffset}
+        side={side}
         isHistoryOpen={isHistoryOpen}
         onHistoryOpenChange={onHistoryOpenChange}
         history={
