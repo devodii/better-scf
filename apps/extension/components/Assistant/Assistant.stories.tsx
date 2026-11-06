@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fn } from "storybook/test";
 import { createPagePush } from "../../entrypoints/scf.content/features/dock/push";
 import dockCss from "../../entrypoints/scf.content/styles/dock.scss?inline";
@@ -539,15 +539,7 @@ const FAKE_SITE_CSS = `
 }
 `;
 
-function FakeSite({
-  isOpen,
-  side,
-  content,
-}: {
-  isOpen: boolean;
-  side: PanelSide;
-  content?: ReactNode;
-}) {
+function FakeSite({ isOpen, side }: { isOpen: boolean; side: PanelSide }) {
   useEffect(() => {
     const push = createPagePush(side);
     push.set(isOpen, true);
@@ -619,22 +611,20 @@ function FakeSite({
         data-testid="site-content"
         style={{ marginTop: "8rem", marginLeft: "16rem" }}
       >
-        {content ?? (
-          <div style={{ padding: "1.5rem" }}>
-            {FILLER.map((label) => (
-              <section
-                key={label}
-                style={{
-                  height: "10rem",
-                  marginBottom: "1rem",
-                  background: "#282630",
-                }}
-              >
-                {label}
-              </section>
-            ))}
-          </div>
-        )}
+        <div style={{ padding: "1.5rem" }}>
+          {FILLER.map((label) => (
+            <section
+              key={label}
+              style={{
+                height: "10rem",
+                marginBottom: "1rem",
+                background: "#282630",
+              }}
+            >
+              {label}
+            </section>
+          ))}
+        </div>
       </aside>
     </main>
   );
@@ -676,161 +666,4 @@ export const PushedPagePhone: Story = {
   ...PHONE,
   args: { isOpen: true, messages: [QUESTION, ANSWER] },
   render: (args) => <PushedPage {...args} />,
-};
-
-const DEMO_TABLE =
-  "| Track | Proposals |\n| --- | --- |\n| Integration | 34 |\n| Open | 26 |";
-
-const DEMO_MESSAGES: AssistantMessageItem[] = [
-  user("d3", "Which recent round paid the most per funded project?"),
-  {
-    id: "d4",
-    role: "assistant",
-    parts: [
-      {
-        kind: "activity",
-        id: "d4a",
-        text: "Working out the answer",
-        status: "done",
-      },
-      {
-        kind: "text",
-        id: "d4t",
-        text: "**SCF #43** at **$108,895** per project, ahead of #45 ($101,090) and #44 ($99,915).",
-      },
-    ],
-  },
-  user("d5", "Is SCF #46 more open track or integration so far?"),
-  {
-    id: "d6",
-    role: "assistant",
-    parts: [
-      {
-        kind: "activity",
-        id: "d6a",
-        text: "Reading the proposals",
-        status: "done",
-      },
-      {
-        kind: "text",
-        id: "d6t",
-        text: `It leans **integration**, with all 60 proposals classified.\n\n${DEMO_TABLE}`,
-      },
-    ],
-  },
-  user("d7", "How far along is my own review?"),
-  {
-    id: "d8",
-    role: "assistant",
-    parts: [
-      {
-        kind: "confirm",
-        id: "d8c",
-        text: "Read your Community Fund data and send it to the assistant",
-        status: "denied",
-      },
-      {
-        kind: "text",
-        id: "d8t",
-        text: "No problem, I will not look at your account data.",
-      },
-    ],
-  },
-  user("d9", "Take me to the SCF #46 page"),
-  {
-    id: "d10",
-    role: "assistant",
-    parts: [
-      {
-        kind: "confirm",
-        id: "d10c",
-        text: "Take you to SCF #46",
-        status: "pending",
-      },
-    ],
-  },
-];
-
-const DEMO_ROUNDS = [
-  { name: "SCF #46", tag: "Submission", line: "Deadline November 9, 2026" },
-  { name: "SCF #45", tag: "Completed", line: "40 funded · $4.0M awarded" },
-  { name: "SCF #44", tag: "Completed", line: "46 funded · $4.6M awarded" },
-];
-
-function DemoContent() {
-  return (
-    <div style={{ padding: "1.5rem 2rem" }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "4.5rem",
-          lineHeight: 1,
-          letterSpacing: "0.02em",
-          textTransform: "uppercase",
-          color: "#fff",
-        }}
-      >
-        Award Rounds
-      </h1>
-      <p style={{ maxWidth: "36rem", color: "rgb(255 255 255 / 70%)" }}>
-        The Stellar Community Fund has several opportunities to get funding and
-        support for teams building on Stellar.
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-        {DEMO_ROUNDS.map((round) => (
-          <section
-            key={round.name}
-            style={{
-              boxSizing: "border-box",
-              width: "13rem",
-              padding: "1.25rem",
-              borderRadius: "0.75rem",
-              background: "#282630",
-              color: "#fff",
-            }}
-          >
-            <h2 style={{ margin: "0 0 0.5rem" }}>{round.name}</h2>
-            <span
-              style={{
-                padding: "0.125rem 0.5rem",
-                borderRadius: "0.375rem",
-                background: "rgb(250 220 0 / 18%)",
-                color: "#fadc00",
-                fontSize: "0.875rem",
-              }}
-            >
-              {round.tag}
-            </span>
-            <p style={{ margin: "1rem 0 0", color: "rgb(255 255 255 / 75%)" }}>
-              {round.line}
-            </p>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DemoPage(args: AssistantProps) {
-  const [isOpen, setIsOpen] = useState(args.isOpen);
-  const side = args.side ?? PANEL_SIDE;
-  return (
-    <>
-      <style>{dockCss}</style>
-      <FakeSite isOpen={isOpen} side={side} content={<DemoContent />} />
-      <Assistant {...args} isOpen={isOpen} onOpenChange={setIsOpen} />
-    </>
-  );
-}
-
-export const Demo: Story = {
-  parameters: { layout: "fullscreen" },
-  args: {
-    isOpen: true,
-    contextLabel: "Funding rounds",
-    placeholder: "Ask about funding rounds",
-    messages: DEMO_MESSAGES,
-    onDecision: fn(),
-  },
-  render: (args) => <DemoPage {...args} />,
 };

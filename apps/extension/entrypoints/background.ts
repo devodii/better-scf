@@ -7,7 +7,6 @@ import {
   getClientId,
   registerRpcHandlers,
 } from "../lib/db";
-import { settingsItem } from "../lib/settings";
 
 const SITE_PATTERN = "https://communityfund.stellar.org/*";
 
@@ -37,10 +36,9 @@ function originOf(value: string): string[] {
 }
 
 export default defineBackground(() => {
-  registerBackgroundFetch(async () => [
-    ...originOf(import.meta.env.WXT_SERVER_URL ?? ""),
-    ...originOf((await settingsItem.get()).serverUrlOverride),
-  ]);
+  registerBackgroundFetch(async () =>
+    originOf(import.meta.env.WXT_SERVER_URL ?? ""),
+  );
   registerRpcHandlers(
     createRpcHandlers({ getRepo: createRepoProvider(), getClientId }),
   );

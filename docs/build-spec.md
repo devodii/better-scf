@@ -423,7 +423,7 @@ On an owned submission page, a collapsible "Self-check" panel appears (clearly l
 
 ### 6.8 Settings popup
 
-Toggles per feature, "clear cache", "export", "debug logging", server URL override (dev only, hidden behind a long-press on the version), client id display (for support), link to privacy.md.
+Toggles per feature, "clear cache", "export", "debug logging", client id display (for support), link to privacy.md.
 
 ---
 

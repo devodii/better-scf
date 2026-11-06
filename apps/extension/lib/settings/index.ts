@@ -26,7 +26,6 @@ const settingsSchema = z.object({
   aiDock: z.boolean().default(true),
   includeRepositoryLink: z.boolean().default(false),
   debugLogging: z.boolean().default(false),
-  serverUrlOverride: z.string().default(""),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

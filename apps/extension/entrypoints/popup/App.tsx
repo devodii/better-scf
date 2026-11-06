@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { SERVER_URLS } from "shared";
+import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import { FeatureToggle } from "@/components/FeatureToggle";
 import { type FeatureKey, type Settings, settingsItem } from "@/lib/settings";
@@ -9,7 +8,6 @@ import type { ExportFormat, RoundOption } from "./exportData";
 const PRIVACY_URL =
   "https://github.com/devodii/better-scf/blob/main/docs/privacy.md";
 const FEEDBACK_URL = "https://forms.gle/7kSGNQQVGbaiaKq9A";
-const LONG_PRESS_MS = 700;
 
 const GROUPS: readonly {
   label: string;
@@ -65,40 +63,15 @@ const GROUPS: readonly {
 
 type Status = { text: string; error: boolean } | null;
 
-function isHttpUrl(value: string): boolean {
-  try {
-    const { protocol } = new URL(value);
-    return protocol === "http:" || protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const [rounds, setRounds] = useState<RoundOption[] | null>(null);
   const [roundId, setRoundId] = useState("");
-  const [showServer, setShowServer] = useState(false);
-  const [serverDraft, setServerDraft] = useState("");
-  const pressTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    void settingsItem.get().then((value) => {
-      setSettings(value);
-      setServerDraft(value.serverUrlOverride);
-    });
+    void settingsItem.get().then(setSettings);
   }, []);
-
-  const change = useCallback(
-    <K extends keyof Settings>(key: K, value: Settings[K]) => {
-      setSettings((current) =>
-        current ? { ...current, [key]: value } : current,
-      );
-      void settingsItem.update((current) => ({ ...current, [key]: value }));
-    },
-    [],
-  );
 
   const setGroup = (keys: readonly FeatureKey[], value: boolean): void => {
     setSettings((current) =>
@@ -151,24 +124,6 @@ export function App() {
     }
   };
 
-  const saveServer = (): void => {
-    const value = serverDraft.trim();
-    if (value && !isHttpUrl(value)) {
-      report("Enter a valid http(s) URL.", true);
-      return;
-    }
-    change("serverUrlOverride", value.replace(/\/+$/, ""));
-    report(value ? "Server URL saved." : "Server URL override removed.");
-  };
-
-  const startPress = (): void => {
-    pressTimer.current = window.setTimeout(
-      () => setShowServer(true),
-      LONG_PRESS_MS,
-    );
-  };
-  const endPress = (): void => window.clearTimeout(pressTimer.current);
-
   if (!settings) return null;
 
   return (
@@ -178,12 +133,7 @@ export function App() {
           <img className={styles.logo} src="/icon/48.png" alt="" />
           better-scf
         </h1>
-        <span
-          className={styles.version}
-          onPointerDown={startPress}
-          onPointerUp={endPress}
-          onPointerLeave={endPress}
-        >
+        <span className={styles.version}>
           v{browser.runtime.getManifest().version}
         </span>
       </header>
@@ -240,24 +190,6 @@ export function App() {
               </button>
             </div>
           </>
-        )}
-        {showServer && (
-          <div className={styles.row}>
-            <input
-              className={styles.input}
-              aria-label="Server URL override"
-              placeholder={SERVER_URLS.production}
-              value={serverDraft}
-              onChange={(event) => setServerDraft(event.target.value)}
-            />
-            <button
-              type="button"
-              className={styles.button}
-              onClick={saveServer}
-            >
-              Save
-            </button>
-          </div>
         )}
       </section>
 

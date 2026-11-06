@@ -52,13 +52,12 @@ export function mountPanel(
   handle: MountedUi,
   openAfterMount: boolean,
 ): () => void {
-  const { page, settings, store, signal, warn } = context;
+  const { page, store, signal, warn } = context;
   let conversationId = readConversation() ?? crypto.randomUUID();
   writeConversation(conversationId);
   const subject = subjectOf(page);
   const nextRequest = createRequestSource(page);
-  const serverUrl =
-    settings.serverUrlOverride || import.meta.env.WXT_SERVER_URL || "";
+  const serverUrl = import.meta.env.WXT_SERVER_URL ?? "";
 
   if (signal.aborted) return () => {};
 
