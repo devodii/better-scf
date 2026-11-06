@@ -22,8 +22,7 @@ How the data reaches the page on communityfund.stellar.org. Method: one gentle p
 - **Submission page payload:** the project object `{ id, category, totalAwarded, totalPaid, team{description,count}, submissions[summary records] }`, which is the source of Project Stats and Other Submissions (its shape varies by page, so parse defensively). The DOM carries the proposal text under uppercase headings.
 - **Project Stats in the DOM:** `Team Size`, `Category`, `Total awarded` (shown as `$0*`), `Awarded Submissions`, `Other Submissions` ("No other submissions." when none), and a `View Project` link.
 - **Track:** the heading `TRANCHE 3 ONCHAIN METRIC INFORMATION` exists on every submission, so its presence says nothing. The heuristic is that the section has body text (an on-chain metric is stated) versus an empty section. Treat it as `trackSource: "heuristic"` and never show it as fact on a card.
-- **Never touch the session.** The page payload also contains the logged-in `session` object with an `accessToken`. The extension must not read, copy, store or send it; parsers pick named fields from the records above and ignore everything else, and fixtures are scrubbed of it.
-- **Fixtures** (scrubbed, in `tests/fixtures/scf/`): `round-46-records.json`, `round-card.html`, and `submission-<id>.html` with `.project.json` for five submissions (lowest budget, mid, highest, one-person team, a filled and an empty on-chain section).
+- **Never touch the session.** The page payload also contains the logged-in `session` object with an `accessToken`. The extension must not read, copy, store or send it; parsers pick named fields from the records above and ignore everything else.
 
 ## Consequences for the build
 
