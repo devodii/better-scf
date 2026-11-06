@@ -19,19 +19,19 @@ const GROUPS: readonly {
   {
     label: "Card badges and team",
     description:
-      "Adds small labels to each proposal card: its track (Open, Integration or RFP), whether it won funding, how many comments it has, and who is on the team.",
+      "See at a glance which proposals are Open, Integration or RFP, which won funding, how much discussion each has and who is behind it, without opening them one by one.",
     keys: ["trackChips", "awardedChip", "commentsChip", "avatarStack"],
   },
   {
     label: "Load tracks and teams",
     description:
-      "To show tracks and teams on cards, the extension quietly opens each proposal in the background using your own login. Turn this off if you would rather it did not open pages for you. Cards then show less.",
+      "Gets tracks and teams showing on every card, so you can compare the whole round in one view.",
     keys: ["loadProposalPages"],
   },
   {
     label: "Review tools",
     description:
-      "Mark proposals as read, shortlist the ones you like and note whether you support them. Comes with a review bar and keyboard shortcuts. Everything stays on your device.",
+      "Keep your place and your opinions in one spot: mark what you have read, shortlist your favourites and note who you support. Private to you.",
     keys: [
       "readState",
       "shortlistAndStance",
@@ -42,13 +42,13 @@ const GROUPS: readonly {
   {
     label: "Search and filters",
     description:
-      "Search the proposals in a round, then filter or sort them by track, status, budget or your own marks.",
+      "Find the right proposals in seconds. Search a round and narrow it down by track, status, budget or your own marks.",
     keys: ["gridTools"],
   },
   {
     label: "Proposal pages",
     description:
-      "Makes a single proposal easier to read: a contents list, a tranche summary, tidy wallet addresses, team photos, click-to-enlarge images and a share button.",
+      "Read long proposals faster. Jump between sections, see the funding breakdown at a glance, spot teams and wallets easily and share a proposal with one click.",
     keys: [
       "tableOfContents",
       "trancheSummary",
@@ -63,19 +63,19 @@ const GROUPS: readonly {
   {
     label: "Round page header",
     description:
-      "Shows the round's key dates and numbers at the top of a round page.",
+      "See the state of a round the moment you open it, with the key dates and numbers right at the top.",
     keys: ["roundHeader"],
   },
   {
     label: "Return to where you left off",
     description:
-      "When you go back to a list, it takes you to the exact spot you left, including the proposal you were on.",
+      "Never lose your place. Go back to a list and land exactly where you left off.",
     keys: ["navigationMemory"],
   },
   {
     label: "AI assistant",
     description:
-      "A chat for asking questions about rounds and proposals. When you ask, your question and the text of the page you are on are sent to our server to get an answer. Turn it off to remove the chat.",
+      "Ask questions about any round or proposal and get clear answers in seconds, instead of reading everything yourself.",
     keys: ["aiDock"],
   },
 ];
