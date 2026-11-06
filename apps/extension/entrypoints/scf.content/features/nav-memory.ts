@@ -69,7 +69,8 @@ function trackTraversal(): void {
   const navigation = window.navigation;
   if (navigation) {
     navigation.addEventListener('currententrychange', (event) => {
-      pending = event.navigationType === 'traverse' ? entryKey() : null;
+      if (event.navigationType === 'traverse') pending = entryKey();
+      else if (event.navigationType === 'push') pending = null;
     });
   } else {
     window.addEventListener('popstate', () => {
@@ -327,7 +328,13 @@ export const feature: Feature = {
       }
       const wantedCard = saved.card;
       if (!wantedCard) return;
-      await until(region, () => findCard(region, wantedCard) !== null, cancel, deadline, false);
+      await until(
+        region,
+        () => findCard(region, wantedCard) !== null,
+        cancel,
+        performance.now() + WAIT_MS,
+        false,
+      );
       if (cancel.aborted) return;
       const element = findCard(region, wantedCard);
       if (element) showRing(element);
@@ -342,6 +349,7 @@ export const feature: Feature = {
         pending = null;
         return;
       }
+      card = saved.card;
       const own = new AbortController();
       restoring = own;
       const stop = (): void => own.abort();
@@ -367,7 +375,7 @@ export const feature: Feature = {
     const onClick = (event: MouseEvent): void => {
       const target = event.target;
       const control = target instanceof Element ? target.closest('a[href],button') : null;
-      if (!(target instanceof Element) || !control) return;
+      if (!event.isTrusted || !(target instanceof Element) || !control) return;
       card =
         control instanceof HTMLButtonElement && !clean(control.textContent)
           ? null
