@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
+import { LINKS } from "shared";
 import { browser } from "wxt/browser";
 import { FeatureToggle } from "@/components/FeatureToggle";
 import { type FeatureKey, type Settings, settingsItem } from "@/lib/settings";
 import styles from "./App.module.scss";
 import type { ExportFormat, RoundOption } from "./exportData";
-
-const PRIVACY_URL =
-  "https://github.com/devodii/better-scf/blob/main/docs/privacy.md";
-const FEEDBACK_URL = "https://forms.gle/7kSGNQQVGbaiaKq9A";
 
 const GROUPS: readonly {
   label: string;
@@ -202,10 +199,10 @@ export function App() {
           {status?.text}
         </p>
         <span className={styles.links}>
-          <a href={FEEDBACK_URL} target="_blank" rel="noreferrer noopener">
+          <a href={LINKS.feedback} target="_blank" rel="noreferrer noopener">
             Suggest a feature
           </a>
-          <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
+          <a href={LINKS.privacy} target="_blank" rel="noreferrer noopener">
             Privacy
           </a>
         </span>

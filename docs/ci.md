@@ -23,6 +23,10 @@ The build and deploy config is `railway.toml` at the repository root (Dockerfile
 
 `ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `BURST_PER_MINUTE`, `DAILY_CAP_PER_CLIENT`, `IP_DAILY_CAP`, `GLOBAL_DAILY_CAP`, `DAILY_TOKEN_CAP_PER_CLIENT` (all five limits are required, the server refuses to start without them), `NODE_ENV=production`.
 
+## Web page
+
+`deploy-web.yml` builds `apps/web` (a React and SCSS landing page that reuses the extension's design tokens) and publishes it to GitHub Pages at `https://devodii.github.io/better-scf/` on every push to `main` that touches the page. Pages must be set to deploy from GitHub Actions (Settings, Pages, Source). Run it locally with `pnpm --filter web dev`.
+
 ## Watching the SCF site
 
 `site-watch.yml` runs every day (and on demand) and checks, without logging in, the things the extension depends on: the headings and data of a public proposal page (including the record shape every round page uses), that the dashboard pages still exist at the same addresses, and the project directory. When any of them changes it opens an issue labelled `site-change` with what changed and what it affects, and it closes the issue by itself once everything passes again. What the dashboard pages look like inside needs a login, so that is not covered.

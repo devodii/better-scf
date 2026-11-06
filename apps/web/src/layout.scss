@@ -1,0 +1,29 @@
+$content: 72rem;
+
+@mixin container {
+  width: 100%;
+  max-width: $content;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@mixin button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--bscf-button-height);
+  padding: 0 1.5rem;
+  border: var(--bscf-border-hairline) solid var(--bscf-border-lavender);
+  border-radius: var(--bscf-radius-pill);
+  background: var(--bscf-button-bg);
+  color: var(--bscf-text);
+  font: var(--bscf-type-label);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    border-color: var(--bscf-link);
+  }
+}

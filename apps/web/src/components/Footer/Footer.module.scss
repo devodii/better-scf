@@ -1,0 +1,28 @@
+@use "../../layout" as *;
+
+.root {
+  border-top: var(--bscf-border-hairline) solid var(--bscf-border-lavender);
+}
+
+.inner {
+  @include container;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 2rem;
+}
+
+.note {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-meta);
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+}
