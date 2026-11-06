@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'wxt';
+import { EXTENSION_PUBLIC_KEY } from '../../packages/shared/src/extension-key';
 
 interface RootPackage {
   version: string;
@@ -15,9 +16,6 @@ if (existsSync(envFile)) {
 const rootPackage = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
 ) as RootPackage;
-
-const EXTENSION_KEY =
-  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAywr9NnHW7rBIzAfwRF0sNrX2j/c+BSCotYYpmGDiCRzKSWpKqzuA59/RWsZpreO1ax1iBHl59Ws6WARDHIp7C1aNg4ThHdsADAikpUYf4Rh9guFew1pwxFTxwsOZlR+XJnFGq3YLhF1ZJpU0DlDBzGlY/ueJoFGsdU9uARgvQzsRORZSS63O0ERUFZ9cRIuoTQOUAIM0nJYiltXqPWIN0L6URatIOIVdx1qXFAG7g6el0oLPtIZEYGvj3yE1v50dNLKhQuzSqgIWY8fMev5p1sgAc3dVL1DOrUsJGZctktqgo+Eh8vhh3LR9488G+/TJdvUnugS580e3f68OHC3QfwIDAQAB';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -42,7 +40,7 @@ export default defineConfig({
     name: 'better-scf',
     version: rootPackage.version,
     description: 'A reviewer-grade UX layer on communityfund.stellar.org.',
-    key: EXTENSION_KEY,
+    key: EXTENSION_PUBLIC_KEY,
     minimum_chrome_version: '111',
     permissions: ['storage', 'scripting'],
     host_permissions: ['https://communityfund.stellar.org/*', ...serverHostPermission(mode)],

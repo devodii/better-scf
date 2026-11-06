@@ -23,7 +23,9 @@ function isAllowedOrigin(origin: string | undefined, options: OriginOptions): bo
 export function origin(options: OriginOptions) {
   return createMiddleware(async (c, next) => {
     const requestOrigin = c.req.header('origin');
-    if (requestOrigin === undefined || !isAllowedOrigin(requestOrigin, options)) {
+    const allowed = isAllowedOrigin(requestOrigin, options);
+    const looksLikeExtension = requestOrigin !== undefined && EXTENSION_ORIGIN.test(requestOrigin);
+    if (requestOrigin === undefined || (!allowed && !looksLikeExtension)) {
       return c.json({ error: 'forbidden_origin' }, 403);
     }
     c.header('Access-Control-Allow-Origin', requestOrigin);
@@ -34,6 +36,7 @@ export function origin(options: OriginOptions) {
       c.header('Access-Control-Max-Age', '600');
       return c.body(null, 204);
     }
+    if (!allowed) return c.json({ error: 'forbidden_origin' }, 403);
     await next();
     return undefined;
   });

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { type Env, loadEnv } from './env.js';
+import { PINNED_EXTENSION_ID } from './extension-id.js';
 import { client } from './middleware/client.js';
 import { origin } from './middleware/origin.js';
 import { createRateLimit } from './middleware/ratelimit.js';
@@ -30,7 +31,7 @@ function createApp(env: Env, deps: AppDeps = {}) {
   v1.use('/chat', chatErrorShape);
   v1.use(
     origin({
-      allowedExtensionIds: env.ALLOWED_EXTENSION_IDS,
+      allowedExtensionIds: [...new Set([PINNED_EXTENSION_ID, ...env.ALLOWED_EXTENSION_IDS])],
       development: env.NODE_ENV === 'development',
     }),
   );
