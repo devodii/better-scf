@@ -1,0 +1,42 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+$duration: 280ms;
+$ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+.root {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  transition: grid-template-rows $duration $ease;
+}
+
+.isOpen {
+  grid-template-rows: 1fr;
+}
+
+.inner {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity $duration $ease,
+    visibility 0s linear $duration;
+}
+
+.isOpen > .inner {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity $duration $ease,
+    visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .inner,
+  .isOpen > .inner {
+    transition: none;
+  }
+}

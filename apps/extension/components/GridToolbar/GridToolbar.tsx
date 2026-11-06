@@ -1,4 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react';
+import { Collapsible } from '../Collapsible';
 import { GridCounts, type GridCountsProps } from '../GridCounts';
 import { type GridFilterState, GridFilters, type GridTrack } from '../GridFilters';
 import { GridNote } from '../GridNote';
@@ -113,15 +114,22 @@ export function GridToolbar({
             </Popover>
           </div>
         )}
-        <div className={isExpanded ? styles.panelOpen : styles.panel}>
-          <GridFilters
-            value={filters}
-            onChange={onFiltersChange}
-            availableTracks={availableTracks}
-            hasReviews={hasReviews}
-          />
-          <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
-        </div>
+        <Collapsible
+          isOpen={isExpanded}
+          keepInteractive
+          className={styles.collapse}
+          innerClassName={styles.collapseInner}
+        >
+          <div className={styles.panel}>
+            <GridFilters
+              value={filters}
+              onChange={onFiltersChange}
+              availableTracks={availableTracks}
+              hasReviews={hasReviews}
+            />
+            <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
+          </div>
+        </Collapsible>
       </div>
       <div className={styles.status}>
         <GridCounts {...counts} />

@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useId } from 'react';
+import { Collapsible } from '../Collapsible';
 import styles from './TocNav.module.scss';
 
 export interface TocNavItem {
@@ -40,7 +41,7 @@ export function TocNav({ items, activeId, isOpen, onOpenChange, onSelect }: TocN
           <path d="M5.3 7.3 10 12l4.7-4.7 1.4 1.4L10 14.8 3.9 8.7z" />
         </svg>
       </button>
-      <div id={listId} className={styles.body} hidden={!isOpen}>
+      <Collapsible id={listId} isOpen={isOpen} className={styles.body}>
         {items.length === 0 ? (
           <p className={styles.empty}>No sections found on this page.</p>
         ) : (
@@ -59,7 +60,7 @@ export function TocNav({ items, activeId, isOpen, onOpenChange, onSelect }: TocN
             ))}
           </ol>
         )}
-      </div>
+      </Collapsible>
     </nav>
   );
 }

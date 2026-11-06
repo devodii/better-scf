@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { useId } from 'react';
 import type { Stance } from 'shared';
 import { CardCorner } from '../CardCorner';
+import { Collapsible } from '../Collapsible';
 import styles from './ReviewerBar.module.scss';
 
 export type ReviewerNoteStatus = 'idle' | 'saving' | 'saved';
@@ -79,51 +80,53 @@ export function ReviewerBar({
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
-      <div id={panelId} className={styles.panel} hidden={!isExpanded}>
-        <div className={styles.row}>
-          <CardCorner
-            stance={stance}
-            onStanceChange={onStanceChange}
-            shortlisted={shortlisted}
-            onShortlistChange={onShortlistChange}
-          />
-          <span className={styles.stanceLabel}>
-            {STANCE_LABEL[stance]}
-            {shortlisted ? ', shortlisted' : ''}
-          </span>
+      <Collapsible id={panelId} isOpen={isExpanded} className={styles.collapse}>
+        <div className={styles.panel}>
+          <div className={styles.row}>
+            <CardCorner
+              stance={stance}
+              onStanceChange={onStanceChange}
+              shortlisted={shortlisted}
+              onShortlistChange={onShortlistChange}
+            />
+            <span className={styles.stanceLabel}>
+              {STANCE_LABEL[stance]}
+              {shortlisted ? ', shortlisted' : ''}
+            </span>
+          </div>
+          <label className={styles.noteLabel}>
+            <span className={styles.noteTitle}>Private note</span>
+            <textarea
+              className={styles.note}
+              rows={3}
+              maxLength={2000}
+              autoComplete="off"
+              placeholder="Only you can see this"
+              value={note}
+              onChange={(event) => onNoteChange(event.target.value)}
+            />
+          </label>
+          <div className={styles.footer}>
+            <span className={styles.status} role="status" aria-live="polite">
+              {statusText(noteStatus, copyStatus)}
+            </span>
+            <button type="button" className={styles.copy} onClick={onCopy}>
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+                <path d="M10.5 5.5v-2a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3.5V9A1.5 1.5 0 0 0 4 10.5h1.5" />
+              </svg>
+              Copy summary
+            </button>
+          </div>
         </div>
-        <label className={styles.noteLabel}>
-          <span className={styles.noteTitle}>Private note</span>
-          <textarea
-            className={styles.note}
-            rows={3}
-            maxLength={2000}
-            autoComplete="off"
-            placeholder="Only you can see this"
-            value={note}
-            onChange={(event) => onNoteChange(event.target.value)}
-          />
-        </label>
-        <div className={styles.footer}>
-          <span className={styles.status} role="status" aria-live="polite">
-            {statusText(noteStatus, copyStatus)}
-          </span>
-          <button type="button" className={styles.copy} onClick={onCopy}>
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.25"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
-              <path d="M10.5 5.5v-2a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3.5V9A1.5 1.5 0 0 0 4 10.5h1.5" />
-            </svg>
-            Copy summary
-          </button>
-        </div>
-      </div>
+      </Collapsible>
     </section>
   );
 }
