@@ -1,0 +1,50 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+  @include hairline;
+  @include type-meta;
+
+  position: fixed;
+  inset: auto;
+  left: max(0.5rem, min(var(--x, 0px), calc(100% - 18.5rem)));
+  top: var(--y, 0px);
+  width: 18rem;
+  max-width: calc(100% - 1rem);
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  overflow: visible;
+  background: var(--bscf-surface);
+  color: var(--bscf-text);
+  border-radius: var(--bscf-radius-chip);
+  pointer-events: none;
+}
+
+.top {
+  translate: 0 -100%;
+}
+
+.contract {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.kind {
+  font-weight: 500;
+}
+
+.address {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--bscf-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--bscf-text-muted);
+}

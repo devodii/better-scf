@@ -1,0 +1,31 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+  @include type-meta;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.revealed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.link {
+  @include focus-ring;
+
+  color: var(--bscf-link);
+}
