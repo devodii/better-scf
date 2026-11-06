@@ -111,13 +111,13 @@ export const feature: Feature = {
     };
 
     const handleState = (): void => {
-      if (document.readyState !== 'complete') return;
+      if (document.readyState === 'loading') return;
       document.removeEventListener('readystatechange', handleState);
       begin();
     };
 
     context.onMutation(sync);
-    if (document.readyState === 'complete') begin();
+    if (document.readyState !== 'loading') begin();
     else document.addEventListener('readystatechange', handleState);
 
     return () => {

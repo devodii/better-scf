@@ -6,10 +6,16 @@ import { pageKey, watchRoutes } from '../../lib/site/route-watcher';
 import { parseRoute, type Route } from '../../lib/site/routes';
 import { createSiteStore, type SiteStore } from '../../lib/site/store';
 import type { FeatureCleanup, FeatureContext } from '../../lib/ui/feature';
-import { type MountedUi, mountShadowUi, OWN_ATTRIBUTE, releaseStyles } from '../../lib/ui/mount';
+import {
+  type MountedUi,
+  mountShadowUi,
+  OWN_ATTRIBUTE,
+  preloadStyles,
+  releaseStyles,
+} from '../../lib/ui/mount';
 import { featuresFor } from '../../lib/ui/registry';
 
-const READY_TIMEOUT_MS = 10_000;
+const READY_TIMEOUT_MS = 30_000;
 
 type Warn = (scope: string, error?: unknown) => void;
 
@@ -124,10 +130,13 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
   };
 }
 
-async function start(ctx: ContentScriptContext): Promise<void> {
-  let settings = await settingsItem.get().catch(() => DEFAULT_SETTINGS);
-  if (ctx.isInvalid) return;
-  setRoundDebug(settings.debugLogging);
+function sameSettings(a: Settings, b: Settings): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function start(ctx: ContentScriptContext): void {
+  preloadStyles();
+  let settings = DEFAULT_SETTINGS;
 
   const warned = new Set<string>();
   const warn: Warn = (scope, error) => {
@@ -182,18 +191,33 @@ async function start(ctx: ContentScriptContext): Promise<void> {
     },
   });
 
-  const unsubscribe = settingsItem.subscribe((next) => {
+  const applySettings = (next: Settings): void => {
+    if (ctx.isInvalid || sameSettings(next, settings)) return;
     settings = next;
     setRoundDebug(next.debugLogging);
     restart();
+  };
+
+  let changed = false;
+  settingsItem.get().then(
+    (next) => {
+      if (!changed) applySettings(next);
+    },
+    () => {},
+  );
+  const unsubscribe = settingsItem.subscribe((next) => {
+    changed = true;
+    applySettings(next);
   });
 
+  document.addEventListener('readystatechange', attempt);
   document.documentElement.setAttribute(OWN_ATTRIBUTE, 'ready');
   ctx.onInvalidated(() => {
     session?.stop();
     session = null;
     waiting = false;
     clearTimeout(waitTimer);
+    document.removeEventListener('readystatechange', attempt);
     watcher.stop();
     unsubscribe();
     releaseStyles();
@@ -205,9 +229,9 @@ async function start(ctx: ContentScriptContext): Promise<void> {
 
 export default defineContentScript({
   matches: ['https://communityfund.stellar.org/*'],
-  runAt: 'document_idle',
+  runAt: 'document_start',
   cssInjectionMode: 'ui',
   main(ctx) {
-    void start(ctx);
+    start(ctx);
   },
 });

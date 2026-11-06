@@ -61,6 +61,10 @@ function loadSheet(): Promise<CSSStyleSheet> {
   return pending;
 }
 
+export function preloadStyles(): void {
+  loadSheet().catch(() => {});
+}
+
 export function releaseStyles(): void {
   documentStyle?.remove();
   documentStyle = undefined;

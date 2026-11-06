@@ -91,7 +91,7 @@ export function createSiteStore(initial: Route): SiteStore {
 
     isReady(route, region) {
       if (route.kind === 'submission') {
-        if (!hasProjectStats(region)) return false;
+        if (document.readyState === 'loading' || !hasProjectStats(region)) return false;
         const title = readTitle(region);
         if (!title) return false;
         const last = lastSubmission;
@@ -103,6 +103,7 @@ export function createSiteStore(initial: Route): SiteStore {
         );
       }
       if (route.kind === 'round') {
+        if (document.readyState === 'loading') return false;
         const section = findReceivedSection(region);
         if (!section) return false;
         const last = lastRound;
