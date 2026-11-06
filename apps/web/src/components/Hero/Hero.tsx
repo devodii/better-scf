@@ -4,11 +4,12 @@ import styles from "./Hero.module.scss";
 export function Hero() {
   return (
     <section id="top" className={styles.root}>
-      <h1 className={styles.title}>Review SCF proposals faster.</h1>
+      <h1 className={styles.title}>A better way to explore SCF.</h1>
       <p className={styles.lead}>
-        better-scf is a browser extension for the Stellar Community Fund. It
-        adds review tools, search and an AI assistant to the site you already
-        use.
+        better-scf is a browser extension that adds smarter tools to the Stellar
+        Community Fund site. See every proposal at a glance, find what matters
+        and ask questions in plain words. Made for reviewers, delegates, voters
+        and anyone following the fund.
       </p>
       <div className={styles.actions}>
         <a className={styles.primary} href="#demo">

@@ -4,7 +4,7 @@ const SHOTS = [
   { file: "badges.jpg", caption: "Tracks and teams on every card" },
   { file: "round-header.jpg", caption: "A round at a glance" },
   { file: "tranche.jpg", caption: "Tranche totals, summarised" },
-  { file: "review.jpg", caption: "Your private review panel" },
+  { file: "review.jpg", caption: "Your private notes and shortlist" },
   { file: "ai.jpg", caption: "Answers with the numbers and their scope" },
   { file: "permission.jpg", caption: "It asks before it acts" },
 ];

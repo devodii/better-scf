@@ -5,8 +5,8 @@ export function Features() {
   return (
     <>
       <Feature
-        title="Review privately"
-        text="Mark your stance, shortlist the proposals you like and keep notes only you can see. It all stays on your device."
+        title="Keep your own shortlist"
+        text="Mark a stance, shortlist what you like and jot private notes as you go. Handy for panel reviews, delegate decisions and your own voting. It all stays on your device."
       >
         <Clip
           name="review"
@@ -14,7 +14,7 @@ export function Features() {
         />
       </Feature>
       <Feature
-        title="Find the right proposals fast"
+        title="Find what matters fast"
         text="Tracks, teams and awards show on every card. Search a round and filter by track or by your own marks in a couple of clicks."
         isReversed
       >
@@ -24,8 +24,8 @@ export function Features() {
         />
       </Feature>
       <Feature
-        title="Ask the assistant"
-        text="Ask anything about a round or a proposal and get a straight answer, with the numbers and where they come from. No digging through pages."
+        title="Ask anything, in plain words"
+        text="Ask about a round or a proposal and get a straight answer, with the numbers and where they come from. No digging through pages."
       >
         <Clip
           name="ai-compare"

@@ -9,7 +9,7 @@ export function Roadmap() {
         <p className={styles.text}>
           Team avatars will link to each builder&apos;s Stellarlight profile, so
           you can see their history across the Stellar ecosystem before you
-          vote.
+          decide.
         </p>
       </div>
     </section>
