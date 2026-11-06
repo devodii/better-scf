@@ -28,6 +28,7 @@ const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
       'addressPills',
       'teamAvatars',
       'imageLightbox',
+      'shareButton',
       'coverNormalization',
       'hoverZoom',
     ],
