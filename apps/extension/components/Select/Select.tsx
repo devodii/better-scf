@@ -1,5 +1,13 @@
 import clsx from 'clsx';
-import { type KeyboardEvent, type ToggleEvent, useEffect, useId, useRef, useState } from 'react';
+import {
+  type KeyboardEvent,
+  type ToggleEvent,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styles from './Select.module.scss';
 
 export interface SelectOption<T extends string> {
