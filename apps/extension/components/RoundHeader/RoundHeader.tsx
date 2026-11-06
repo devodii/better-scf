@@ -37,7 +37,11 @@ export function RoundHeader({
       <dl className={styles.stats}>
         <RoundHeaderStat
           label="Submissions"
-          value={String(submissions)}
+          value={
+            siteTotal !== null && siteTotal > submissions
+              ? `${submissions} of ${siteTotal}`
+              : String(submissions)
+          }
           hint={
             siteTotal !== null && siteTotal > submissions
               ? `${siteTotal} applications were counted. The site only lists the ${submissions} that passed pre-screen.`
