@@ -41,15 +41,31 @@ export const Focus: Story = {
   ],
 };
 
-export const UnreadDot: Story = { args: { hasUnread: true } };
+export const Pressed: Story = {
+  decorators: [
+    (Story) => (
+      <div data-force-active>
+        <Story />
+      </div>
+    ),
+  ],
+};
 
-export const Hidden: Story = { args: { isHidden: true } };
+export const Unread: Story = { args: { hasUnread: true } };
+
+export const Open: Story = { args: { isOpen: true } };
+
+export const OpenHover: Story = { ...Hover, args: { isOpen: true } };
+
+export const OpenFocus: Story = { ...Focus, args: { isOpen: true } };
 
 export const Left: Story = { args: { side: 'left' } };
 
 export const LeftHover: Story = { ...Hover, args: { side: 'left' } };
 
 export const LeftUnread: Story = { args: { side: 'left', hasUnread: true } };
+
+export const LeftOpen: Story = { args: { side: 'left', isOpen: true } };
 
 export const Right: Story = { args: { side: 'right' } };
 
@@ -58,3 +74,5 @@ export const RightHover: Story = { ...Hover, args: { side: 'right' } };
 export const RightFocus: Story = { ...Focus, args: { side: 'right' } };
 
 export const RightUnread: Story = { args: { side: 'right', hasUnread: true } };
+
+export const RightOpen: Story = { args: { side: 'right', isOpen: true } };

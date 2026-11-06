@@ -11,7 +11,7 @@ export const feature: Feature = {
     const { warn } = context;
     const handle = await context.mount({
       anchor: document.body,
-      children: <AssistantLauncher isHidden={readOpen()} onClick={() => load(true)} />,
+      children: <AssistantLauncher isOpen={readOpen()} onClick={() => load(true)} />,
     });
     if (!handle) return;
 

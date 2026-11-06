@@ -90,10 +90,10 @@ export function Assistant({
     <>
       <AssistantLauncher
         ref={launcher}
-        isHidden={isOpen}
+        isOpen={isOpen}
         hasUnread={hasUnread}
         side={side}
-        onClick={() => onOpenChange(true)}
+        onClick={() => onOpenChange(!isOpen)}
       />
       <AssistantPanel
         isOpen={isOpen}
