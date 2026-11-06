@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const DEFAULT_MODEL = 'claude-sonnet-4-5';
+const DEFAULT_MODEL = 'claude-sonnet-5-5';
 
 const intWithDefault = (fallback: number) => z.coerce.number().int().positive().default(fallback);
 
