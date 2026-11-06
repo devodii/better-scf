@@ -3,6 +3,7 @@ export const FLIGHT_PUSH_PREFIX = 'self.__next_f.push(';
 export const FLIGHT_RECORD_START = /\{"id":"rec[A-Za-z0-9]+","/g;
 
 export const SECTION_HEADING = 'h1,h2,h3,h4,h5,h6';
+export const AWARDED_HEADING_TEXT = 'awarded submissions';
 export const RECEIVED_HEADING_TEXT = 'received submissions';
 export const SECTION_MAX_DEPTH = 8;
 

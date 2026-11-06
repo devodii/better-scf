@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { RoundHeader } from '../../../components/RoundHeader';
 import type { RoundHeaderTrackCounts } from '../../../components/RoundHeaderTracks';
 import {
+  findFirstSubmissionSection,
   findPhaseTable,
   type RoundPhase,
   readRoundPhases,
@@ -13,7 +14,6 @@ import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import headerCss from '../styles/round-header.scss?inline';
 
 const BAR = 'data-bscf-round-header-bar';
-const ROUND_NUMBER = /#\s*(\d+)/;
 
 function when(verb: string, at: number, now: dayjs.Dayjs): string {
   const days = dayjs(at).startOf('day').diff(now.startOf('day'), 'day');
@@ -51,8 +51,6 @@ export const feature: Feature = {
       return;
     }
     const records = page.records;
-    const roundNumber =
-      ROUND_NUMBER.exec(page.roundName ?? records[0]?.roundName ?? '')?.[1] ?? null;
     const ids = new Set(records.map((record) => record.id));
     const budgets = records
       .flatMap((record) => (record.budget === null ? [] : [record.budget]))
@@ -95,15 +93,19 @@ export const feature: Feature = {
       if (bar?.isConnected && table?.isConnected) return;
       teardown();
       const found = findPhaseTable(region);
-      if (!found) {
-        warn('phase table not found');
+      const anchor = found
+        ? (found.parentElement?.parentElement ?? found)
+        : findFirstSubmissionSection(region);
+      if (!anchor) {
+        warn('round header anchor not found');
         return;
       }
       const mine = document.createElement('div');
       mine.setAttribute(OWN_ATTRIBUTE, 'round-header-bar');
       mine.setAttribute(BAR, '');
-      (found.parentElement?.parentElement ?? found).after(mine);
-      table = found;
+      if (found) anchor.after(mine);
+      else anchor.before(mine);
+      table = found ?? anchor;
       bar = mine;
       countdown = countdownText(readRoundPhases(region), dayjs());
       context

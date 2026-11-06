@@ -3,6 +3,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { parseWith, type Round, submissionSchema } from 'shared';
 import { z } from 'zod';
 import {
+  AWARDED_HEADING_TEXT,
   CARD_BUDGET,
   CARD_BYLINE_PREFIX,
   CARD_CHIP,
@@ -270,22 +271,38 @@ export function readRoundPhases(root: ParentNode): RoundPhase[] {
   }
 }
 
+function sectionOf(heading: Element): Element {
+  let section: Element = heading;
+  for (let i = 0; i < SECTION_MAX_DEPTH; i++) {
+    const parent = section.parentElement;
+    if (!parent || parent.querySelectorAll(SECTION_HEADING).length > 1) break;
+    section = parent;
+  }
+  return section;
+}
+
 export function findReceivedSection(root: ParentNode): Element | null {
   try {
     for (const heading of root.querySelectorAll(SECTION_HEADING)) {
-      if (norm(heading.textContent) !== RECEIVED_HEADING_TEXT) continue;
-      let section: Element = heading;
-      for (let i = 0; i < SECTION_MAX_DEPTH; i++) {
-        const parent = section.parentElement;
-        if (!parent || parent.querySelectorAll(SECTION_HEADING).length > 1) break;
-        section = parent;
-      }
-      return section;
+      if (norm(heading.textContent) === RECEIVED_HEADING_TEXT) return sectionOf(heading);
     }
   } catch {
     return null;
   }
   debug('receivedSection');
+  return null;
+}
+
+export function findFirstSubmissionSection(root: ParentNode): Element | null {
+  try {
+    for (const heading of root.querySelectorAll(SECTION_HEADING)) {
+      const text = norm(heading.textContent);
+      if (text === RECEIVED_HEADING_TEXT || text === AWARDED_HEADING_TEXT)
+        return sectionOf(heading);
+    }
+  } catch {
+    return null;
+  }
   return null;
 }
 
