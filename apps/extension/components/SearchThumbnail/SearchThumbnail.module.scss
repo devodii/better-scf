@@ -7,11 +7,10 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 100%;
+  aspect-ratio: 5 / 2;
   overflow: hidden;
-  border-radius: var(--bscf-radius-chip);
-  background: var(--bscf-muted-chip);
+  background: var(--bscf-surface);
 }
 
 .image {
@@ -23,7 +22,6 @@
 
 .fallback {
   color: var(--bscf-text-muted);
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 1;
+  font: 700 2rem / 1 var(--bscf-font-text);
+  letter-spacing: 0.04em;
 }

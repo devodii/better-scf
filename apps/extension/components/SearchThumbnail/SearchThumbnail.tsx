@@ -8,6 +8,16 @@ export interface SearchThumbnailProps extends Omit<ComponentPropsWithoutRef<'spa
   ref?: Ref<HTMLSpanElement>;
 }
 
+function initials(text: string): string {
+  return text
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
+
 export function SearchThumbnail({ src, fallback, className, ref, ...rest }: SearchThumbnailProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = src !== null && failedSrc !== src;
@@ -25,7 +35,7 @@ export function SearchThumbnail({ src, fallback, className, ref, ...rest }: Sear
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <span className={styles.fallback}>{fallback.slice(0, 1).toUpperCase()}</span>
+        <span className={styles.fallback}>{initials(fallback)}</span>
       )}
     </span>
   );
