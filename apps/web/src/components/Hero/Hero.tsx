@@ -12,7 +12,7 @@ export function Hero() {
       </p>
       <div className={styles.actions}>
         <a className={styles.primary} href="#demo">
-          See it in action
+          Watch the 30-second demo
         </a>
         <a
           className={styles.secondary}

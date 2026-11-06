@@ -1,0 +1,14 @@
+.frame {
+  overflow: hidden;
+  border: var(--bscf-border-hairline) solid var(--bscf-border-lavender);
+  border-radius: 0.75rem;
+  background: var(--bscf-surface);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 45%);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+}

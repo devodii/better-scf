@@ -1,0 +1,45 @@
+@use "../../layout" as *;
+
+.root {
+  @include container;
+
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+  padding-block: 3rem;
+}
+
+.copy {
+  max-width: 28rem;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font: 800 clamp(1.75rem, 4vw, 2.5rem) / 1.1 var(--bscf-font-text);
+  letter-spacing: -0.02em;
+}
+
+.text {
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-body);
+}
+
+.media {
+  min-width: 0;
+}
+
+@media (min-width: 56rem) {
+  .root {
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+  }
+
+  .reversed {
+    grid-template-columns: 1.5fr 1fr;
+
+    .copy {
+      order: 2;
+    }
+  }
+}

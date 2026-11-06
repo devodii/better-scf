@@ -1,0 +1,36 @@
+@use "../../layout" as *;
+
+.root {
+  @include container;
+
+  padding-bottom: 6rem;
+}
+
+.card {
+  padding: clamp(1.75rem, 4vw, 3rem);
+  border: var(--bscf-border-hairline) solid var(--bscf-border-lavender);
+  border-radius: 1rem;
+  background: var(--bscf-surface);
+}
+
+.tag {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-chip-yellow-bg);
+  color: var(--bscf-chip-yellow-fg);
+  font: var(--bscf-type-chip);
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font: 800 clamp(1.5rem, 3.5vw, 2rem) / 1.1 var(--bscf-font-text);
+}
+
+.text {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-body);
+}

@@ -1,8 +1,10 @@
+import { Demo } from "./components/Demo";
 import { Features } from "./components/Features";
 import { Footer } from "./components/Footer";
+import { Gallery } from "./components/Gallery";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
-import { Showcase } from "./components/Showcase";
+import { Roadmap } from "./components/Roadmap";
 
 export function App() {
   return (
@@ -10,8 +12,10 @@ export function App() {
       <Header />
       <main>
         <Hero />
-        <Showcase />
+        <Demo />
         <Features />
+        <Gallery />
+        <Roadmap />
       </main>
       <Footer />
     </>
