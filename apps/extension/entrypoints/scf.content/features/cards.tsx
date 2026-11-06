@@ -317,6 +317,57 @@ export const feature: Feature = {
       }, HOVER_DELAY_MS);
     };
 
+    const nearby = new Set<Entry>();
+    let pumping = false;
+
+    async function pump(): Promise<void> {
+      if (pumping || !enrichable) return;
+      pumping = true;
+      try {
+        while (!signal.aborted && document.visibilityState === 'visible') {
+          let next: Entry | null = null;
+          let nearest = Number.POSITIVE_INFINITY;
+          for (const entry of nearby) {
+            if (entry.gone || facts.has(entry.id) || tried.has(entry.id)) continue;
+            const box = entry.card.getBoundingClientRect();
+            if (box.width === 0) continue;
+            const distance = Math.abs((box.top + box.bottom) / 2 - window.innerHeight / 2);
+            if (distance < nearest) {
+              next = entry;
+              nearest = distance;
+            }
+          }
+          if (!next) break;
+          tried.add(next.id);
+          const data = await enrichSubmission(next.id, signal);
+          if (signal.aborted) break;
+          if (data) setFacts(data);
+          else if (await readEnrichBlock()) break;
+        }
+      } finally {
+        pumping = false;
+      }
+    }
+
+    const watcher = enrichable
+      ? new IntersectionObserver(
+          (changes) => {
+            for (const change of changes) {
+              const entry = entries.get(change.target);
+              if (!entry) continue;
+              if (change.isIntersecting) nearby.add(entry);
+              else nearby.delete(entry);
+            }
+            void pump();
+          },
+          { rootMargin: '100% 0px' },
+        )
+      : null;
+    signal.addEventListener('abort', () => watcher?.disconnect(), { once: true });
+    if (enrichable) {
+      document.addEventListener('visibilitychange', () => void pump(), { signal });
+    }
+
     const attach = (card: Element, id: string): void => {
       const entry: Entry = {
         id,
@@ -335,6 +386,7 @@ export const feature: Feature = {
         gone: false,
       };
       entries.set(card, entry);
+      watcher?.observe(card);
       const siblings = byId.get(id);
       if (siblings) siblings.add(entry);
       else byId.set(id, new Set([entry]));
@@ -377,6 +429,8 @@ export const feature: Feature = {
       entry.backdrop?.remove();
       if (entry.image) entry.image.style.objectFit = entry.objectFit;
       entry.cover?.removeAttribute(COVER_ATTRIBUTE);
+      watcher?.unobserve(entry.card);
+      nearby.delete(entry);
       byId.get(entry.id)?.delete(entry);
       entries.delete(entry.card);
     };
