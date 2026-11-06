@@ -10,6 +10,14 @@ const get = async (path) => {
   return response.text();
 };
 
+const routeStatus = async (path) => {
+  const response = await fetch(ORIGIN + path, {
+    redirect: 'manual',
+    headers: { 'user-agent': AGENT },
+  });
+  return { status: response.status, location: response.headers.get('location') ?? '' };
+};
+
 const headings = (html) =>
   [...html.matchAll(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/g)].map((match) =>
     match[1]
@@ -89,6 +97,48 @@ const checks = [
     },
   },
   {
+    name: 'Dashboard pages still exist at the same addresses',
+    why: 'The extension recognises the round list, a round, a proposal and My Projects by these paths.',
+    async run() {
+      const paths = [
+        '/dashboard/award-rounds',
+        '/dashboard/award-rounds/recxrSMYwAl8vcglg',
+        '/dashboard/submissions/recuKWaSdUL8Lkw9o',
+        '/dashboard/projects',
+      ];
+      const gone = [];
+      for (const path of paths) {
+        const { status, location } = await routeStatus(path);
+        const sentToLogin = status >= 300 && status < 400 && location.includes('login');
+        if (!(status === 200 || sentToLogin)) gone.push(`${path} -> ${status} ${location}`.trim());
+      }
+      expect(gone.length === 0, `routes changed: ${gone.join('; ')}`);
+      return `${paths.length} routes answer`;
+    },
+  },
+  {
+    name: 'Round records still have the fields the round parser reads',
+    why: 'Cards are matched to proposals using these fields, in every round page payload.',
+    async run() {
+      const data = flight(await get(SUBMISSION));
+      const at = data.indexOf('"roundName":"SCF #');
+      expect(at > 0, 'no submission record with a round name was found in the page payload');
+      const record = data.slice(Math.max(0, at - 400), at + 400);
+      const missing = [
+        'id',
+        'title',
+        'status',
+        'project',
+        'projectName',
+        'budget',
+        'awardType',
+        'isCvvc',
+        'thumbnail',
+      ].filter((key) => !record.includes(`"${key}"`));
+      expect(missing.length === 0, `missing record fields: ${missing.join(', ')}`);
+    },
+  },
+  {
     name: 'Landing page keeps its two entry buttons',
     why: 'The clearer landing choice finds the site buttons by their text.',
     async run() {
@@ -148,7 +198,7 @@ const lines = [
       : `- **BROKEN: ${row.name}**\n  - What changed: ${row.detail}\n  - What it affects: ${row.why}`,
   ),
   '',
-  'Not covered here because they need a login: the round and award-round pages. The extension logs those problems on the page when debug logging is on.',
+  'Not covered here because they need a login: what the round list, round and dashboard proposal pages look like inside. The checks above cover their addresses and the data they are built from.',
 ];
 const report = lines.join('\n');
 writeFileSync('site-watch-report.md', report);
