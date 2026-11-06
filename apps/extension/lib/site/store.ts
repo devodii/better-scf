@@ -5,7 +5,8 @@ import {
   readInlineScripts,
   type SubmissionSummary,
 } from './round';
-import { type Route, SITE_ORIGIN } from './routes';
+import { fetchRoundRecords } from './round-fetch';
+import type { Route } from './routes';
 import { SUBMISSION_SELECTORS as SEL, SUBMISSION_TEXT as TXT } from './selectors/submission';
 import { parseSubmissionPage, type SubmissionPage } from './submission';
 
@@ -76,29 +77,6 @@ export function createSiteStore(initial: Route): SiteStore {
     return inlineRound;
   };
 
-  const fetchedRounds = new Map<string, Promise<InlineRound>>();
-
-  const fetchRound = (roundId: string): Promise<InlineRound> => {
-    const known = fetchedRounds.get(roundId);
-    if (known) return known;
-    const next = fetch(`${SITE_ORIGIN}/dashboard/award-rounds/${encodeURIComponent(roundId)}`, {
-      credentials: 'include',
-      headers: { Accept: 'text/html' },
-    })
-      .then(async (response): Promise<InlineRound> => {
-        if (!response.ok) return NO_RECORDS;
-        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
-        const { roundName, submissions } = parseRoundPayload(readInlineScripts(doc), roundId);
-        return roundName === null ? NO_RECORDS : { roundName, records: submissions };
-      })
-      .catch((): InlineRound => NO_RECORDS);
-    fetchedRounds.set(roundId, next);
-    next.then((round) => {
-      if (round.records === null) fetchedRounds.delete(roundId);
-    });
-    return next;
-  };
-
   const submissionPayload = (id: string): { summary: SubmissionSummary } | undefined => {
     if (initial.kind !== 'submission' || initial.submissionId !== id) return undefined;
     if (inlineSummary === undefined) {
@@ -140,7 +118,7 @@ export function createSiteStore(initial: Route): SiteStore {
         const section = findReceivedSection(region);
         if (section) lastRound = { id: route.roundId, node: section };
         const inline = roundRecords(route.roundId);
-        const found = inline.records ? inline : await fetchRound(route.roundId);
+        const found = inline.records ? inline : await fetchRoundRecords(route.roundId);
         return { kind: 'round', roundId: route.roundId, ...found };
       }
       if (route.kind === 'submission') {

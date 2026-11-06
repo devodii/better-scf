@@ -17,7 +17,7 @@ import {
   readEnrichBlock,
 } from '../../../lib/site/enrich';
 import { findReceivedSection, mapRoundCards, readRoundPhases } from '../../../lib/site/round';
-import { publishFacts } from '../../../lib/site/round-facts';
+import { onFacts, publishFacts, readFacts } from '../../../lib/site/round-facts';
 import { SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
@@ -321,11 +321,22 @@ export const feature: Feature = {
       return frozenRound;
     };
 
-    const setFacts = (data: Enrichment): void => {
+    const adoptFacts = (data: Enrichment): void => {
       facts.set(data.id, data);
-      publishFacts(data);
       for (const entry of byId.get(data.id) ?? []) placeMeta(entry);
     };
+
+    const setFacts = (data: Enrichment): void => {
+      adoptFacts(data);
+      publishFacts(data);
+    };
+
+    const adoptKnown = (): void => {
+      for (const [id, data] of readFacts()) if (!facts.has(id)) adoptFacts(data);
+    };
+    adoptKnown();
+    const offFacts = onFacts(adoptKnown);
+    signal.addEventListener('abort', offFacts, { once: true });
 
     const stopHover = (entry: Entry): void => {
       window.clearTimeout(entry.hoverTimer);
@@ -511,13 +522,20 @@ export const feature: Feature = {
       const control = new AbortController();
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
-      loader = { status: 'running', done: 0, total: ids.length, message: null };
+      adoptKnown();
+      const pending = ids.filter((id) => !facts.has(id));
+      loader = {
+        status: 'running',
+        done: ids.length - pending.length,
+        total: ids.length,
+        message: null,
+      };
       renderLoader();
       const frozen = isFrozen();
       let cursor = 0;
       const worker = async (): Promise<void> => {
         while (!stop.aborted) {
-          const id = ids[cursor++];
+          const id = pending[cursor++];
           if (id === undefined) return;
           const data = await enrichSubmission(id, stop, frozen);
           if (stop.aborted) return;
@@ -527,7 +545,7 @@ export const feature: Feature = {
         }
       };
       await Promise.all(
-        Array.from({ length: Math.min(ENRICH_CONCURRENCY, ids.length) }, () => worker()),
+        Array.from({ length: Math.min(ENRICH_CONCURRENCY, pending.length) }, () => worker()),
       );
       batch = null;
       if (signal.aborted || loader.status === 'stopped') return;

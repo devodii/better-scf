@@ -449,3 +449,17 @@ export function readSiteSubmissionCount(roundName: string | null): number | null
     return null;
   }
 }
+
+const OPEN_ROUND =
+  /"id":"(rec[A-Za-z0-9]{14})","name":"[^"]*","type":"[^"]*","phase":"Submission"/g;
+
+export function readOpenRoundIds(): string[] {
+  try {
+    const flight = readInlineScripts(document).join('\n').replaceAll('\\"', '"');
+    return [...new Set(Array.from(flight.matchAll(OPEN_ROUND), (found) => found[1] ?? ''))].filter(
+      (id) => id !== '',
+    );
+  } catch {
+    return [];
+  }
+}
