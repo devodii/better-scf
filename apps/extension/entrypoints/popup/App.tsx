@@ -17,18 +17,6 @@ const GROUPS: readonly {
   keys: readonly FeatureKey[];
 }[] = [
   {
-    label: "Card badges and team",
-    description:
-      "See at a glance which proposals are Open, Integration or RFP, which won funding, how much discussion each has and who is behind it, without opening them one by one.",
-    keys: ["trackChips", "awardedChip", "commentsChip", "avatarStack"],
-  },
-  {
-    label: "Load tracks and teams",
-    description:
-      "Gets tracks and teams showing on every card, so you can compare the whole round in one view.",
-    keys: ["loadProposalPages"],
-  },
-  {
     label: "Review tools",
     description:
       "Keep your place and your opinions in one spot: mark what you have read, shortlist your favourites and note who you support. Private to you.",
@@ -46,10 +34,21 @@ const GROUPS: readonly {
     keys: ["gridTools"],
   },
   {
-    label: "Proposal pages",
+    label: "AI assistant",
     description:
-      "Read long proposals faster. Jump between sections, see the funding breakdown at a glance, spot teams and wallets easily and share a proposal with one click.",
+      "Ask questions about any round or proposal and get clear answers in seconds, instead of reading everything yourself.",
+    keys: ["aiDock"],
+  },
+  {
+    label: "UX improvements",
+    description:
+      "Small touches that save you time: track and team badges on every proposal card, easier-to-read proposal pages, a round's key numbers up top, and going back to a list lands you exactly where you left off.",
     keys: [
+      "trackChips",
+      "awardedChip",
+      "commentsChip",
+      "avatarStack",
+      "loadProposalPages",
       "tableOfContents",
       "trancheSummary",
       "addressPills",
@@ -58,19 +57,9 @@ const GROUPS: readonly {
       "shareButton",
       "coverNormalization",
       "hoverZoom",
+      "roundHeader",
+      "navigationMemory",
     ],
-  },
-  {
-    label: "UX improvements",
-    description:
-      "Small touches that save you time: the round's key dates and numbers up top, and going back to a list lands you exactly where you left off.",
-    keys: ["roundHeader", "navigationMemory"],
-  },
-  {
-    label: "AI assistant",
-    description:
-      "Ask questions about any round or proposal and get clear answers in seconds, instead of reading everything yourself.",
-    keys: ["aiDock"],
   },
 ];
 
