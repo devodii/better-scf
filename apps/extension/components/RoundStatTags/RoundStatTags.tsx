@@ -1,4 +1,4 @@
-import { formatMoneyCompact } from '../../lib/site/rounds';
+import { formatMoneyCompact } from '../../lib/format/money';
 import { RoundStatTag } from '../RoundStatTag';
 import styles from './RoundStatTags.module.scss';
 

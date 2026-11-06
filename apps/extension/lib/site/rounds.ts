@@ -106,13 +106,6 @@ export function parseRoundsPayload(scripts: readonly string[]): RoundRecord[] {
   }
 }
 
-export function formatMoneyCompact(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return '$0';
-  if (value >= 999_500) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1000) return `$${Math.round(value / 1000)}K`;
-  return `$${Math.round(value)}`;
-}
-
 function cardRoundNumber(card: Element): number | null {
   let found: number | null = null;
   for (const node of card.querySelectorAll(ROUND_CARD_NAME)) {

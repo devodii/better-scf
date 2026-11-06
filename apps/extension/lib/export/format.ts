@@ -1,15 +1,8 @@
 import type { Submission } from 'shared';
 
-const NOTE_MAX_CHARS = 200;
+export { formatBudget } from '../format/money';
 
-export function formatBudget(usd: number | null): string {
-  if (usd === null || !Number.isFinite(usd)) return 'n/a';
-  const sign = usd < 0 ? '-' : '';
-  const abs = Math.abs(usd);
-  if (abs >= 999_950) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
-  if (abs >= 999.5) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${Math.round(abs)}`;
-}
+const NOTE_MAX_CHARS = 200;
 
 const TRACK_LABELS: Record<Submission['track'], string> = {
   open: 'Open',

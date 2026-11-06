@@ -1,4 +1,4 @@
-import { formatBudget } from '../../lib/export/format';
+import { formatBudget } from '../../lib/format/money';
 import { RoundHeaderStat } from '../RoundHeaderStat';
 import { type RoundHeaderTrackCounts, RoundHeaderTracks } from '../RoundHeaderTracks';
 import styles from './RoundHeader.module.scss';
