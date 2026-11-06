@@ -19,7 +19,8 @@ import {
   parseChatError,
 } from 'shared';
 import { AppError, assertNever, isAppError } from '../errors';
-import { getToolDeclarations, runTool } from './tools/registry';
+import { gateFor } from './safety';
+import { getToolDeclarations, runTool, ToolError } from './tools/registry';
 
 export interface ChatPageRequest extends ProposalContext {
   promptId?: string;
@@ -39,7 +40,8 @@ export type ChatTransportErrorKind =
   | 'rate-limited'
   | 'global-cap'
   | 'server'
-  | 'network';
+  | 'network'
+  | 'not-configured';
 
 interface ChatTransportErrorDetail {
   status: number;
@@ -105,8 +107,14 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
     return new ChatTransportError('network', { status: 0, retryAfterSeconds: null, cause });
   }
 
+  static notConfigured(): ChatTransportError {
+    return new ChatTransportError('not-configured', { status: 0, retryAfterSeconds: null });
+  }
+
   userMessage(): string {
     switch (this.kind) {
+      case 'not-configured':
+        return 'The assistant server is not configured, so the assistant is unavailable in this build.';
       case 'rate-limited': {
         const wait =
           this.retryAfterSeconds === null ? 'a moment' : `${this.retryAfterSeconds} seconds`;
@@ -233,32 +241,43 @@ function fitBody(body: ChatRequest): ChatRequest {
 
 export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
   private readonly inFlight: Set<AbortController>;
-  private readonly turn: { steps: number };
+  private readonly turn: { steps: number; sawPageText: boolean };
 
   constructor(options: BscfChatTransportOptions) {
     const doFetch = options.fetch ?? ((...args) => globalThis.fetch(...args));
     const now = options.now ?? Date.now;
     const version = options.extensionVersion ?? EXTENSION_VERSION;
     const inFlight = new Set<AbortController>();
-    const turn = { steps: 0 };
+    const turn = { steps: 0, sawPageText: false };
 
     const guardedFetch: typeof globalThis.fetch = async (input, init) => {
       const controller = new AbortController();
       inFlight.add(controller);
       const outer = init?.signal;
       const forward = () => controller.abort();
+      const settle = () => {
+        inFlight.delete(controller);
+        outer?.removeEventListener('abort', forward);
+      };
       if (outer?.aborted) controller.abort();
       else outer?.addEventListener('abort', forward, { once: true });
       try {
         const response = await doFetch(input, { ...init, signal: controller.signal });
         if (!response.ok) throw await mapChatErrorResponse(response, now);
-        return response;
+        if (!response.body) {
+          settle();
+          return response;
+        }
+        const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+        response.body
+          .pipeTo(writable)
+          .catch(() => undefined)
+          .finally(settle);
+        return new Response(readable, response);
       } catch (error) {
-        inFlight.delete(controller);
+        settle();
         if (isAppError(error) || controller.signal.aborted) throw error;
         throw ChatTransportError.network(error);
-      } finally {
-        outer?.removeEventListener('abort', forward);
       }
     };
 
@@ -269,7 +288,12 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
       prepareSendMessagesRequest: async ({ messages }) => {
         const page = options.getPageRequest();
         const tools = page.promptId === undefined ? await getToolDeclarations() : [];
-        turn.steps = messages.at(-1)?.role === 'assistant' ? turn.steps + 1 : 1;
+        if (messages.at(-1)?.role === 'assistant') {
+          turn.steps += 1;
+        } else {
+          turn.steps = 1;
+          turn.sawPageText = false;
+        }
         const body: ChatRequest = {
           submissionId: page.submissionId,
           contentHash: page.contentHash,
@@ -296,6 +320,14 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
     return this.turn.steps < CHAT_LIMITS.maxSteps;
   }
 
+  isUserInitiated(): boolean {
+    return this.turn.steps === 1 && !this.turn.sawPageText;
+  }
+
+  markPageText(): void {
+    this.turn.sawPageText = true;
+  }
+
   close(): void {
     for (const controller of this.inFlight) controller.abort();
     this.inFlight.clear();
@@ -308,39 +340,73 @@ export class BscfChatTransport extends DefaultChatTransport<UIMessage> {
   }
 }
 
+export type ToolDecision = 'pending' | 'allowed';
+
 export interface BscfChat {
   chat: Chat<UIMessage>;
   transport: BscfChatTransport;
+  decisions: ReadonlyMap<string, ToolDecision>;
+  decide: (toolCallId: string, decision: 'allow' | 'deny') => void;
+  expire: () => Promise<void>;
   close: () => void;
+}
+
+interface HeldCall {
+  toolName: string;
+  input: unknown;
+  decision: ToolDecision;
+}
+
+function errorText(error: ToolError): string {
+  const { error: kind, message } = error.toToolResult();
+  return `${kind}: ${message}`;
 }
 
 export function createBscfChat(options: BscfChatTransportOptions): BscfChat {
   const transport = new BscfChatTransport(options);
   const controller = new AbortController();
+  const held = new Map<string, HeldCall>();
+  const decisions = new Map<string, ToolDecision>();
+  let isExpiring = false;
+
+  const refuse = async (toolName: string, toolCallId: string, error: ToolError): Promise<void> =>
+    chat.addToolOutput({
+      state: 'output-error',
+      tool: toolName,
+      toolCallId,
+      errorText: errorText(error),
+    });
 
   const answer = async (toolName: string, toolCallId: string, input: unknown): Promise<void> => {
     const outcome = await runTool(toolName, input, controller.signal);
     if (controller.signal.aborted) return;
+    if (toolName === 'read_page') transport.markPageText();
     if (outcome.ok) {
       void chat.addToolOutput({ tool: toolName, toolCallId, output: outcome.output });
     } else {
-      const { error, message } = outcome.error.toToolResult();
-      void chat.addToolOutput({
-        state: 'output-error',
-        tool: toolName,
-        toolCallId,
-        errorText: `${error}: ${message}`,
-      });
+      void refuse(toolName, toolCallId, outcome.error);
     }
+  };
+
+  const forget = (toolCallId: string): void => {
+    held.delete(toolCallId);
+    decisions.delete(toolCallId);
   };
 
   const chat = new Chat<UIMessage>({
     transport,
     onToolCall: ({ toolCall }) => {
-      void answer(toolCall.toolName, toolCall.toolCallId, toolCall.input);
+      const { toolName, toolCallId, input } = toolCall;
+      if (gateFor(toolName, input, transport.isUserInitiated()) === 'run') {
+        void answer(toolName, toolCallId, input);
+        return;
+      }
+      held.set(toolCallId, { toolName, input, decision: 'pending' });
+      decisions.set(toolCallId, 'pending');
     },
     sendAutomaticallyWhen: ({ messages }) =>
       !controller.signal.aborted &&
+      !isExpiring &&
       transport.canContinue() &&
       lastAssistantMessageIsCompleteWithToolCalls({ messages }),
   });
@@ -348,8 +414,38 @@ export function createBscfChat(options: BscfChatTransportOptions): BscfChat {
   return {
     chat,
     transport,
+    decisions,
+    decide: (toolCallId, decision) => {
+      const call = held.get(toolCallId);
+      if (call?.decision !== 'pending' || controller.signal.aborted) return;
+      if (decision === 'deny') {
+        forget(toolCallId);
+        void refuse(call.toolName, toolCallId, ToolError.denied());
+        return;
+      }
+      call.decision = 'allowed';
+      decisions.set(toolCallId, 'allowed');
+      void answer(call.toolName, toolCallId, call.input).finally(() => forget(toolCallId));
+    },
+    expire: async () => {
+      const stale = [...held].filter(([, call]) => call.decision === 'pending');
+      if (stale.length === 0) return;
+      isExpiring = true;
+      try {
+        await Promise.all(
+          stale.map(([toolCallId, call]) => {
+            forget(toolCallId);
+            return refuse(call.toolName, toolCallId, ToolError.expired());
+          }),
+        );
+      } finally {
+        isExpiring = false;
+      }
+    },
     close: () => {
       controller.abort();
+      held.clear();
+      decisions.clear();
       transport.close();
       void chat.stop();
     },

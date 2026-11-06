@@ -73,6 +73,7 @@ const meta = {
     onSubmit: fn(),
     onStop: fn(),
     onPromptSelect: fn(),
+    onDecision: fn(),
     onHistoryOpenChange: fn(),
     onHistorySelect: fn(),
     onHistoryClear: fn(),
@@ -210,6 +211,83 @@ export const ToolError: Story = {
         ],
       },
     ],
+  },
+};
+
+export const ToolConfirmPending: Story = {
+  args: {
+    messages: [
+      user('u', 'Summarize this proposal'),
+      {
+        id: 'a',
+        role: 'assistant',
+        parts: [
+          { kind: 'text', id: 't', text: 'I read the page. Taking you to the voting page next.' },
+          { kind: 'confirm', id: 'x', text: 'Take you to Voting History', status: 'pending' },
+        ],
+      },
+    ],
+  },
+};
+
+export const ToolConfirmAllowed: Story = {
+  args: {
+    messages: [
+      user('u', 'Summarize this proposal'),
+      {
+        id: 'a',
+        role: 'assistant',
+        parts: [
+          { kind: 'confirm', id: 'x', text: 'Take you to Voting History', status: 'allowed' },
+        ],
+      },
+    ],
+  },
+};
+
+export const ToolConfirmDenied: Story = {
+  args: {
+    messages: [
+      user('u', 'Summarize this proposal'),
+      {
+        id: 'a',
+        role: 'assistant',
+        parts: [
+          {
+            kind: 'confirm',
+            id: 'x',
+            text: 'Read your Community Fund data (dashboard user) and send it to the assistant',
+            status: 'denied',
+          },
+          { kind: 'text', id: 't', text: 'Understood, I will not look at your account data.' },
+        ],
+      },
+    ],
+  },
+};
+
+export const ToolConfirmExpired: Story = {
+  args: {
+    messages: [
+      user('u', 'Summarize this proposal'),
+      {
+        id: 'a',
+        role: 'assistant',
+        parts: [
+          { kind: 'confirm', id: 'x', text: 'Take you to Voting History', status: 'expired' },
+        ],
+      },
+      user('u2', 'Never mind, who is on the team?'),
+    ],
+  },
+};
+
+export const ServerNotConfigured: Story = {
+  args: {
+    notice: {
+      tone: 'error',
+      text: 'The assistant server is not configured, so the assistant is unavailable in this build.',
+    },
   },
 };
 

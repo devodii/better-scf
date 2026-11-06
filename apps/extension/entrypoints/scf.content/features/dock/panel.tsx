@@ -5,7 +5,13 @@ import { Assistant } from '../../../../components/Assistant';
 import type { AssistantHistoryItem } from '../../../../components/AssistantHistory';
 import type { AssistantPromptItem } from '../../../../components/AssistantPrompts';
 import { detectPageKind } from '../../../../lib/ai/context';
-import { type BscfChat, type ChatPageRequest, createBscfChat } from '../../../../lib/ai/transport';
+import {
+  type BscfChat,
+  type ChatPageRequest,
+  ChatTransportError,
+  createBscfChat,
+  type ToolDecision,
+} from '../../../../lib/ai/transport';
 import type { FeatureContext } from '../../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
 import dockCss from '../../styles/dock.scss?inline';
@@ -24,8 +30,9 @@ import {
   toUiMessage,
 } from './thread';
 
-const DEFAULT_SERVER_URL = 'http://localhost:8787';
 const RENDER_THROTTLE_MS = 50;
+const NOT_CONFIGURED = describeError(ChatTransportError.notConfigured());
+const NO_DECISIONS: ReadonlyMap<string, ToolDecision> = new Map();
 const HISTORY_LIMIT = 30;
 
 const NO_PAGE: ChatPageRequest = {
@@ -44,8 +51,7 @@ export function mountPanel(
   const threadKey = page.kind === 'submission' ? page.submissionId : SITE_THREAD;
   const subject = subjectOf(page);
   const nextRequest = createRequestSource(page);
-  const serverUrl =
-    settings.serverUrlOverride || import.meta.env.WXT_SERVER_URL || DEFAULT_SERVER_URL;
+  const serverUrl = settings.serverUrlOverride || import.meta.env.WXT_SERVER_URL || '';
 
   if (signal.aborted) return () => {};
 
@@ -114,10 +120,18 @@ export function mountPanel(
         placeholder={placeholderFor(kind, subject)}
         maxLength={CHAT_LIMITS.maxUserMessageChars}
         status={busy ? 'streaming' : 'idle'}
-        messages={toItems(session?.chat.messages ?? restored, busy)}
-        notice={error ? describeError(error) : undefined}
+        messages={toItems(
+          session?.chat.messages ?? restored,
+          busy,
+          session?.decisions ?? NO_DECISIONS,
+        )}
+        notice={serverUrl === '' ? NOT_CONFIGURED : error ? describeError(error) : undefined}
         prompts={quickPromptsFor(kind)}
         onPromptSelect={(prompt) => void submit(prompt.text, prompt)}
+        onDecision={(id, decision) => {
+          session?.decide(id, decision);
+          render();
+        }}
         isHistoryOpen={isHistoryOpen}
         onHistoryOpenChange={(next) => {
           isHistoryOpen = next;
@@ -242,7 +256,7 @@ export function mountPanel(
 
   async function submit(text: string, prompt?: AssistantPromptItem): Promise<void> {
     const question = text.trim();
-    if (question === '' || starting || isBusy() || closed) return;
+    if (question === '' || starting || isBusy() || closed || serverUrl === '') return;
     starting = true;
     value = '';
     isHistoryOpen = false;
@@ -254,6 +268,8 @@ export function mountPanel(
       const promptId = prompt && source.cacheable ? prompt.id : undefined;
       pageRequest = { ...source.request, ...(promptId === undefined ? {} : { promptId }) };
       const active = ensureSession();
+      await active.expire();
+      if (closed) return;
       const sending = active.chat.sendMessage({
         id: crypto.randomUUID(),
         parts: [{ type: 'text', text: question }],

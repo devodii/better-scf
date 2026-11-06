@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AssistantComposer } from '../AssistantComposer';
 import { AssistantHistory, type AssistantHistoryItem } from '../AssistantHistory';
 import { AssistantLauncher } from '../AssistantLauncher';
-import type { AssistantMessageItem } from '../AssistantMessage';
+import type { AssistantDecision, AssistantMessageItem } from '../AssistantMessage';
 import { AssistantMessages, type AssistantNotice } from '../AssistantMessages';
 import { AssistantPanel } from '../AssistantPanel';
 import type { AssistantPromptItem } from '../AssistantPrompts';
@@ -28,6 +28,7 @@ export interface AssistantProps {
   notice?: AssistantNotice | undefined;
   prompts: readonly AssistantPromptItem[];
   onPromptSelect: (prompt: AssistantPromptItem) => void;
+  onDecision?: ((id: string, decision: AssistantDecision) => void) | undefined;
   isHistoryOpen: boolean;
   onHistoryOpenChange: (next: boolean) => void;
   historyItems: readonly AssistantHistoryItem[];
@@ -64,6 +65,7 @@ export function Assistant({
   notice,
   prompts,
   onPromptSelect,
+  onDecision,
   isHistoryOpen,
   onHistoryOpenChange,
   historyItems,
@@ -124,6 +126,7 @@ export function Assistant({
           prompts={prompts}
           isBusy={isStreaming}
           onPromptSelect={onPromptSelect}
+          onDecision={onDecision}
         />
         <AssistantComposer
           ref={composer}

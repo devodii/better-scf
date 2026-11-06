@@ -3,7 +3,7 @@ import type { ChatMessage, PageKind } from 'shared';
 import type { AssistantActivityStatus } from '../../../../components/AssistantActivity';
 import type { AssistantMessageItem, AssistantPart } from '../../../../components/AssistantMessage';
 import type { AssistantNotice } from '../../../../components/AssistantMessages';
-import { ChatTransportError } from '../../../../lib/ai/transport';
+import { ChatTransportError, type ToolDecision } from '../../../../lib/ai/transport';
 import { assertNever, isAppError } from '../../../../lib/errors';
 import type { PageData } from '../../../../lib/site/store';
 
@@ -23,6 +23,26 @@ function readString(input: unknown, key: string): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+function endpointWords(endpoint: string): string {
+  return clip(
+    endpoint
+      .replace(/[-_/.:]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+}
+
+function confirmText(name: string, input: unknown): string {
+  if (name === 'navigate') {
+    const target = readString(input, 'target');
+    return target ? `Take you to ${clip(target)}` : 'Take you to another page';
+  }
+  const endpoint = readString(input, 'endpoint');
+  return endpoint
+    ? `Read your Community Fund data (${endpointWords(endpoint)}) and send it to the assistant`
+    : 'Read your Community Fund data and send it to the assistant';
+}
+
 function activityText(name: string, input: unknown): string {
   switch (name) {
     case 'navigate': {
@@ -31,14 +51,7 @@ function activityText(name: string, input: unknown): string {
     }
     case 'backend_get': {
       const endpoint = readString(input, 'endpoint');
-      return endpoint
-        ? `Looking up ${clip(
-            endpoint
-              .replace(/[-_/.:]+/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim(),
-          )}`
-        : 'Looking up your data';
+      return endpoint ? `Looking up ${endpointWords(endpoint)}` : 'Looking up your data';
     }
     case 'search_projects': {
       const query = readString(input, 'query');
@@ -90,7 +103,16 @@ function toolDetail(errorText: string): string {
   return clip(separator === -1 ? errorText : errorText.slice(separator + 2), DETAIL_CHARS);
 }
 
-function toParts(message: UIMessage): AssistantPart[] {
+function refusalOf(errorText: string): 'denied' | 'expired' | null {
+  if (errorText.startsWith('denied:')) return 'denied';
+  if (errorText.startsWith('expired:')) return 'expired';
+  return null;
+}
+
+function toParts(
+  message: UIMessage,
+  decisions: ReadonlyMap<string, ToolDecision>,
+): AssistantPart[] {
   const parts: AssistantPart[] = [];
   message.parts.forEach((part, index) => {
     const id = `${message.id}:${index}`;
@@ -99,6 +121,18 @@ function toParts(message: UIMessage): AssistantPart[] {
       return;
     }
     if (!isToolUIPart(part)) return;
+    const text = confirmText(getToolName(part), part.input);
+    const decision = decisions.get(part.toolCallId);
+    if (part.state === 'input-available' && decision !== undefined) {
+      const status = decision === 'allowed' ? 'allowed' : 'pending';
+      parts.push({ kind: 'confirm', id: part.toolCallId, text, status });
+      return;
+    }
+    const refusal = part.state === 'output-error' ? refusalOf(part.errorText) : null;
+    if (refusal) {
+      parts.push({ kind: 'confirm', id: part.toolCallId, text, status: refusal });
+      return;
+    }
     let status: AssistantActivityStatus = 'running';
     let detail: string | undefined;
     if (part.state === 'output-available') status = 'done';
@@ -117,7 +151,11 @@ function toParts(message: UIMessage): AssistantPart[] {
   return parts;
 }
 
-export function toItems(messages: readonly UIMessage[], isBusy: boolean): AssistantMessageItem[] {
+export function toItems(
+  messages: readonly UIMessage[],
+  isBusy: boolean,
+  decisions: ReadonlyMap<string, ToolDecision>,
+): AssistantMessageItem[] {
   const items: AssistantMessageItem[] = [];
   messages.forEach((message, index) => {
     const isLast = index === messages.length - 1;
@@ -130,7 +168,7 @@ export function toItems(messages: readonly UIMessage[], isBusy: boolean): Assist
       return;
     }
     if (message.role !== 'assistant') return;
-    const parts = toParts(message);
+    const parts = toParts(message, decisions);
     const isStreaming = isLast && isBusy;
     if (parts.length === 0 && !isStreaming) return;
     items.push({ id: message.id, role: 'assistant', parts, isStreaming });
@@ -154,6 +192,7 @@ export function describeError(error: Error): AssistantNotice {
       case 'global-cap':
       case 'server':
       case 'network':
+      case 'not-configured':
         return { tone: 'error', text: error.userMessage() };
       default:
         return assertNever(error.kind);

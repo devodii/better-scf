@@ -1,6 +1,10 @@
 import clsx from 'clsx';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AssistantMessage, type AssistantMessageItem } from '../AssistantMessage';
+import {
+  type AssistantDecision,
+  AssistantMessage,
+  type AssistantMessageItem,
+} from '../AssistantMessage';
 import { type AssistantPromptItem, AssistantPrompts } from '../AssistantPrompts';
 import { Chip } from '../Chip';
 import styles from './AssistantMessages.module.scss';
@@ -16,6 +20,7 @@ export interface AssistantMessagesProps {
   contextLabel: string;
   prompts: readonly AssistantPromptItem[];
   onPromptSelect: (prompt: AssistantPromptItem) => void;
+  onDecision?: ((id: string, decision: AssistantDecision) => void) | undefined;
   isBusy?: boolean;
 }
 
@@ -31,6 +36,7 @@ export function AssistantMessages({
   contextLabel,
   prompts,
   onPromptSelect,
+  onDecision,
   isBusy = false,
 }: AssistantMessagesProps) {
   const list = useRef<HTMLDivElement>(null);
@@ -99,7 +105,7 @@ export function AssistantMessages({
             </div>
           )}
           {messages.map((message) => (
-            <AssistantMessage key={message.id} message={message} />
+            <AssistantMessage key={message.id} message={message} onDecision={onDecision} />
           ))}
           {notice && (
             <p className={clsx(styles.notice, styles[notice.tone])} role="alert">

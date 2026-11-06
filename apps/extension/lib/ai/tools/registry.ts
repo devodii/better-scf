@@ -2,7 +2,14 @@ import { CHAT_LIMITS, type ChatToolDeclaration, chatToolDeclarationSchema } from
 import { z } from 'zod';
 import { AppError } from '../../errors';
 
-export type ToolErrorKind = 'unknown-tool' | 'invalid-input' | 'timed-out' | 'cancelled' | 'failed';
+export type ToolErrorKind =
+  | 'unknown-tool'
+  | 'invalid-input'
+  | 'timed-out'
+  | 'cancelled'
+  | 'failed'
+  | 'denied'
+  | 'expired';
 
 const MAX_TOOL_NAME_CHARS = 60;
 
@@ -29,6 +36,17 @@ export class ToolError extends AppError<ToolErrorKind> {
 
   static failed(cause?: unknown): ToolError {
     return new ToolError('failed', 'The tool failed.', cause);
+  }
+
+  static denied(): ToolError {
+    return new ToolError('denied', 'The user did not allow this action. Do not retry it.');
+  }
+
+  static expired(): ToolError {
+    return new ToolError(
+      'expired',
+      'The user moved on before approving this action. Do not retry it unless they ask again.',
+    );
   }
 
   userMessage(): string {

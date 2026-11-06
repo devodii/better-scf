@@ -1,0 +1,83 @@
+@use "@/entrypoints/scf.content/styles/mixins" as *;
+
+.root {
+  @include base;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: var(--bscf-radius-chip);
+  background: color-mix(in srgb, var(--bscf-muted-chip) 50%, transparent);
+  color: var(--bscf-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.pending {
+  border-color: var(--bscf-accent-yellow);
+  color: var(--bscf-text);
+}
+
+.denied,
+.expired {
+  border-color: var(--bscf-site-toastify-color-error);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.label {
+  color: var(--bscf-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pending .label {
+  color: var(--bscf-accent-yellow);
+}
+
+.text {
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.button {
+  @include reset-button;
+  @include focus-ring;
+  @include quick-transition(background-color, border-color);
+
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border: 0.0625rem solid var(--bscf-muted-chip);
+  border-radius: var(--bscf-radius-chip);
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  @include on-hover {
+    border-color: var(--bscf-text-muted);
+  }
+}
+
+.allow {
+  border-color: var(--bscf-accent-yellow);
+  background: var(--bscf-accent-yellow);
+  color: var(--bscf-bg);
+
+  @include on-hover {
+    background: color-mix(in srgb, var(--bscf-accent-yellow) 85%, var(--bscf-text));
+  }
+}
