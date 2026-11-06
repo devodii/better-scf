@@ -1,6 +1,6 @@
 # better-scf
 
-A Chrome extension that adds a reviewer-focused layer to [communityfund.stellar.org](https://communityfund.stellar.org), plus a small server behind its in-page AI chat.
+A Chrome extension that adds smarter tools for everyone following the fund to [communityfund.stellar.org](https://communityfund.stellar.org), plus a small server behind its in-page AI chat.
 
 ## What it is
 

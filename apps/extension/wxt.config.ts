@@ -32,7 +32,8 @@ export default defineConfig({
   manifest: ({ mode }) => ({
     name: "better-scf",
     version: rootPackage.version,
-    description: "A reviewer-grade UX layer on communityfund.stellar.org.",
+    description:
+      "Smarter tools for communityfund.stellar.org: badges, filters, private notes and an AI assistant.",
     key: EXTENSION_PUBLIC_KEY,
     minimum_chrome_version: "111",
     permissions: ["storage", "scripting"],
