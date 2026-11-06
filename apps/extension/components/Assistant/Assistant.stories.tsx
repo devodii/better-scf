@@ -97,6 +97,10 @@ export const RightClosedUnread: Story = {
   args: { side: 'right', isOpen: false, hasUnread: true },
 };
 
+export const LeftClosedUnread: Story = {
+  args: { side: 'left', isOpen: false, hasUnread: true },
+};
+
 export const RightHistory: Story = {
   args: { side: 'right', isHistoryOpen: true, messages: [QUESTION, ANSWER] },
 };
@@ -465,13 +469,13 @@ export const PushedPageOpen: Story = {
   render: (args) => <PushedPage {...args} />,
 };
 
-export const PushedPageRightClosed: Story = {
-  args: { side: 'right', isOpen: false, messages: [QUESTION, ANSWER] },
+export const PushedPageLeftClosed: Story = {
+  args: { side: 'left', isOpen: false, messages: [QUESTION, ANSWER] },
   render: (args) => <PushedPage {...args} />,
 };
 
-export const PushedPageRightOpen: Story = {
-  args: { side: 'right', isOpen: true, messages: [QUESTION, ANSWER] },
+export const PushedPageLeftOpen: Story = {
+  args: { side: 'left', isOpen: true, messages: [QUESTION, ANSWER] },
   render: (args) => <PushedPage {...args} />,
 };
 

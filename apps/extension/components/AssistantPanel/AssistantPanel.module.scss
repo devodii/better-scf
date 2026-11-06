@@ -15,6 +15,7 @@ $ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
   border: 0.0625rem solid var(--bscf-muted-chip);
   border-bottom: 0;
   border-radius: 1rem 1rem 0 0;
+  padding-bottom: 5rem;
   background: var(--bscf-surface);
   box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 50%);
   color: var(--bscf-text);
