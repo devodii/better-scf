@@ -131,13 +131,19 @@ const compiled = endpoints.map((endpoint: EndpointEntry) => ({
   regex: patternToRegex(endpoint.path),
 }));
 
-const cache = new Map<string, { at: number; result: BackendSuccess }>();
+interface VerifiedSession {
+  token: string;
+  owner: string;
+}
+
+const cache = new Map<string, { at: number; owner: string; result: BackendSuccess }>();
 const sharing = new Map<string, Promise<BackendResult>>();
 const waiters: Array<() => void> = [];
 const sentAt: number[] = [];
 let active = 0;
 let blockedUntil = 0;
 let backoffMs = 0;
+let cacheOwner = '';
 
 function findEndpointByPath(path: string): EndpointEntry | undefined {
   return compiled.find(({ regex }) => matchPath(regex, path))?.endpoint;
@@ -147,10 +153,33 @@ function fail(error: BackendError): BackendFailure {
   return { ok: false, error };
 }
 
+function dropCache(): void {
+  cache.clear();
+  cacheOwner = '';
+}
+
+async function fingerprint(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest).slice(0, 12), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
+}
+
+async function verifySession(): Promise<({ ok: true } & VerifiedSession) | BackendFailure> {
+  const session = await getSession();
+  if (!session.ok) return fail(fromSession(session.error));
+  const owner = await fingerprint(session.token);
+  if (owner !== cacheOwner) {
+    cache.clear();
+    cacheOwner = owner;
+  }
+  return { ok: true, token: session.token, owner };
+}
+
 function fromSession(error: SessionError): BackendError {
   switch (error.kind) {
     case 'not-logged-in':
-      cache.clear();
+      dropCache();
       return BackendError.notLoggedIn();
     case 'failed':
       return BackendError.failed(error);
@@ -228,22 +257,27 @@ function retryAfterHeader(value: string | null): number {
   return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
 }
 
-function remember(path: string, result: BackendSuccess): void {
+function remember(path: string, owner: string, result: BackendSuccess): void {
+  if (owner !== cacheOwner) return;
   cache.delete(path);
-  cache.set(path, { at: Date.now(), result });
+  cache.set(path, { at: Date.now(), owner, result });
   if (cache.size > CACHE_MAX_ENTRIES) {
     const oldest = cache.keys().next();
     if (!oldest.done) cache.delete(oldest.value);
   }
 }
 
-async function request(path: string, entry: EndpointEntry): Promise<BackendResult> {
+async function request(
+  path: string,
+  entry: EndpointEntry,
+  verified?: VerifiedSession,
+): Promise<BackendResult> {
   await acquire();
   try {
     const wait = reserve(Date.now());
     if (wait > 0) return fail(BackendError.rateLimited(wait));
-    const session = await getSession();
-    if (!session.ok) return fail(fromSession(session.error));
+    const session = verified ? { ok: true as const, ...verified } : await verifySession();
+    if (!session.ok) return session;
     const response = await fetch(`${SITE_ORIGIN}${path}`, {
       method: 'GET',
       credentials: 'same-origin',
@@ -261,7 +295,7 @@ async function request(path: string, entry: EndpointEntry): Promise<BackendResul
       return fail(BackendError.rateLimited(wait429));
     }
     if (response.status === 401) {
-      cache.clear();
+      dropCache();
       return fail(BackendError.notLoggedIn());
     }
     if (response.status === 403) return fail(BackendError.notAllowed(path));
@@ -270,7 +304,7 @@ async function request(path: string, entry: EndpointEntry): Promise<BackendResul
     const raw: unknown = await response.json();
     const { data, truncated } = trimForModel(raw, entry.trim);
     const result: BackendSuccess = { ok: true, data, personal: entry.personal, truncated };
-    remember(path, result);
+    remember(path, session.owner, result);
     return result;
   } catch (cause) {
     return fail(BackendError.failed(cause));
@@ -293,18 +327,28 @@ export async function backendGet(
     const entry = findEndpointByPath(path);
     if (!entry) return fail(BackendError.notAllowed(path));
 
+    let verified: VerifiedSession | undefined;
+    if (entry.personal) {
+      const session = await verifySession();
+      if (!session.ok) return session;
+      verified = { token: session.token, owner: session.owner };
+    }
+
     const hit = cache.get(path);
     if (hit) {
-      if (Date.now() - hit.at < CACHE_TTL_MS) return hit.result;
+      if (Date.now() - hit.at < CACHE_TTL_MS && (!verified || hit.owner === verified.owner)) {
+        return hit.result;
+      }
       cache.delete(path);
     }
-    const shared = sharing.get(path);
+    const key = verified ? `${verified.owner}:${path}` : path;
+    const shared = sharing.get(key);
     if (shared) return shared;
 
-    const running = request(path, entry).finally(() => {
-      sharing.delete(path);
+    const running = request(path, entry, verified).finally(() => {
+      sharing.delete(key);
     });
-    sharing.set(path, running);
+    sharing.set(key, running);
     return running;
   } catch (cause) {
     return fail(BackendError.failed(cause));
