@@ -1,5 +1,17 @@
-[data-bscf="address-pills-slot"] {
-  display: inline-block;
-  max-width: 100%;
-  vertical-align: baseline;
+::highlight(bscf-account) {
+  background-color: rgba(184, 162, 255, 0.2);
+  color: #b8a2ff;
+  text-decoration: underline;
+}
+
+::highlight(bscf-contract) {
+  background-color: rgba(255, 218, 0, 0.2);
+  color: #ffda00;
+  text-decoration: underline;
+}
+
+::highlight(bscf-address-active) {
+  background-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  text-decoration: underline;
 }
