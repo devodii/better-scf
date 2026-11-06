@@ -113,11 +113,25 @@ $ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
 
 @media (min-width: 48rem) {
   .root {
-    inset: var(--assistant-top, 0) 0 0 auto;
+    top: 0;
+    bottom: 0;
     width: var(--bscf-assistant-width, 25rem);
     border: 0;
-    border-left: 0.0625rem solid var(--bscf-muted-chip);
     border-radius: 0;
+  }
+
+  .left {
+    right: auto;
+    left: 0;
+    border-right: 0.0625rem solid var(--bscf-muted-chip);
+    box-shadow: 0.5rem 0 2rem rgb(0 0 0 / 35%);
+    transform: translateX(-100%);
+  }
+
+  .right {
+    right: 0;
+    left: auto;
+    border-left: 0.0625rem solid var(--bscf-muted-chip);
     box-shadow: -0.5rem 0 2rem rgb(0 0 0 / 35%);
     transform: translateX(100%);
   }

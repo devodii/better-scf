@@ -1,11 +1,6 @@
 import clsx from 'clsx';
-import {
-  type KeyboardEvent,
-  type PointerEvent,
-  type ReactNode,
-  useLayoutEffect,
-  useRef,
-} from 'react';
+import { type KeyboardEvent, type PointerEvent, type ReactNode, useRef } from 'react';
+import { PANEL_SIDE, type PanelSide } from '../Assistant/side';
 import { IconButton } from '../IconButton';
 import styles from './AssistantPanel.module.scss';
 
@@ -17,7 +12,7 @@ export interface AssistantPanelProps {
   onHistoryOpenChange: (next: boolean) => void;
   history: ReactNode;
   children: ReactNode;
-  topOffset?: number;
+  side?: PanelSide;
 }
 
 const CLOSE_DRAG_RATIO = 0.3;
@@ -36,7 +31,7 @@ export function AssistantPanel({
   onHistoryOpenChange,
   history,
   children,
-  topOffset = 0,
+  side = PANEL_SIDE,
 }: AssistantPanelProps) {
   const root = useRef<HTMLElement>(null);
   const drag = useRef<DragStart | null>(null);
@@ -72,14 +67,10 @@ export function AssistantPanel({
     if (offset > CLOSE_DRAG_PX || offset > element.offsetHeight * CLOSE_DRAG_RATIO) onClose();
   };
 
-  useLayoutEffect(() => {
-    root.current?.style.setProperty('--assistant-top', `${topOffset}px`);
-  }, [topOffset]);
-
   return (
     <aside
       ref={root}
-      className={clsx(styles.root, isOpen && styles.isOpen)}
+      className={clsx(styles.root, styles[side], isOpen && styles.isOpen)}
       aria-label="Assistant"
       inert={!isOpen}
       onKeyDown={handleKeyDown}
