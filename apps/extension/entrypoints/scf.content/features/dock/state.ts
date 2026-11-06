@@ -17,8 +17,23 @@ export function writeOpen(isOpen: boolean): void {
   }
 }
 
+const TEXT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+
+function isTyping(event: KeyboardEvent): boolean {
+  const target = event.composedPath()[0];
+  return (
+    target instanceof HTMLElement && (TEXT_TAGS.has(target.tagName) || target.isContentEditable)
+  );
+}
+
 export function isToggleShortcut(event: KeyboardEvent): boolean {
   return (
-    event.code === 'KeyA' && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+    event.code === 'KeyA' &&
+    event.altKey &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey &&
+    !event.isComposing &&
+    !isTyping(event)
   );
 }
