@@ -20,7 +20,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '22rem', padding: '0.5rem' }}>
+      <div style={{ maxWidth: '28rem', padding: '0.5rem' }}>
         <Story />
       </div>
     ),
@@ -74,6 +74,32 @@ export const Focused: Story = {
   decorators: [
     (Story) => (
       <div data-force-focus>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Hover: Story = {
+  args: { leadingIcon: <Search />, value: 'Soroban tooling' },
+  decorators: [
+    (Story) => (
+      <div data-force-hover>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Narrow390: Story = {
+  args: {
+    leadingIcon: <Search />,
+    isLoading: true,
+    value: 'Soroban tooling and wallet onboarding',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: '390px' }}>
         <Story />
       </div>
     ),
