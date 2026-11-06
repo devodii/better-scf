@@ -39,6 +39,7 @@ export interface ChatLogEntry {
 export interface ChatRouteDeps {
   getModel: () => LanguageModel;
   log: (entry: ChatLogEntry) => void;
+  onUsage?: (clientId: string, tokens: number) => void;
   now?: () => number;
 }
 
@@ -123,6 +124,7 @@ export function createChatRoute(deps: ChatRouteDeps) {
     body: ChatRequest,
     usage: { inputTokens: number; outputTokens: number },
   ): void => {
+    deps.onUsage?.(clientId, usage.inputTokens + usage.outputTokens);
     deps.log({
       ts: dayjs(now()).toISOString(),
       clientId,

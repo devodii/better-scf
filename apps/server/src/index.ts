@@ -6,6 +6,7 @@ import { PINNED_EXTENSION_ID } from './extension-id.js';
 import { client } from './middleware/client.js';
 import { origin } from './middleware/origin.js';
 import { createRateLimit } from './middleware/ratelimit.js';
+import { createTokenBudget } from './middleware/tokenbudget.js';
 import {
   type ChatRouteDeps,
   createChatRoute,
@@ -46,11 +47,14 @@ function createApp(env: Env, deps: AppDeps = {}) {
       ...(deps.now ? { now: deps.now } : {}),
     }),
   );
+  const budget = createTokenBudget(env.DAILY_TOKEN_CAP_PER_CLIENT, deps.now);
+  v1.use(budget.middleware);
   v1.route(
     '/chat',
     createChatRoute({
       getModel: deps.getModel ?? createModelFactory(env),
       log: deps.log ?? logChatEntry,
+      onUsage: budget.add,
       ...(deps.now ? { now: deps.now } : {}),
     }),
   );

@@ -21,6 +21,7 @@ const envSchema = z
     DAILY_CAP_PER_CLIENT: intWithDefault(300),
     BURST_PER_MINUTE: intWithDefault(24),
     GLOBAL_DAILY_CAP: intWithDefault(6000),
+    DAILY_TOKEN_CAP_PER_CLIENT: intWithDefault(1_500_000),
     MODEL: z.string().min(1).default(DEFAULT_MODEL),
   })
   .superRefine((value, ctx) => {
