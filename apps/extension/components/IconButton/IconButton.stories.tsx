@@ -50,3 +50,41 @@ export const Focused: Story = {
 export const Disabled: Story = {
   args: { variant: 'accent', size: 'lg', label: 'Send', children: <Arrow />, disabled: true },
 };
+
+export const SurfaceDisabled: Story = {
+  args: { variant: 'surface', size: 'lg', label: 'Next', children: <Arrow />, disabled: true },
+};
+
+export const Carousel: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+      <IconButton {...args} variant="surface" size="lg" label="Previous">
+        <Arrow />
+      </IconButton>
+      <IconButton {...args} variant="surface" size="lg" label="Next">
+        <Arrow />
+      </IconButton>
+    </div>
+  ),
+};
+
+export const Hover: Story = {
+  render: (args) => (
+    <div data-force-hover style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+      <IconButton {...args} />
+      <IconButton {...args} variant="surface" size="lg" />
+      <IconButton {...args} variant="accent" size="lg" label="Send" />
+    </div>
+  ),
+};
+
+export const Narrow390: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', maxWidth: '390px' }}>
+      <IconButton {...args} size="sm" />
+      <IconButton {...args} variant="surface" size="md" />
+      <IconButton {...args} variant="surface" size="lg" isPressed />
+      <IconButton {...args} variant="accent" size="lg" label="Send" />
+    </div>
+  ),
+};

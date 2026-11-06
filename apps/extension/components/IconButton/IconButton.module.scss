@@ -4,13 +4,13 @@
   @include reset-button;
   @include base;
   @include focus-ring;
-  @include quick-transition(background-color, color, opacity, transform);
+  @include quick-transition(background-color, border-color, color, opacity, transform);
 
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--bscf-radius-pill);
   line-height: 0;
 
   > svg {
@@ -39,40 +39,48 @@
 }
 
 .lg {
-  width: 3rem;
-  height: 3rem;
+  width: var(--bscf-button-height);
+  height: var(--bscf-button-height);
 }
 
 .ghost {
   color: var(--bscf-text-muted);
 
-  &:hover:not(:disabled),
+  @include on-hover {
+    color: var(--bscf-accent-yellow);
+  }
+
   &[aria-pressed="true"] {
     color: var(--bscf-accent-yellow);
   }
 }
 
 .surface {
-  background: var(--bscf-muted-chip);
-  color: var(--bscf-text);
+  @include hairline(var(--bscf-accent-yellow));
 
-  &:hover:not(:disabled) {
-    color: var(--bscf-accent-yellow);
+  background: var(--bscf-button-bg);
+  color: var(--bscf-accent-yellow);
+
+  @include on-hover {
+    &:not([aria-pressed="true"]) {
+      background: var(--bscf-chip-yellow-bg);
+    }
   }
 
   &[aria-pressed="true"] {
-    background: var(--bscf-chip-yellow-bg);
-    color: var(--bscf-accent-yellow);
+    background: var(--bscf-accent-yellow);
+    color: var(--bscf-bg);
   }
 }
 
 .accent {
+  @include hairline(var(--bscf-accent-yellow));
   @include focus-ring(var(--bscf-text));
 
   background: var(--bscf-accent-yellow);
   color: var(--bscf-bg);
 
-  &:hover:not(:disabled) {
+  @include on-hover {
     opacity: 0.85;
   }
 }
