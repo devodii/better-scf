@@ -42,7 +42,7 @@ jobs:
       contents: read
     env:
       RAILWAY_CONFIGURED: ${{ secrets.RAILWAY_TOKEN != '' }}
-      SERVER_URL: ${{ vars.SERVER_URL }}
+      SERVER_URL: ${{ vars.WXT_SERVER_URL }}
     steps:
       - name: Skip when Railway is not configured
         if: env.RAILWAY_CONFIGURED != 'true'
@@ -67,7 +67,7 @@ jobs:
         if: env.RAILWAY_CONFIGURED == 'true'
         run: |
           if [ -z "$SERVER_URL" ]; then
-            echo "Repository variable SERVER_URL is not set; cannot poll /health." >&2
+            echo "Repository variable WXT_SERVER_URL is not set; cannot poll /health." >&2
             exit 1
           fi
           for _ in $(seq 1 12); do
