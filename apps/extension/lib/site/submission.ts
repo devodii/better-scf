@@ -2,7 +2,14 @@ import type { Project, Submission } from 'shared';
 import { z } from 'zod';
 import { computeContentHash, type SectionText } from '../ai/context';
 import { detectStellarAddresses } from '../stellar/detect';
-import { SUBMISSION_SELECTORS as SEL, SUBMISSION_TEXT as TXT } from './selectors/submission';
+import {
+  FIRST_TRACK_ROUND,
+  PARSER_VERSION,
+  RFP_LINK,
+  RFP_PHRASES,
+  SUBMISSION_SELECTORS as SEL,
+  SUBMISSION_TEXT as TXT,
+} from './selectors/submission';
 
 export interface SubmissionPageInput {
   id: string;
@@ -598,11 +605,21 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
     else if (TXT.team.test(element.title)) teamText = text;
   }
   if (!metricFound) logMiss(debug, 'onchainMetricSection');
-
   const stats = readProjectStats(root, debug);
   const otherContainer = findOtherSubmissionsContainer(root);
   const team = readTeam(root, teamText, otherContainer, debug);
   const bodies = sections.map(({ element }) => element.body);
+  const awardRound = Number(
+    /#\s*(\d+)/.exec(summary?.roundName ?? '')?.[1] ?? header.roundNumber ?? Number.NaN,
+  );
+  const respondsToRfp =
+    awardRound >= FIRST_TRACK_ROUND &&
+    (sections.some(({ text }) => RFP_PHRASES.some((phrase) => phrase.test(text))) ||
+      bodies.some((body) =>
+        Array.from(body.querySelectorAll(SEL.link)).some((anchor) =>
+          RFP_LINK.test(unwrapHref(anchor.getAttribute('href'))?.href ?? ''),
+        ),
+      ));
   const links: Links = { ...header.links, video: header.links.video ?? findVideo(root, bodies) };
 
   const addressSource: string[] = sectionTexts.map((section) => section.text);
@@ -629,8 +646,15 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
     budgetUsd: summary?.budget ?? header.budgetUsd ?? requestedBudget,
     status: summary?.status ?? header.status ?? '',
     kind: awardType !== null && /build/i.test(awardType) ? 'build' : 'other',
-    track: metricFound ? (onchainMetric === null ? 'open' : 'integration') : 'unknown',
-    trackSource: metricFound ? 'heuristic' : 'unknown',
+    track: respondsToRfp
+      ? 'rfp'
+      : metricFound
+        ? onchainMetric === null
+          ? 'open'
+          : 'integration'
+        : 'unknown',
+    trackSource: metricFound || respondsToRfp ? 'heuristic' : 'unknown',
+    parserVersion: PARSER_VERSION,
     category: projectRecord?.category ?? stats.category,
     tranches,
     onchainMetric,

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createRpcClient } from '../db';
 import { settingsItem } from '../settings';
 import { SITE_ORIGIN } from './routes';
+import { PARSER_VERSION } from './selectors/submission';
 import { parseSubmissionPage } from './submission';
 
 export const ENRICH_CONCURRENCY = 20;
@@ -192,7 +193,7 @@ async function fetchOne(
 async function run(id: string, signal: AbortSignal, frozen: boolean): Promise<Enrichment | null> {
   if (frozen) {
     const saved = await rpc.getSubmission(id).catch(() => null);
-    if (saved) return toEnrichment(saved.value);
+    if (saved && saved.value.parserVersion >= PARSER_VERSION) return toEnrichment(saved.value);
   }
   return fetchOne(id, signal, frozen);
 }

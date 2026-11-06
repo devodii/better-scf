@@ -33,3 +33,15 @@ export const SUBMISSION_TEXT = {
   linkGithub: /^github$/i,
   linkVideo: /^(?:demo\s+)?video$/i,
 } as const;
+
+export const PARSER_VERSION = 4;
+export const FIRST_TRACK_ROUND = 41;
+
+export const RFP_LINK = /scf-handbook\/scf-awards\/build-award\/rfp-track/i;
+
+export const RFP_PHRASES: readonly RegExp[] = [
+  /(?:respon(?:ds?|se|ding)\s+(?:directly\s+)?to|in\s+response\s+to|built\s+(?:directly\s+)?for|answers?|addresses|fill|fulfil+s?)\b[^.\n]{0,90}?\bRFP\b/i,
+  /\bRFP[\s-]*(?:track|requirements?|required|facing|scope|evaluation|ask)\b/i,
+  /\b(?:this|the)\s+RFP\b/i,
+  /request[\s-]for[\s-]proposals?/i,
+];

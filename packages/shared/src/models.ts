@@ -57,6 +57,7 @@ export const submissionSchema = z.object({
   kind: z.enum(['build', 'other']),
   track: trackSchema,
   trackSource: z.enum(['api', 'heuristic', 'unknown']),
+  parserVersion: z.number().int().nonnegative().catch(0),
   category: nullableString,
   tranches: z.array(trancheSchema),
   onchainMetric: nullableString,
