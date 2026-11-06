@@ -61,16 +61,10 @@ const GROUPS: readonly {
     ],
   },
   {
-    label: "Round page header",
+    label: "UX improvements",
     description:
-      "See the state of a round the moment you open it, with the key dates and numbers right at the top.",
-    keys: ["roundHeader"],
-  },
-  {
-    label: "Return to where you left off",
-    description:
-      "Never lose your place. Go back to a list and land exactly where you left off.",
-    keys: ["navigationMemory"],
+      "Small touches that save you time: the round's key dates and numbers up top, and going back to a list lands you exactly where you left off.",
+    keys: ["roundHeader", "navigationMemory"],
   },
   {
     label: "AI assistant",
