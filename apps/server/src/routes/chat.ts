@@ -26,7 +26,7 @@ import { buildContextBlock, promptMatches, SYSTEM_PROMPT } from '../ai/prompts.j
 import type { Env } from '../env.js';
 import type { ClientVariables } from '../middleware/client.js';
 
-const MAX_OUTPUT_TOKENS = 900;
+const MAX_OUTPUT_TOKENS = 3500;
 const TEMPERATURE = 0.2;
 const BURST_WINDOW_SECONDS = 60;
 
