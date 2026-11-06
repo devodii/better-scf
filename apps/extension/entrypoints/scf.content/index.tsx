@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { DEFAULT_SETTINGS, type Settings, settingsItem } from '../../lib/settings';
@@ -135,7 +136,23 @@ function sameSettings(a: Settings, b: Settings): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+const OWNER_ATTRIBUTE = 'data-bscf-owner';
+
+function claimPage(ctx: ContentScriptContext): boolean {
+  const root = document.documentElement;
+  const owner = root.getAttribute(OWNER_ATTRIBUTE);
+  if (owner !== null && owner !== browser.runtime.id) return false;
+  root.setAttribute(OWNER_ATTRIBUTE, browser.runtime.id);
+  ctx.onInvalidated(() => {
+    if (root.getAttribute(OWNER_ATTRIBUTE) === browser.runtime.id) {
+      root.removeAttribute(OWNER_ATTRIBUTE);
+    }
+  });
+  return true;
+}
+
 function start(ctx: ContentScriptContext): void {
+  if (!claimPage(ctx)) return;
   preloadStyles();
   let settings = DEFAULT_SETTINGS;
 
