@@ -5,9 +5,12 @@ import { OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import ringCss from '../styles/nav-memory.scss?inline';
 
 const KEY_PREFIX = 'bscf-nav:';
-const TTL_MS = 30 * 60 * 1000;
-const WAIT_MS = 3000;
+export const SEARCH_PREFIX = 'bscf-search:';
+export const TTL_MS = 30 * 60 * 1000;
+export const WAIT_MS = 3000;
 const RING_MS = 1200;
+const SWIPER_REQUEST = 'bscf-swiper-request';
+const SWIPER_RESPONSE = 'bscf-swiper-response';
 const MAX_CLIMB = 10;
 const CARD_TEXT_CHARS = 160;
 const RING_ATTRIBUTE = 'data-bscf-nav-ring';
@@ -54,34 +57,41 @@ interface Ring {
 }
 
 const clean = (text: string | null | undefined): string => (text ?? '').replace(/\s+/g, ' ').trim();
-const entryKey = (): string =>
-  KEY_PREFIX + (window.navigation?.currentEntry?.key ?? location.pathname + location.search);
+export const currentEntry = (): string =>
+  window.navigation?.currentEntry?.key ?? location.pathname + location.search;
 const slideText = (slide: Element): string => clean(slide.textContent).slice(0, CARD_TEXT_CHARS);
 
 let pending: string | null = null;
+let ring: Ring | null = null;
+
+export function returningEntry(): string | null {
+  const entry = currentEntry();
+  return pending === entry ? entry : null;
+}
 
 function trackTraversal(): void {
   for (const entry of performance.getEntriesByType('navigation')) {
     if (entry instanceof PerformanceNavigationTiming && entry.type === 'back_forward') {
-      pending = entryKey();
+      pending = currentEntry();
     }
   }
   const navigation = window.navigation;
   if (navigation) {
     navigation.addEventListener('currententrychange', (event) => {
-      if (event.navigationType === 'traverse') pending = entryKey();
+      if (event.navigationType === 'traverse') pending = currentEntry();
       else if (event.navigationType === 'push') pending = null;
     });
   } else {
     window.addEventListener('popstate', () => {
-      pending = entryKey();
+      pending = currentEntry();
     });
   }
 }
 
 trackTraversal();
 
-function readSaved(key: string): Saved | null {
+function readSaved(entry: string): Saved | null {
+  const key = KEY_PREFIX + entry;
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
@@ -94,12 +104,81 @@ function readSaved(key: string): Saved | null {
   return null;
 }
 
-function writeSaved(key: string, saved: Saved): void {
+function writeSaved(entry: string, saved: Saved): void {
   try {
-    sessionStorage.setItem(key, JSON.stringify(saved));
+    sessionStorage.setItem(KEY_PREFIX + entry, JSON.stringify(saved));
   } catch {
     return;
   }
+}
+
+function hasSearch(entry: string): boolean {
+  try {
+    return sessionStorage.getItem(SEARCH_PREFIX + entry) !== null;
+  } catch {
+    return false;
+  }
+}
+
+const replySchema = z.object({ id: z.string(), active: z.number(), total: z.number() });
+
+let requestCounter = 0;
+
+function askSwiper(
+  swiper: Element,
+  index: number | null,
+): { active: number; total: number } | null {
+  const id = `r${++requestCounter}`;
+  const got: { reply: z.infer<typeof replySchema> | null } = { reply: null };
+  const onReply = (event: Event): void => {
+    if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;
+    try {
+      const parsed = replySchema.safeParse(JSON.parse(event.detail));
+      if (parsed.success && parsed.data.id === id) got.reply = parsed.data;
+    } catch {
+      return;
+    }
+  };
+  document.addEventListener(SWIPER_RESPONSE, onReply);
+  swiper.dispatchEvent(
+    new CustomEvent(SWIPER_REQUEST, { bubbles: true, detail: JSON.stringify({ id, index }) }),
+  );
+  document.removeEventListener(SWIPER_RESPONSE, onReply);
+  return got.reply && got.reply.total > 0 ? got.reply : null;
+}
+
+export function clearRing(): void {
+  if (!ring) return;
+  clearTimeout(ring.timer);
+  ring.slide.removeAttribute(RING_ATTRIBUTE);
+  ring.style.remove();
+  ring = null;
+}
+
+export function showRing(slide: Element): void {
+  clearRing();
+  const style = document.createElement('style');
+  style.setAttribute(OWN_ATTRIBUTE, 'nav-memory');
+  style.textContent = ringCss;
+  const root = slide.getRootNode();
+  (root instanceof ShadowRoot ? root : (document.head ?? document.documentElement)).append(style);
+  slide.setAttribute(RING_ATTRIBUTE, '');
+  ring = { slide, style, timer: setTimeout(clearRing, RING_MS) };
+}
+
+export function centerInView(element: Element): void {
+  const rect = element.getBoundingClientRect();
+  const top = window.scrollY + rect.top + rect.height / 2 - window.innerHeight / 2;
+  window.scrollTo({ top: Math.max(0, Math.round(top)), behavior: 'instant' });
+}
+
+export function untilInput(): AbortController {
+  const own = new AbortController();
+  const stop = (): void => own.abort();
+  for (const type of USER_INPUT) {
+    window.addEventListener(type, stop, { once: true, passive: true, signal: own.signal });
+  }
+  return own;
 }
 
 function findHeader(root: Element, control: Element): Element | null {
@@ -195,15 +274,17 @@ function findCard(root: Element, card: NonNullable<Card>): Element | null {
 function capture(root: Element, card: Card): Saved {
   const sections: Saved['sections'] = {};
   for (const section of readSections(root)) {
-    const index = section.swiper ? activeIndex(section.swiper) : 0;
+    const index = section.swiper
+      ? (askSwiper(section.swiper, null)?.active ?? activeIndex(section.swiper))
+      : 0;
     const open = isOpen(section);
     if (index > 0 || open) sections[section.id] = { index, open };
   }
   return { ts: dayjs().valueOf(), y: Math.round(window.scrollY), sections, card };
 }
 
-function until(
-  root: Element,
+export function until(
+  root: Node,
   check: () => boolean,
   signal: AbortSignal,
   deadline: number,
@@ -236,46 +317,47 @@ function until(
   });
 }
 
-function advance(section: Section, target: number): void {
+function advance(section: Section, target: number): boolean {
   const { swiper, next } = section;
-  if (!swiper || !next) return;
+  if (!swiper || !next) return false;
   const clicks = target - activeIndex(swiper);
   for (let i = 0; i < clicks; i++) next.click();
   const wrapper = swiper.querySelector(WRAPPER);
-  if (!wrapper) return;
-  for (const animation of wrapper.getAnimations()) animation.finish();
+  if (wrapper) {
+    for (const animation of wrapper.getAnimations()) animation.finish();
+  }
+  return true;
+}
+
+function slideTo(section: Section, target: number): boolean {
+  if (!section.swiper) return false;
+  return askSwiper(section.swiper, target) !== null || advance(section, target);
+}
+
+function showCard(root: Element, card: NonNullable<Card>, element: Element): void {
+  const section = readSections(root).find((s) => s.id === card.section);
+  const swiper = section?.swiper;
+  if (section && swiper && !isOpen(section)) {
+    const box = swiper.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+    if (rect.left < box.left - 1 || rect.right > box.right + 1) {
+      slideTo(section, cardsOf(section).indexOf(element));
+    }
+  }
+  centerInView(element);
 }
 
 export const feature: Feature = {
   pages: ['roundList', 'round', 'submission', 'myProjects', 'other'],
   toggles: ['navigationMemory'],
   mount({ region, signal, warn, page, store }) {
-    let key = entryKey();
+    let key = currentEntry();
     let card: Card = null;
     let restoring: AbortController | null = null;
-    let ring: Ring | null = null;
 
     if (page.kind === 'submission') {
       store.rpc.markOpened(page.submissionId).catch((error: unknown) => warn('mark opened', error));
     }
-
-    const clearRing = (): void => {
-      if (!ring) return;
-      clearTimeout(ring.timer);
-      ring.slide.removeAttribute(RING_ATTRIBUTE);
-      ring.style.remove();
-      ring = null;
-    };
-
-    const showRing = (slide: Element): void => {
-      clearRing();
-      const style = document.createElement('style');
-      style.setAttribute(OWN_ATTRIBUTE, 'nav-memory');
-      style.textContent = ringCss;
-      (document.head ?? document.documentElement).append(style);
-      slide.setAttribute(RING_ATTRIBUTE, '');
-      ring = { slide, style, timer: setTimeout(clearRing, RING_MS) };
-    };
 
     const restore = async (saved: Saved, cancel: AbortSignal, fresh: boolean): Promise<void> => {
       const deadline = performance.now() + WAIT_MS;
@@ -286,10 +368,9 @@ export const feature: Feature = {
           const section = sections.find((s) => s.id === id);
           if (!section || (target.open && !section.toggle)) return false;
           if (target.index === 0) return true;
-          const { swiper, next } = section;
+          const { swiper } = section;
           return (
             !!swiper &&
-            !!next &&
             swiper.classList.contains(INITIALIZED) &&
             swiper.querySelectorAll(SLIDE).length > target.index
           );
@@ -304,8 +385,8 @@ export const feature: Feature = {
           warn(`carousel not found: ${id}`);
           continue;
         }
-        if (target.index > 0 && !section.next) warn(`next button not found: ${id}`);
-        advance(section, target.index);
+        if (target.index > 0 && !slideTo(section, target.index))
+          warn(`carousel not movable: ${id}`);
       }
       const opened = wanted.filter(([, target]) => target.open);
       if (opened.length > 0) {
@@ -315,19 +396,15 @@ export const feature: Feature = {
           if (section?.toggle && !isOpen(section)) section.toggle.click();
         }
       }
-      if (saved.y > 0) {
-        await until(
-          region,
-          () => document.documentElement.scrollHeight >= saved.y + window.innerHeight,
-          cancel,
-          deadline,
-          false,
-        );
-        if (cancel.aborted) return;
-        window.scrollTo({ top: saved.y, behavior: 'instant' });
-      }
       const wantedCard = saved.card;
-      if (!wantedCard) return;
+      if (!wantedCard) {
+        const fits = (): boolean =>
+          document.documentElement.scrollHeight >= saved.y + window.innerHeight;
+        if (saved.y <= 0) return;
+        await until(region, fits, cancel, deadline, false);
+        if (!cancel.aborted && fits()) window.scrollTo({ top: saved.y, behavior: 'instant' });
+        return;
+      }
       await until(
         region,
         () => findCard(region, wantedCard) !== null,
@@ -337,25 +414,27 @@ export const feature: Feature = {
       );
       if (cancel.aborted) return;
       const element = findCard(region, wantedCard);
-      if (element) showRing(element);
-      else warn('returned card not found');
+      if (!element) {
+        warn('returned card not found');
+        return;
+      }
+      showCard(region, wantedCard, element);
+      showRing(element);
     };
 
     const begin = async (fresh: boolean): Promise<void> => {
       restoring?.abort();
       const entry = key;
-      const saved = pending === entry ? readSaved(entry) : null;
+      const saved = pending === entry && !hasSearch(entry) ? readSaved(entry) : null;
       if (!saved) {
-        pending = null;
+        queueMicrotask(() => {
+          if (pending === entry) pending = null;
+        });
         return;
       }
       card = saved.card;
-      const own = new AbortController();
+      const own = untilInput();
       restoring = own;
-      const stop = (): void => own.abort();
-      for (const type of USER_INPUT) {
-        window.addEventListener(type, stop, { once: true, passive: true, signal: own.signal });
-      }
       try {
         await restore(saved, AbortSignal.any([signal, own.signal]), fresh);
       } catch (error) {
@@ -375,7 +454,11 @@ export const feature: Feature = {
     const onClick = (event: MouseEvent): void => {
       const target = event.target;
       const control = target instanceof Element ? target.closest('a[href],button') : null;
-      if (!event.isTrusted || !(target instanceof Element) || !control) return;
+      if (!event.isTrusted || !(target instanceof Element)) return;
+      if (!control) {
+        if (target.closest(SLIDE)) card = locateCard(region, target);
+        return;
+      }
       card =
         control instanceof HTMLButtonElement && !clean(control.textContent)
           ? null
@@ -383,7 +466,7 @@ export const feature: Feature = {
     };
 
     const onEntry = (): void => {
-      const next = entryKey();
+      const next = currentEntry();
       if (next === key || signal.aborted) return;
       key = next;
       card = null;
