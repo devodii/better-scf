@@ -40,7 +40,7 @@ interface SummaryParts {
 
 interface TeamPerson {
   name: string;
-  src: string;
+  src: string | null;
   href: string;
 }
 
@@ -82,12 +82,14 @@ function firstSegment(url: URL): string | null {
 function personOf(card: Element): TeamPerson | null {
   let github: string | null = null;
   let x: string | null = null;
+  let linkedin: string | null = null;
   for (const anchor of card.querySelectorAll('a[href]')) {
     const url = externalUrl(anchor);
     if (!url) continue;
     const host = url.hostname.toLowerCase().replace(/^www\./, '');
     if (host === 'github.com') github ??= firstSegment(url);
     else if (host === 'x.com' || host === 'twitter.com') x ??= firstSegment(url);
+    else if (host === 'linkedin.com' || host.endsWith('.linkedin.com')) linkedin ??= url.href;
   }
   const name = decode(card.querySelector('p')?.textContent ?? '');
   if (github) {
@@ -98,6 +100,7 @@ function personOf(card: Element): TeamPerson | null {
     };
   }
   if (x) return { name, src: `https://unavatar.io/x/${x}`, href: `https://x.com/${x}` };
+  if (linkedin) return { name, src: null, href: linkedin };
   return null;
 }
 

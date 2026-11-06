@@ -96,10 +96,9 @@ function githubOwner(url: string | null): string | null {
 }
 
 function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
-  if (linkedin) return linkedin;
   if (github) return `https://github.com/${encodeURIComponent(github)}`;
   if (x) return `https://x.com/${encodeURIComponent(x)}`;
-  return null;
+  return linkedin;
 }
 
 function builderPeople(facts: Enrichment): AvatarStackPerson[] {
