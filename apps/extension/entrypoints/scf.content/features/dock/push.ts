@@ -1,9 +1,14 @@
+import { PANEL_SIDE, type PanelSide } from '../../../../components/Assistant/side';
+
 const ROOT_ATTRIBUTE = 'data-bscf-assistant';
+const SIDE_ATTRIBUTE = 'data-bscf-side';
+const MOTION_ATTRIBUTE = 'data-bscf-motion';
 const WRAPPER_ATTRIBUTE = 'data-bscf-push';
+const PIN_ATTRIBUTE = 'data-bscf-pin';
+const FIXED_SELECTOR = 'nav, header, aside';
 const SETTLE_MS = 360;
 const REMOUNT_GRACE_MS = 800;
-const TOP_BAR_MIN_WIDTH = 0.9;
-const TOP_BAR_MAX_HEIGHT = 0.3;
+const BAR_MIN_WIDTH = 0.9;
 
 export interface PagePush {
   set(isOpen: boolean, animate: boolean): void;
@@ -11,55 +16,61 @@ export interface PagePush {
 }
 
 let wrapper: Element | null = null;
+let pinned: Element[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 function findWrapper(): Element {
   return document.querySelector('main') ?? document.body;
 }
 
-function finish(): void {
-  clearTimeout(timer);
-  document.documentElement.removeAttribute(ROOT_ATTRIBUTE);
-  wrapper?.removeAttribute(WRAPPER_ATTRIBUTE);
-  wrapper = null;
-}
-
-export function measureTopBar(): number {
-  let bottom = 0;
-  for (const element of findWrapper().querySelectorAll('nav, header')) {
+function pinFixed(root: Element, side: PanelSide): Element[] {
+  const found: Element[] = [];
+  for (const element of root.querySelectorAll(FIXED_SELECTOR)) {
     if (getComputedStyle(element).position !== 'fixed') continue;
     const rect = element.getBoundingClientRect();
-    if (
-      rect.top <= 1 &&
-      rect.width >= innerWidth * TOP_BAR_MIN_WIDTH &&
-      rect.height <= innerHeight * TOP_BAR_MAX_HEIGHT
-    ) {
-      bottom = Math.max(bottom, rect.bottom);
-    }
+    if (rect.width === 0) continue;
+    const isBar = rect.width >= innerWidth * BAR_MIN_WIDTH;
+    const isOnSide = side === 'left' ? rect.left < innerWidth / 2 : rect.right > innerWidth / 2;
+    if (!isBar && !isOnSide) continue;
+    element.setAttribute(PIN_ATTRIBUTE, isBar ? 'bar' : 'edge');
+    found.push(element);
   }
-  return Math.round(bottom);
+  return found;
 }
 
-export function createPagePush(): PagePush {
+function finish(): void {
+  clearTimeout(timer);
+  const root = document.documentElement;
+  root.removeAttribute(ROOT_ATTRIBUTE);
+  root.removeAttribute(SIDE_ATTRIBUTE);
+  root.removeAttribute(MOTION_ATTRIBUTE);
+  wrapper?.removeAttribute(WRAPPER_ATTRIBUTE);
+  for (const element of pinned) element.removeAttribute(PIN_ATTRIBUTE);
+  wrapper = null;
+  pinned = [];
+}
+
+export function createPagePush(side: PanelSide = PANEL_SIDE): PagePush {
+  const root = document.documentElement;
   return {
     set(isOpen, animate) {
       clearTimeout(timer);
+      if (!isOpen && !wrapper) return;
+      if (animate) root.setAttribute(MOTION_ATTRIBUTE, 'animate');
+      else root.removeAttribute(MOTION_ATTRIBUTE);
       if (isOpen) {
         const next = findWrapper();
         if (wrapper !== next) wrapper?.removeAttribute(WRAPPER_ATTRIBUTE);
+        if (pinned.length === 0) pinned = pinFixed(next, side);
         wrapper = next;
-        wrapper.setAttribute(WRAPPER_ATTRIBUTE, animate ? 'animate' : 'static');
-        document.documentElement.setAttribute(ROOT_ATTRIBUTE, 'open');
+        wrapper.setAttribute(WRAPPER_ATTRIBUTE, '');
+        root.setAttribute(SIDE_ATTRIBUTE, side);
+        root.setAttribute(ROOT_ATTRIBUTE, 'open');
         return;
       }
-      document.documentElement.removeAttribute(ROOT_ATTRIBUTE);
-      if (!wrapper) return;
-      if (!animate) {
-        finish();
-        return;
-      }
-      wrapper.setAttribute(WRAPPER_ATTRIBUTE, 'animate');
-      timer = setTimeout(finish, SETTLE_MS);
+      root.removeAttribute(ROOT_ATTRIBUTE);
+      if (animate) timer = setTimeout(finish, SETTLE_MS);
+      else finish();
     },
     release() {
       clearTimeout(timer);

@@ -9,7 +9,7 @@ import { type BscfChat, type ChatPageRequest, createBscfChat } from '../../../..
 import type { FeatureContext } from '../../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
 import dockCss from '../../styles/dock.scss?inline';
-import { createPagePush, measureTopBar } from './push';
+import { createPagePush } from './push';
 import { createRequestSource } from './request';
 import { isToggleShortcut, readOpen, writeOpen } from './state';
 import {
@@ -55,7 +55,6 @@ export function mountPanel(
   let value = '';
   let isOpen = readOpen();
   let hasUnread = false;
-  let topOffset = 0;
   let isHistoryOpen = false;
   let historyItems: AssistantHistoryItem[] = [];
   let seenPath = location.pathname;
@@ -104,7 +103,6 @@ export function mountPanel(
         isOpen={isOpen}
         onOpenChange={setOpen}
         hasUnread={hasUnread}
-        topOffset={topOffset}
         contextLabel={contextLabelFor(kind, subject)}
         value={value}
         onValueChange={(next) => {
@@ -145,12 +143,8 @@ export function mountPanel(
     if (closed || next === isOpen) return;
     isOpen = next;
     writeOpen(next);
-    if (next) {
-      hasUnread = false;
-      topOffset = measureTopBar();
-    } else {
-      isHistoryOpen = false;
-    }
+    if (next) hasUnread = false;
+    else isHistoryOpen = false;
     push.set(next, true);
     render();
   }
@@ -290,10 +284,7 @@ export function mountPanel(
   style.textContent = dockCss;
   (document.head ?? document.documentElement).append(style);
 
-  if (isOpen) {
-    topOffset = measureTopBar();
-    push.set(true, false);
-  }
+  if (isOpen) push.set(true, false);
 
   ui.render(view());
   if (openAfterMount) setOpen(true);
