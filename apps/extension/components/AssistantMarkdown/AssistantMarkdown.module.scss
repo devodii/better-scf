@@ -74,6 +74,8 @@
   overflow-x: auto;
 
   table {
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
   }
@@ -82,7 +84,9 @@
   td {
     padding: 0.25rem 0.625rem;
     border: 0.0625rem solid var(--bscf-muted-chip);
+    overflow-wrap: normal;
     text-align: start;
+    white-space: nowrap;
   }
 
   th {
