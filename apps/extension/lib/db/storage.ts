@@ -6,7 +6,6 @@ export interface StorageItemOptions<T> {
   key: string;
   schema: z.ZodType<T>;
   defaults: T;
-  migrate?: (raw: unknown) => unknown;
 }
 
 export interface StorageItem<T> {
@@ -19,11 +18,11 @@ export interface StorageItem<T> {
 }
 
 export function defineStorageItem<T>(options: StorageItemOptions<T>): StorageItem<T> {
-  const { key, schema, defaults, migrate } = options;
+  const { key, schema, defaults } = options;
 
   function parseStored(raw: unknown): T {
     if (raw === undefined) return defaults;
-    const parsed = parseWith(schema, migrate ? migrate(raw) : raw);
+    const parsed = parseWith(schema, raw);
     return parsed.ok ? parsed.data : defaults;
   }
 

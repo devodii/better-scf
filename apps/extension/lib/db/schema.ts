@@ -9,10 +9,9 @@ import type {
   Submission,
 } from 'shared';
 import { z } from 'zod';
-import { DbError } from './errors';
 
 const DB_NAME = 'better-scf';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -100,41 +99,26 @@ export const CACHE_STORE_NAMES = [
   'projectIndex',
 ] as const satisfies readonly StoreName[];
 
-type Migration = (db: Db) => void;
+function createStores(db: Db): void {
+  const native = unwrap(db);
+  for (const name of [...native.objectStoreNames]) native.deleteObjectStore(name);
 
-const MIGRATIONS: readonly Migration[] = [
-  (db) => {
-    const submissions = db.createObjectStore('submissions', { keyPath: 'id' });
-    submissions.createIndex('roundId', 'roundId');
-    submissions.createIndex('projectId', 'projectId');
-    submissions.createIndex('fetchedAt', 'fetchedAt');
+  const submissions = db.createObjectStore('submissions', { keyPath: 'id' });
+  submissions.createIndex('roundId', 'roundId');
+  submissions.createIndex('projectId', 'projectId');
+  submissions.createIndex('fetchedAt', 'fetchedAt');
 
-    db.createObjectStore('projects', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
-    db.createObjectStore('rounds', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
-    db.createObjectStore('review', { keyPath: 'submissionId' });
-    db.createObjectStore('navstate', { keyPath: 'routeKey' });
-    db.createObjectStore('chat', { keyPath: ['submissionId', 'id'] }).createIndex(
-      'submissionId',
-      'submissionId',
-    );
-    db.createObjectStore('horizon', { keyPath: 'accountId' }).createIndex('fetchedAt', 'fetchedAt');
-    db.createObjectStore('avatars', { keyPath: 'handleKey' });
-  },
-  (db) => {
-    db.createObjectStore('projectIndex', { keyPath: 'key' });
-  },
-  (db) => {
-    const native = unwrap(db);
-    if (native.objectStoreNames.contains('ownership')) native.deleteObjectStore('ownership');
-  },
-];
-
-function migrate(db: Db, oldVersion: number, newVersion: number = DB_VERSION): void {
-  for (let version = oldVersion; version < newVersion; version += 1) {
-    const step = MIGRATIONS[version];
-    if (!step) throw DbError.missingMigration(version);
-    step(db);
-  }
+  db.createObjectStore('projects', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
+  db.createObjectStore('rounds', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
+  db.createObjectStore('review', { keyPath: 'submissionId' });
+  db.createObjectStore('navstate', { keyPath: 'routeKey' });
+  db.createObjectStore('chat', { keyPath: ['submissionId', 'id'] }).createIndex(
+    'submissionId',
+    'submissionId',
+  );
+  db.createObjectStore('horizon', { keyPath: 'accountId' }).createIndex('fetchedAt', 'fetchedAt');
+  db.createObjectStore('avatars', { keyPath: 'handleKey' });
+  db.createObjectStore('projectIndex', { keyPath: 'key' });
 }
 
 export interface OpenOptions {
@@ -143,9 +127,7 @@ export interface OpenOptions {
 
 export function openBetterScfDb(options: OpenOptions = {}): Promise<Db> {
   return openDB<BetterScfDb>(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion, newVersion) {
-      migrate(db, oldVersion, newVersion ?? DB_VERSION);
-    },
+    upgrade: createStores,
     terminated() {
       options.onTerminated?.();
     },
