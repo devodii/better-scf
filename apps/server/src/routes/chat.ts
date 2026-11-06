@@ -1,9 +1,6 @@
-import { createHash } from 'node:crypto';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import {
   convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
   type JSONSchema7,
   jsonSchema,
   type LanguageModel,
@@ -25,7 +22,6 @@ import {
   messageText,
 } from 'shared';
 import { z } from 'zod';
-import { type AnswerCache, cacheKey } from '../ai/cache.js';
 import { buildContextBlock, promptMatches, SYSTEM_PROMPT } from '../ai/prompts.js';
 import type { Env } from '../env.js';
 import type { ClientVariables } from '../middleware/client.js';
@@ -41,12 +37,10 @@ export interface ChatLogEntry {
   promptId: string;
   inputTokens: number;
   outputTokens: number;
-  cacheHit: boolean;
 }
 
 export interface ChatRouteDeps {
   getModel: () => LanguageModel;
-  cache: AnswerCache;
   log: (entry: ChatLogEntry) => void;
   now?: () => number;
 }
@@ -115,24 +109,12 @@ function corsHeaders(c: ChatContext): Record<string, string> {
     : { 'Access-Control-Allow-Origin': requestOrigin, Vary: 'Origin' };
 }
 
-function streamCachedAnswer(answer: string, headers: Record<string, string>): Response {
-  const stream = createUIMessageStream({
-    execute: ({ writer }) => {
-      writer.write({ type: 'text-start', id: 'cached' });
-      writer.write({ type: 'text-delta', id: 'cached', delta: answer });
-      writer.write({ type: 'text-end', id: 'cached' });
-    },
-  });
-  return createUIMessageStreamResponse({ stream, headers });
-}
-
 export function createChatRoute(deps: ChatRouteDeps) {
   const now = deps.now ?? Date.now;
   const record = (
     clientId: string,
     body: ChatRequest,
     usage: { inputTokens: number; outputTokens: number },
-    cacheHit: boolean,
   ): void => {
     deps.log({
       ts: dayjs(now()).toISOString(),
@@ -141,7 +123,6 @@ export function createChatRoute(deps: ChatRouteDeps) {
       promptId: body.promptId ?? 'free',
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      cacheHit,
     });
   };
 
@@ -167,25 +148,6 @@ export function createChatRoute(deps: ChatRouteDeps) {
       }
 
       const clientId = c.get('clientId');
-      const key =
-        body.promptId !== undefined && body.messages.length === 1 && tools === undefined
-          ? cacheKey({
-              submissionId: body.submissionId,
-              contentHash: createHash('sha256')
-                .update(JSON.stringify([body.contentHash, body.page, body.context]))
-                .digest('hex'),
-              promptId: body.promptId,
-            })
-          : undefined;
-
-      if (key !== undefined) {
-        const hit = deps.cache.get(key);
-        if (hit !== undefined) {
-          record(clientId, body, { inputTokens: 0, outputTokens: 0 }, true);
-          return streamCachedAnswer(hit, corsHeaders(c));
-        }
-      }
-
       const result = streamText({
         model: deps.getModel(),
         instructions: [
@@ -208,18 +170,10 @@ export function createChatRoute(deps: ChatRouteDeps) {
           console.error(`chat model error: ${error instanceof Error ? error.name : 'unknown'}`);
         },
         onEnd: (event) => {
-          record(
-            clientId,
-            body,
-            {
-              inputTokens: event.totalUsage.inputTokens ?? 0,
-              outputTokens: event.totalUsage.outputTokens ?? 0,
-            },
-            false,
-          );
-          if (key !== undefined && event.finishReason === 'stop' && event.text.length > 0) {
-            deps.cache.set(key, event.text);
-          }
+          record(clientId, body, {
+            inputTokens: event.totalUsage.inputTokens ?? 0,
+            outputTokens: event.totalUsage.outputTokens ?? 0,
+          });
         },
       });
 

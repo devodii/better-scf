@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { createMemoryCache } from './ai/cache.js';
 import { type Env, loadEnv } from './env.js';
 import { client } from './middleware/client.js';
 import { origin } from './middleware/origin.js';
@@ -51,7 +50,6 @@ function createApp(env: Env, deps: AppDeps = {}) {
     '/chat',
     createChatRoute({
       getModel: deps.getModel ?? createModelFactory(env),
-      cache: deps.cache ?? createMemoryCache(),
       log: deps.log ?? logChatEntry,
       ...(deps.now ? { now: deps.now } : {}),
     }),
