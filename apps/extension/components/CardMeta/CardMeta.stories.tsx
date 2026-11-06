@@ -105,6 +105,24 @@ export const FocusedAvatars: Story = {
   ],
 };
 
+export const TouchTargets: Story = {
+  args: { people: PEOPLE.slice(0, 3) },
+  globals: { viewport: { value: 'phone', isRotated: false } },
+  decorators: [
+    (Story) => (
+      <div
+        data-force-focus
+        style={{ width: '100%', padding: '1rem', background: 'var(--bscf-surface)' }}
+      >
+        <style>
+          {'ul a::after { background: rgb(255 214 0 / 0.3); outline: 1px dashed currentColor; }'}
+        </style>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Narrow: Story = {
   args: { people: PEOPLE },
   globals: { viewport: { value: 'phone', isRotated: false } },

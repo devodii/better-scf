@@ -43,6 +43,31 @@
   margin-inline-start: -0.5rem;
 }
 
+@media (max-width: 767px) {
+  .people.people {
+    --hit: calc(0.625rem + var(--bscf-border-hairline));
+
+    a {
+      position: relative;
+      overflow: visible;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: calc(-1 * var(--hit)) calc(-1 * var(--hit)) calc(-1 * var(--hit)) 0;
+      }
+
+      img {
+        border-radius: inherit;
+      }
+    }
+
+    > li:first-child a::after {
+      left: calc(-1 * var(--hit));
+    }
+  }
+}
+
 .short {
   display: none;
 }
