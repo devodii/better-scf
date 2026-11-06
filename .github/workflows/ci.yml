@@ -46,7 +46,7 @@ jobs:
         id: zip
         run: |
           version="$(node -p "require('./package.json').version")"
-          zip_path="$(ls apps/extension/.output/*-chrome.zip | head -n 1)"
+          zip_path="$(ls apps/extension/output/*-chrome.zip | head -n 1)"
           test -n "$zip_path"
           cp "$zip_path" "better-scf-${version}.zip"
           echo "name=better-scf-${version}.zip" >> "$GITHUB_OUTPUT"

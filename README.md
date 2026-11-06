@@ -69,7 +69,7 @@ Two commands, same extension, different server:
 | `pnpm build:dev`  | `http://localhost:8787` (run `pnpm --filter server dev`) | `http://localhost/*`                                    |
 | `pnpm build:prod` | the Railway server                                       | `https://better-scf-server-production.up.railway.app/*` |
 
-The URLs live in one place, `packages/shared/src/server-urls.ts`, and the build mode picks one and bakes it in. Output goes to `apps/extension/.output/chrome-mv3-dev` and `chrome-mv3`. `pnpm --filter extension zip` and the CI builds use production.
+The URLs live in one place, `packages/shared/src/server-urls.ts`, and the build mode picks one and bakes it in. Output goes to `apps/extension/output/chrome-mv3-dev` and `chrome-mv3`. `pnpm --filter extension zip` and the CI builds use production.
 
 The other host permission is `https://communityfund.stellar.org/*`. Horizon is fetched from the page's origin and `unavatar.io` is only an image, so neither needs a permission.
 

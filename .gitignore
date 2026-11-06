@@ -2,7 +2,7 @@
 node_modules/
 
 # WXT build output (unpacked extension and zips), written by `wxt build` / `wxt zip`.
-/apps/extension/.output/
+/apps/extension/output/
 
 # WXT generated types and tsconfig, written by `wxt prepare`.
 /apps/extension/.wxt/

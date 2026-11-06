@@ -6,7 +6,7 @@
 
 # Build and tooling output regenerated in the image.
 **/dist
-**/.output
+**/output
 **/.wxt
 **/coverage
 

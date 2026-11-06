@@ -21,6 +21,7 @@ function serverHostPermission(url: string): string[] {
 }
 
 export default defineConfig({
+  outDir: "output",
   modules: ["@wxt-dev/module-react"],
   imports: { dirs: ["!components/**/*.stories.tsx"] },
   vite: ({ mode }) => ({
