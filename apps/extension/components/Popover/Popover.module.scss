@@ -8,10 +8,8 @@
 .panel {
   min-width: 12rem;
   max-width: min(22rem, calc(100vw - 1rem));
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: var(--bscf-radius-chip);
-  font-size: 0.875rem;
-  line-height: 1.4;
 }
 
 .top {

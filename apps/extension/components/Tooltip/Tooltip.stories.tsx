@@ -38,6 +38,22 @@ export const LongContent: Story = {
   },
 };
 
+export const Narrow390: Story = {
+  args: {
+    isOpen: true,
+    content:
+      'Totals use only submissions with a parsed budget: 48 of 52 parsed, the rest state no amount.',
+    children: <Chip variant="muted">48 of 52</Chip>,
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: '390px' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const OnAvatar: Story = {
   args: {
     isOpen: true,

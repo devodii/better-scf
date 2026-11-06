@@ -50,6 +50,21 @@ export const FocusedTrigger: Story = {
   ],
 };
 
+export const Narrow390: Story = {
+  args: {
+    isOpen: true,
+    children:
+      'A long reviewer note that wraps across several lines to check the panel inside a phone width: the milestones are clear and the architecture document is linked.',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: '390px' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Top: Story = { args: { isOpen: true, placement: 'top' } };
 
 export const RichContent: Story = {
