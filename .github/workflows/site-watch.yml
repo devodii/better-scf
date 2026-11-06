@@ -1,0 +1,63 @@
+name: Watch the SCF site
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: "Site to check (leave empty for the real SCF site)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: site-watch
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+  LABEL: site-change
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Check the pages the extension relies on
+        id: check
+        continue-on-error: true
+        env:
+          SITE_ORIGIN: ${{ inputs.origin }}
+        run: node .github/scripts/site-watch.mjs
+      - name: Show the report
+        if: always()
+        run: cat site-watch-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the issue when something changed
+        if: steps.check.outcome == 'failure'
+        run: |
+          gh label create "$LABEL" --color D93F0B --description "The SCF site changed in a way that can break the extension" --force
+          existing="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file site-watch-report.md
+          else
+            gh issue create --label "$LABEL" --title "SCF site changed: the extension may break" --body-file site-watch-report.md
+          fi
+      - name: Close the issue when everything passes again
+        if: steps.check.outcome == 'success'
+        run: |
+          existing="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --comment "All checks pass again."
+          fi
+      - name: Fail the run when something changed
+        if: steps.check.outcome == 'failure'
+        run: exit 1

@@ -22,3 +22,7 @@ The manifest pins its key, so every build has the id `eaplcaohhkncckjnobkipmkpbn
 The build and deploy config is `railway.toml` at the repository root (Dockerfile `apps/server/Dockerfile`, built with the root as context), so no "Config as Code file path" setting is needed in the Railway dashboard.
 
 `ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT`, `BURST_PER_MINUTE`, `GLOBAL_DAILY_CAP`, `NODE_ENV=production`.
+
+## Watching the SCF site
+
+`site-watch.yml` runs every day (and on demand) and checks, without logging in, the things the extension depends on: the headings and data of a public proposal page, the project directory, the two landing buttons and the sign-in status answer. When any of them changes it opens an issue labelled `site-change` with what changed and what it affects, and it closes the issue by itself once everything passes again. The round and award-round pages need a login, so they are not covered; the extension logs those problems on the page when debug logging is on.
