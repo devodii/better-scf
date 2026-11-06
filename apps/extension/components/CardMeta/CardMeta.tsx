@@ -1,6 +1,7 @@
 import { AvatarStack, type AvatarStackPerson } from '../AvatarStack';
 import { Chip, type ChipVariant } from '../Chip';
 import { Tooltip } from '../Tooltip';
+import { TrackIcon, type TrackIconKind } from '../TrackIcon';
 import styles from './CardMeta.module.scss';
 
 export interface CardMetaChip {
@@ -8,6 +9,7 @@ export interface CardMetaChip {
   shortLabel?: string;
   hint: string;
   variant?: ChipVariant;
+  icon?: TrackIconKind;
 }
 
 export interface CardMetaProps {
@@ -20,7 +22,10 @@ function MetaChip({ chip, className }: { chip: CardMetaChip; className?: string 
   return (
     <span className={className}>
       <Tooltip content={chip.hint}>
-        <Chip variant={chip.variant ?? 'purple'}>
+        <Chip
+          variant={chip.variant ?? 'purple'}
+          icon={chip.icon ? <TrackIcon kind={chip.icon} /> : undefined}
+        >
           {chip.shortLabel ? (
             <>
               <span className={styles.full}>{chip.label}</span>
@@ -39,9 +44,11 @@ export function CardMeta({ track, awarded, people = [] }: CardMetaProps) {
   if (!track && !awarded && people.length === 0) return null;
   return (
     <div className={styles.root}>
-      {track && <MetaChip chip={track} className={styles.fixed} />}
-      {awarded && <MetaChip chip={awarded} className={styles.shrinking} />}
-      <AvatarStack people={people} size="sm" max={4} className={styles.people} />
+      <div className={styles.chips}>
+        {track && <MetaChip chip={track} className={styles.fixed} />}
+        {awarded && <MetaChip chip={awarded} className={styles.shrinking} />}
+      </div>
+      <AvatarStack people={people} size="md" max={4} className={styles.people} />
     </div>
   );
 }

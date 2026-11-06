@@ -40,6 +40,7 @@ export interface EnrichedBuilder {
   name: string;
   role: string | null;
   linkedin: string | null;
+  github: string | null;
 }
 
 export interface Enrichment {
@@ -50,6 +51,7 @@ export interface Enrichment {
   builderCount: number;
   awardedUsd: number | null;
   awardedCount: number | null;
+  projectGithub: string | null;
 }
 
 const BLOCK_STATUS: Record<number, EnrichBlock> = {
@@ -81,10 +83,16 @@ export function toEnrichment(submission: Submission): Enrichment {
     id: submission.id,
     track: submission.track === 'unknown' ? null : submission.track,
     trackSource: submission.trackSource,
-    builders: submission.team.map(({ name, role, linkedin }) => ({ name, role, linkedin })),
+    builders: submission.team.map(({ name, role, linkedin, github }) => ({
+      name,
+      role,
+      linkedin,
+      github,
+    })),
     builderCount: submission.team.length,
     awardedUsd: submission.totalAwardedUsd,
     awardedCount: submission.awardedSubmissions,
+    projectGithub: submission.links.github,
   };
 }
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ReviewState, Submission } from 'shared';
+import type { AvatarStackPerson } from '../../../components/AvatarStack';
 import { BuildersLoader, type BuildersLoaderStatus } from '../../../components/BuildersLoader';
 import { CardCorner, type CardCornerProps } from '../../../components/CardCorner';
 import { CardMeta, type CardMetaProps } from '../../../components/CardMeta';
@@ -15,7 +16,7 @@ import {
   toEnrichment,
 } from '../../../lib/site/enrich';
 import { findReceivedSection, mapRoundCards } from '../../../lib/site/round';
-import { CARD_BYLINE_PREFIX, CARD_TEXT, SECTION_HEADING } from '../../../lib/site/selectors/round';
+import { SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import cardsCss from '../styles/cards.scss?inline';
@@ -67,6 +68,43 @@ function trackHint(source: Submission['trackSource']): string | null {
   return null;
 }
 
+function githubAvatar(handle: string): string {
+  return `https://github.com/${encodeURIComponent(handle)}.png?size=96`;
+}
+
+function githubOwner(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== 'github.com') return null;
+    return parsed.pathname.split('/').find((part) => part.length > 0) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function builderPeople(facts: Enrichment): AvatarStackPerson[] {
+  const people: AvatarStackPerson[] = facts.builders.map(({ name, role, linkedin, github }) => ({
+    name,
+    role,
+    src: github ? githubAvatar(github) : null,
+    href: github ? `https://github.com/${encodeURIComponent(github)}` : linkedin,
+  }));
+  const owner = githubOwner(facts.projectGithub);
+  if (
+    owner &&
+    !facts.builders.some(({ github }) => github?.toLowerCase() === owner.toLowerCase())
+  ) {
+    people.unshift({
+      name: owner,
+      role: 'On GitHub',
+      src: githubAvatar(owner),
+      href: facts.projectGithub,
+    });
+  }
+  return people;
+}
+
 function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaProps | null {
   if (!facts) return null;
   const props: CardMetaProps = {};
@@ -75,6 +113,7 @@ function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaP
     props.track = {
       label: trackLabel(facts.track),
       variant: TRACK_VARIANT[facts.track],
+      icon: facts.track,
       hint,
     };
   }
@@ -92,21 +131,10 @@ function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaP
           : `${count} awarded ${count === 1 ? 'submission' : 'submissions'}`,
     };
   }
-  if (settings.avatarStack && facts.builders.length > 0) {
-    props.people = facts.builders.map(({ name, role, linkedin }) => ({
-      name,
-      role,
-      href: linkedin,
-    }));
+  if (settings.avatarStack && (facts.builders.length > 0 || facts.projectGithub)) {
+    props.people = builderPeople(facts);
   }
   return props.track || props.awarded || props.people ? props : null;
-}
-
-function findFooter(card: Element): Element | null {
-  for (const text of card.querySelectorAll(CARD_TEXT)) {
-    if (text.textContent?.trimStart().startsWith(CARD_BYLINE_PREFIX)) return text.parentElement;
-  }
-  return null;
 }
 
 export const feature: Feature = {
@@ -257,13 +285,13 @@ export const feature: Feature = {
         return;
       }
       if (entry.hasMeta) return;
-      const footer = findFooter(entry.card);
-      if (!footer) {
-        warn('card footer not found');
+      const frame = entry.cover?.parentElement ?? null;
+      if (!frame) {
+        warn('card cover not found for the badges');
         return;
       }
       entry.hasMeta = true;
-      void place(entry, footer, 'meta', <CardMeta {...meta} />);
+      void place(entry, frame, 'meta', <CardMeta {...meta} />);
     };
 
     const setFacts = (data: Enrichment): void => {
