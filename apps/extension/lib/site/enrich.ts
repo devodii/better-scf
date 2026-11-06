@@ -11,19 +11,29 @@ export const ENRICH_MAX_PER_MINUTE = 12;
 const WINDOW_MS = 60_000;
 const BLOCK_MS = 15 * 60_000;
 const MAX_QUEUED = 3;
+const MAX_FAILURES = 3;
+const LOCK_NAME = 'bscf-enrich';
 const STATE_KEY = 'enrichState';
 const PATH_PREFIX = '/dashboard/submissions/';
 const CAPTCHA = /captcha|cf-challenge|challenge-platform|just a moment/i;
 
-const blockReasonSchema = z.enum(['signed-out', 'forbidden', 'rate-limited', 'captcha']);
+const blockReasonSchema = z.enum([
+  'signed-out',
+  'forbidden',
+  'rate-limited',
+  'captcha',
+  'unavailable',
+  'redirected',
+]);
 export type EnrichBlock = z.infer<typeof blockReasonSchema>;
 
 const stateSchema = z
   .object({
     starts: z.array(z.number()).catch([]),
+    failures: z.number().int().min(0).catch(0),
     block: z.object({ reason: blockReasonSchema, until: z.number() }).nullable().catch(null),
   })
-  .catch({ starts: [], block: null });
+  .catch({ starts: [], failures: 0, block: null });
 type State = z.infer<typeof stateSchema>;
 
 export interface EnrichedBuilder {
@@ -53,6 +63,8 @@ const BLOCK_MESSAGES: Record<EnrichBlock, string> = {
   forbidden: 'Stopped: the site refused the request (403).',
   'rate-limited': 'Stopped: the site asked us to slow down (429).',
   captcha: 'Stopped: the site showed a captcha.',
+  unavailable: 'Stopped: the site failed three requests in a row.',
+  redirected: 'Stopped: the site sent us to another address.',
 };
 
 export function enrichBlockMessage(reason: EnrichBlock): string {
@@ -62,7 +74,6 @@ export function enrichBlockMessage(reason: EnrichBlock): string {
 const rpc = createRpcClient();
 const inflight = new Map<string, Promise<Enrichment | null>>();
 const blockListeners = new Set<(reason: EnrichBlock) => void>();
-let tail: Promise<unknown> = Promise.resolve();
 let queued = 0;
 
 export function toEnrichment(submission: Submission): Enrichment {
@@ -82,6 +93,7 @@ async function readState(): Promise<State> {
   const state = stateSchema.parse((await browser.storage.local.get(STATE_KEY))[STATE_KEY] ?? {});
   return {
     starts: state.starts.filter((at) => at <= now && now - at < WINDOW_MS).sort((a, b) => a - b),
+    failures: state.failures,
     block: state.block && state.block.until > now ? state.block : null,
   };
 }
@@ -101,8 +113,18 @@ export function onEnrichBlock(listener: (reason: EnrichBlock) => void): () => vo
 
 async function stopFor(reason: EnrichBlock): Promise<void> {
   const state = await readState();
-  await writeState({ ...state, block: { reason, until: Date.now() + BLOCK_MS } });
+  await writeState({ ...state, failures: 0, block: { reason, until: Date.now() + BLOCK_MS } });
   for (const listener of blockListeners) listener(reason);
+}
+
+async function recordOutcome(failed: boolean): Promise<void> {
+  const state = await readState();
+  const failures = failed ? state.failures + 1 : 0;
+  if (failures >= MAX_FAILURES) {
+    await stopFor('unavailable');
+    return;
+  }
+  if (failures !== state.failures) await writeState({ ...state, failures });
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -140,34 +162,55 @@ async function takeSlot(signal: AbortSignal): Promise<boolean> {
   }
 }
 
-async function fetchOne(id: string, signal: AbortSignal): Promise<Enrichment | null> {
+async function readResponse(response: Response, id: string): Promise<Enrichment | null> {
+  const url = new URL(response.url);
+  if (response.redirected && url.origin !== SITE_ORIGIN) {
+    await stopFor('redirected');
+    return null;
+  }
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    const reason = CAPTCHA.test(body) ? 'captcha' : BLOCK_STATUS[response.status];
+    if (reason) await stopFor(reason);
+    else await recordOutcome(response.status >= 500);
+    return null;
+  }
+  if (response.redirected && !url.pathname.startsWith(PATH_PREFIX)) {
+    await stopFor('signed-out');
+    return null;
+  }
+  const html = await response.text();
+  const page = await parseSubmissionPage(new DOMParser().parseFromString(html, 'text/html'), {
+    id,
+  });
+  if (!page) {
+    if (CAPTCHA.test(html)) await stopFor('captcha');
+    else await recordOutcome(false);
+    return null;
+  }
+  await recordOutcome(false);
+  await rpc.putSubmissions([page.submission]).catch(() => {});
+  return toEnrichment(page.submission);
+}
+
+async function fetchLocked(id: string, signal: AbortSignal): Promise<Enrichment | null> {
+  if (!(await takeSlot(signal))) return null;
   try {
-    if (!(await takeSlot(signal))) return null;
     const response = await fetch(`${SITE_ORIGIN}${PATH_PREFIX}${encodeURIComponent(id)}`, {
       credentials: 'include',
       headers: { Accept: 'text/html' },
       signal,
     });
-    const blocked = BLOCK_STATUS[response.status];
-    if (blocked) {
-      await stopFor(blocked);
-      return null;
-    }
-    if (!response.ok) return null;
-    if (response.redirected && !new URL(response.url).pathname.startsWith(PATH_PREFIX)) {
-      await stopFor('signed-out');
-      return null;
-    }
-    const html = await response.text();
-    const page = await parseSubmissionPage(new DOMParser().parseFromString(html, 'text/html'), {
-      id,
-    });
-    if (!page) {
-      if (CAPTCHA.test(html)) await stopFor('captcha');
-      return null;
-    }
-    await rpc.putSubmissions([page.submission]).catch(() => {});
-    return toEnrichment(page.submission);
+    return await readResponse(response, id);
+  } catch {
+    if (!signal.aborted) await recordOutcome(true).catch(() => {});
+    return null;
+  }
+}
+
+async function fetchOne(id: string, signal: AbortSignal): Promise<Enrichment | null> {
+  try {
+    return await navigator.locks.request(LOCK_NAME, { signal }, () => fetchLocked(id, signal));
   } catch {
     return null;
   }
@@ -178,10 +221,8 @@ async function run(id: string, signal: AbortSignal): Promise<Enrichment | null> 
   if (cached && !cached.stale) return toEnrichment(cached.value);
   if (signal.aborted || queued >= MAX_QUEUED) return null;
   queued += 1;
-  const turn = tail.then(() => fetchOne(id, signal));
-  tail = turn;
   try {
-    return await turn;
+    return await fetchOne(id, signal);
   } finally {
     queued -= 1;
   }
