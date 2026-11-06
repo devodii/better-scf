@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { SearchField } from '../../../components/SearchField';
 import type { SearchResultMatch } from '../../../components/SearchResultCard';
 import { SearchResults, type SearchResultsStatus } from '../../../components/SearchResults';
@@ -9,6 +10,17 @@ import {
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import searchCss from '../styles/dashboard-search.scss?inline';
+import {
+  centerInView,
+  currentEntry,
+  returningEntry,
+  SEARCH_PREFIX,
+  showRing,
+  TTL_MS,
+  until,
+  untilInput,
+  WAIT_MS,
+} from './nav-memory';
 
 const ROW = 'data-bscf-search-row';
 const HEADING = 'data-bscf-search-heading';
@@ -21,7 +33,16 @@ const HEADING_TEXT = { roundList: 'award rounds', myProjects: 'my projects' } as
 const DEBOUNCE_MS = 120;
 const ANIMATION_MS = 200;
 const LIMIT = 60;
+const PROJECT_HREF = '/project/';
 
+const savedSchema = z.object({
+  ts: z.number(),
+  q: z.string(),
+  id: z.string().nullable(),
+  y: z.number(),
+});
+
+type SavedSearch = z.infer<typeof savedSchema>;
 type ResultsState = 'closed' | 'open' | 'closing';
 type SectionState = 'out' | 'gone' | 'in';
 
@@ -80,6 +101,32 @@ function findAnchor(heading: Element, region: Element): Element | null {
   return anchor;
 }
 
+function readSearch(entry: string): SavedSearch | null {
+  const key = SEARCH_PREFIX + entry;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = savedSchema.safeParse(JSON.parse(raw));
+    if (parsed.success && Date.now() - parsed.data.ts <= TTL_MS && parsed.data.q.trim() !== '') {
+      return parsed.data;
+    }
+    sessionStorage.removeItem(key);
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function writeSearch(entry: string, saved: SavedSearch | null): void {
+  const key = SEARCH_PREFIX + entry;
+  try {
+    if (saved) sessionStorage.setItem(key, JSON.stringify(saved));
+    else sessionStorage.removeItem(key);
+  } catch {
+    return;
+  }
+}
+
 function ownBox(name: string, marker: string): HTMLElement {
   const box = document.createElement('div');
   box.setAttribute(OWN_ATTRIBUTE, name);
@@ -90,9 +137,12 @@ function ownBox(name: string, marker: string): HTMLElement {
 export const feature: Feature = {
   pages: ['roundList', 'myProjects'],
   mount(context) {
-    const { page: pageData, region, onMutation, warn } = context;
+    const { page: pageData, region, onMutation, warn, signal } = context;
     if (pageData.kind !== 'roundList' && pageData.kind !== 'myProjects') return;
     const headingText = HEADING_TEXT[pageData.kind];
+    const returning = returningEntry();
+    const saved = returning ? readSearch(returning) : null;
+    if (!returning) writeSearch(currentEntry(), null);
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const style = document.createElement('style');
@@ -108,6 +158,8 @@ export const feature: Feature = {
     let shown = false;
     let focusWhenOpen = false;
     let closed = false;
+    let clicked: string | null = null;
+    let reveal: SavedSearch | null = saved;
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
     let animationTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -281,6 +333,56 @@ export const feature: Feature = {
       paint();
     }
 
+    const onResultsClick = (event: Event): void => {
+      const link = event
+        .composedPath()
+        .find((node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement);
+      const href = link?.getAttribute('href');
+      if (href?.startsWith(PROJECT_HREF)) clicked = href.slice(PROJECT_HREF.length);
+    };
+
+    const persist = (): void => {
+      writeSearch(
+        currentEntry(),
+        raw.trim() === ''
+          ? null
+          : { ts: Date.now(), q: raw, id: clicked, y: Math.round(window.scrollY) },
+      );
+    };
+
+    const settle = async (wanted: SavedSearch, shadow: ShadowRoot): Promise<void> => {
+      const own = untilInput();
+      const cancel = AbortSignal.any([signal, own.signal]);
+      const href = wanted.id === null ? null : PROJECT_HREF + wanted.id;
+      const find = (): Element | null => {
+        if (href === null) return null;
+        for (const link of shadow.querySelectorAll('a')) {
+          if (link.getAttribute('href') === href) return link;
+        }
+        return null;
+      };
+      const tall = (): boolean =>
+        document.documentElement.scrollHeight >= wanted.y + window.innerHeight;
+      const ready = href === null ? tall : () => find() !== null;
+      try {
+        if (href === null && wanted.y <= 0) return;
+        await until(shadow, ready, cancel, performance.now() + WAIT_MS, false);
+        if (cancel.aborted) return;
+        for (const animation of page?.results.getAnimations() ?? []) animation.finish();
+        const link = find();
+        if (link) {
+          centerInView(link);
+          showRing(link);
+        } else if (href === null && tall()) {
+          window.scrollTo({ top: wanted.y, behavior: 'instant' });
+        } else {
+          warn('returned result not found');
+        }
+      } finally {
+        own.abort();
+      }
+    };
+
     const detach = (): void => {
       if (!page) return;
       for (const node of page.marked) node.removeAttribute(SECTION);
@@ -305,6 +407,7 @@ export const feature: Feature = {
       const gap = Number.parseFloat(getComputedStyle(row).rowGap);
       if (gap > 0) bar.style.setProperty('--bscf-site-gap', `${gap}px`);
       const results = ownBox('search-results', RESULTS);
+      results.addEventListener('click', onResultsClick);
       const mine: Page = {
         heading,
         anchor,
@@ -347,6 +450,10 @@ export const feature: Feature = {
           }
           mine.resultsUi = handle;
           handle.render(resultsView());
+          const wanted = reveal;
+          reveal = null;
+          if (wanted)
+            settle(wanted, handle.shadow).catch((error: unknown) => warn('restore', error));
         })
         .catch((error: unknown) => warn('mount', error));
     };
@@ -360,6 +467,14 @@ export const feature: Feature = {
       attach();
     };
 
+    if (saved) {
+      raw = saved.q;
+      shown = true;
+      search(saved.q.trim());
+    }
+
+    window.addEventListener('pagehide', persist, { signal });
+    window.navigation?.addEventListener('navigate', persist, { signal });
     onMutation(sync);
     sync();
 
