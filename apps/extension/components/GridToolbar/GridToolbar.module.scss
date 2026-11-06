@@ -35,55 +35,6 @@
   height: 2.75rem;
 }
 
-.expand {
-  @container (min-width: 40rem) {
-    display: none;
-  }
-}
-
-.note {
-  display: flex;
-
-  @container (min-width: 40rem) {
-    order: 2;
-  }
-}
-
-.collapse {
-  flex-basis: 100%;
-  min-width: 0;
-
-  @container (min-width: 40rem) {
-    display: contents;
-  }
-}
-
-.collapseInner {
-  @container (min-width: 40rem) {
-    display: contents;
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
-  min-width: 0;
-  padding-top: 0.5rem;
-
-  @container (min-width: 40rem) {
-    order: 1;
-    flex: 1 1 auto;
-    flex-flow: row wrap;
-    align-items: center;
-    gap: 0.5rem 0.75rem;
-    padding-top: 0;
-  }
-}
-
 .status {
   display: flex;
   flex-wrap: wrap;

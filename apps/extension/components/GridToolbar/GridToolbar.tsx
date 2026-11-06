@@ -1,5 +1,4 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { Collapsible } from '../Collapsible';
 import { GridCounts, type GridCountsProps } from '../GridCounts';
 import { type GridFilterState, GridFilters, type GridTrack } from '../GridFilters';
 import { GridNote } from '../GridNote';
@@ -29,8 +28,6 @@ export interface GridToolbarProps {
   counts: GridCountsProps;
   isFiltered: boolean;
   onReset: () => void;
-  isExpanded: boolean;
-  onExpandedChange: (isExpanded: boolean) => void;
   note: GridToolbarNote | null;
   searchRef?: Ref<HTMLInputElement>;
 }
@@ -47,8 +44,6 @@ export function GridToolbar({
   counts,
   isFiltered,
   onReset,
-  isExpanded,
-  onExpandedChange,
   note,
   searchRef,
 }: GridToolbarProps) {
@@ -82,18 +77,6 @@ export function GridToolbar({
             }
           />
         </div>
-        <IconButton
-          label="Filters and sort"
-          variant="surface"
-          size="lg"
-          className={styles.expand}
-          aria-expanded={isExpanded}
-          onClick={() => onExpandedChange(!isExpanded)}
-        >
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M3 4h14l-5.5 6.5V16l-3-1.5v-4z" />
-          </svg>
-        </IconButton>
         {note && (
           <div className={styles.note}>
             <Popover
@@ -114,31 +97,22 @@ export function GridToolbar({
             </Popover>
           </div>
         )}
-        <Collapsible
-          isOpen={isExpanded}
-          keepInteractive
-          className={styles.collapse}
-          innerClassName={styles.collapseInner}
-        >
-          <div className={styles.panel}>
-            <GridFilters
-              value={filters}
-              onChange={onFiltersChange}
-              availableTracks={availableTracks}
-              hasReviews={hasReviews}
-            />
-            <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
-          </div>
-        </Collapsible>
+        <GridFilters
+          value={filters}
+          onChange={onFiltersChange}
+          availableTracks={availableTracks}
+          hasReviews={hasReviews}
+        />
+        <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
       </div>
-      <div className={styles.status}>
-        <GridCounts {...counts} />
-        {isFiltered && (
+      {isFiltered && (
+        <div className={styles.status}>
+          <GridCounts {...counts} />
           <button type="button" className={styles.reset} onClick={onReset}>
             Clear filters
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

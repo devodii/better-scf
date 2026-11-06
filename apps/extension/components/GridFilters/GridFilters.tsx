@@ -1,6 +1,5 @@
 import type { Stance, Track } from 'shared';
-import { GridFilterButton } from '../GridFilterButton';
-import styles from './GridFilters.module.scss';
+import { Select, type SelectOption } from '../Select';
 
 export type GridTrack = Exclude<Track, 'unknown'>;
 
@@ -25,6 +24,8 @@ export interface GridFiltersProps {
   hasReviews: boolean;
 }
 
+type FilterKey = `stance:${Stance}` | `track:${GridTrack}` | 'shortlisted' | 'unread';
+
 const STANCES: readonly { value: Stance; label: string }[] = [
   { value: 'support', label: 'Support' },
   { value: 'unsure', label: 'Unsure' },
@@ -38,45 +39,39 @@ const TRACK_LABELS: Record<GridTrack, string> = {
   rfp: 'RFP',
 };
 
-function toggled<T>(list: readonly T[], item: T): T[] {
-  return list.includes(item) ? list.filter((entry) => entry !== item) : [...list, item];
-}
-
 export function GridFilters({ value, onChange, availableTracks, hasReviews }: GridFiltersProps) {
-  if (!hasReviews && availableTracks.length === 0) return null;
+  const options: SelectOption<FilterKey>[] = [];
+  if (hasReviews) {
+    for (const { value: stance, label } of STANCES) {
+      options.push({ value: `stance:${stance}`, label, group: 'Stance' });
+    }
+    options.push({ value: 'shortlisted', label: 'Shortlisted', group: 'Status' });
+    options.push({ value: 'unread', label: 'Unread', group: 'Status' });
+  }
+  for (const track of availableTracks) {
+    options.push({ value: `track:${track}`, label: TRACK_LABELS[track], group: 'Track' });
+  }
+  if (options.length === 0) return null;
+
+  const values: FilterKey[] = [
+    ...value.stances.map((stance): FilterKey => `stance:${stance}`),
+    ...(value.shortlisted ? (['shortlisted'] as const) : []),
+    ...(value.unread ? (['unread'] as const) : []),
+    ...value.tracks.map((track): FilterKey => `track:${track}`),
+  ];
+
+  const change = (next: FilterKey[]): void => {
+    onChange({
+      stances: STANCES.map((stance) => stance.value).filter((stance) =>
+        next.includes(`stance:${stance}`),
+      ),
+      tracks: availableTracks.filter((track) => next.includes(`track:${track}`)),
+      shortlisted: next.includes('shortlisted'),
+      unread: next.includes('unread'),
+    });
+  };
+
   return (
-    <fieldset aria-label="Filter submissions" className={styles.root}>
-      {hasReviews &&
-        STANCES.map(({ value: stance, label }) => (
-          <GridFilterButton
-            key={stance}
-            label={label}
-            isPressed={value.stances.includes(stance)}
-            onPressedChange={() => onChange({ ...value, stances: toggled(value.stances, stance) })}
-          />
-        ))}
-      {hasReviews && (
-        <>
-          <GridFilterButton
-            label="Shortlisted"
-            isPressed={value.shortlisted}
-            onPressedChange={(shortlisted) => onChange({ ...value, shortlisted })}
-          />
-          <GridFilterButton
-            label="Unread"
-            isPressed={value.unread}
-            onPressedChange={(unread) => onChange({ ...value, unread })}
-          />
-        </>
-      )}
-      {availableTracks.map((track) => (
-        <GridFilterButton
-          key={track}
-          label={TRACK_LABELS[track]}
-          isPressed={value.tracks.includes(track)}
-          onPressedChange={() => onChange({ ...value, tracks: toggled(value.tracks, track) })}
-        />
-      ))}
-    </fieldset>
+    <Select multiple label="Filters" options={options} values={values} onValuesChange={change} />
   );
 }

@@ -16,19 +16,9 @@ const meta = {
     onSortChange: fn(),
     availableTracks: [],
     hasReviews: true,
-    counts: {
-      total: 34,
-      shown: 34,
-      integration: 0,
-      open: 0,
-      rfp: 0,
-      knownTracks: 0,
-      opened: 9,
-    },
+    counts: { total: 34, shown: 34 },
     isFiltered: false,
     onReset: fn(),
-    isExpanded: false,
-    onExpandedChange: fn(),
     note: null,
   },
   decorators: [
@@ -47,7 +37,6 @@ function Interactive(args: GridToolbarProps) {
   const [query, setQuery] = useState(args.query);
   const [filters, setFilters] = useState(args.filters);
   const [sort, setSort] = useState(args.sort);
-  const [isExpanded, setExpanded] = useState(args.isExpanded);
   const [isNoteOpen, setNoteOpen] = useState(args.note?.isOpen ?? false);
   const [noteValue, setNoteValue] = useState(args.note?.value ?? '');
   const isFiltered =
@@ -65,8 +54,6 @@ function Interactive(args: GridToolbarProps) {
       onFiltersChange={setFilters}
       sort={sort}
       onSortChange={setSort}
-      isExpanded={isExpanded}
-      onExpandedChange={setExpanded}
       isFiltered={isFiltered}
       onReset={() => {
         setQuery('');
@@ -98,15 +85,7 @@ export const Default: Story = { render: (args) => <Interactive {...args} /> };
 export const WithKnownTracks: Story = {
   args: {
     availableTracks: ['integration', 'open'],
-    counts: {
-      total: 34,
-      shown: 34,
-      integration: 5,
-      open: 3,
-      rfp: 0,
-      knownTracks: 8,
-      opened: 9,
-    },
+    counts: { total: 34, shown: 34 },
   },
   render: (args) => <Interactive {...args} />,
 };
@@ -116,7 +95,7 @@ export const Filtered: Story = {
     query: 'stellar',
     filters: { stances: ['support'], tracks: [], shortlisted: true, unread: false },
     isFiltered: true,
-    counts: { total: 34, shown: 6, integration: 0, open: 0, rfp: 0, knownTracks: 0, opened: 9 },
+    counts: { total: 34, shown: 6 },
   },
 };
 
@@ -124,14 +103,14 @@ export const NoMatches: Story = {
   args: {
     query: 'zzz',
     isFiltered: true,
-    counts: { total: 34, shown: 0, integration: 0, open: 0, rfp: 0, knownTracks: 0, opened: 9 },
+    counts: { total: 34, shown: 0 },
   },
 };
 
 export const WithoutReviewData: Story = {
   args: {
     hasReviews: false,
-    counts: { total: 34, shown: 34, integration: 0, open: 0, rfp: 0, knownTracks: 0, opened: null },
+    counts: { total: 34, shown: 34 },
   },
 };
 
@@ -171,24 +150,6 @@ export const Focused: Story = {
 
 export const Narrow: Story = {
   args: { note: noteArgs },
-  render: (args) => <Interactive {...args} />,
-  decorators: [
-    (Story) => (
-      <div style={{ width: '24.375rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
-
-export const NarrowExpanded: Story = {
-  args: {
-    isExpanded: true,
-    availableTracks: ['integration', 'open', 'rfp'],
-    filters: { stances: ['unsure'], tracks: ['open'], shortlisted: false, unread: true },
-    isFiltered: true,
-    counts: { total: 34, shown: 4, integration: 5, open: 3, rfp: 1, knownTracks: 9, opened: 9 },
-  },
   render: (args) => <Interactive {...args} />,
   decorators: [
     (Story) => (

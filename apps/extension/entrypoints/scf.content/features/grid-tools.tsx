@@ -16,7 +16,14 @@ import {
   readRoundCard,
   readRoundView,
 } from '../../../lib/site/round';
-import { CARD_VIEW_BUTTON, CARD_VIEW_TEXT } from '../../../lib/site/selectors/round';
+import { onFacts, readFacts } from '../../../lib/site/round-facts';
+import {
+  CARD_VIEW_BUTTON,
+  CARD_VIEW_TEXT,
+  SECTION_HEADING,
+  SEE_ALL_TEXT,
+  TOGGLE_BUTTON,
+} from '../../../lib/site/selectors/round';
 import type { Feature, FeatureContext } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import gridCss from '../styles/grid-tools.scss?inline';
@@ -24,7 +31,6 @@ import gridCss from '../styles/grid-tools.scss?inline';
 const HIDDEN = 'data-bscf-grid-hidden';
 const FOCUSED = 'data-bscf-grid-focus';
 const BAR = 'data-bscf-grid-bar';
-const ROUND_NUMBER = /#\s*(\d+)/;
 const EDITABLE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 const INTERACTIVE = 'a[href],button,summary,[role="button"],[role="link"]';
 const TRACKS: readonly GridTrack[] = ['integration', 'open', 'rfp'];
@@ -48,6 +54,12 @@ interface Entry {
 interface Collected {
   grid: Element;
   entries: Entry[];
+}
+
+interface Seed {
+  query: string;
+  filters: GridFilterState;
+  sort: GridSortKey;
 }
 
 interface GridTools {
@@ -128,7 +140,7 @@ function viewButton(card: Element): HTMLElement | null {
 function openTools(
   context: FeatureContext,
   { grid, entries }: Collected,
-  roundNumber: string | null,
+  seed: Seed | null,
 ): GridTools {
   const { store, settings, warn } = context;
   const control = new AbortController();
@@ -144,19 +156,11 @@ function openTools(
   let all = entries;
   let hasReviews = entries.some((entry) => entry.id !== null);
   let ordered: Entry[] = entries;
-  let counts: GridCountsProps = {
-    total: 0,
-    shown: 0,
-    integration: 0,
-    open: 0,
-    rfp: 0,
-    knownTracks: 0,
-    opened: null,
-  };
-  let query = '';
-  let filters: GridFilterState = EMPTY_GRID_FILTERS;
-  let sort: GridSortKey = 'site';
-  let expanded = false;
+  let counts: GridCountsProps = { total: 0, shown: 0 };
+  let availableTracks: GridTrack[] = [];
+  let query = seed?.query ?? '';
+  let filters: GridFilterState = seed?.filters ?? EMPTY_GRID_FILTERS;
+  let sort: GridSortKey = seed?.sort ?? 'site';
   let focused: Entry | null = null;
   let noteOpen = false;
   let draft: string | null = null;
@@ -256,23 +260,8 @@ function openTools(
       for (const entry of ordered) entry.cell.style.setProperty('order', String(rank++));
     }
 
-    const next: GridCountsProps = {
-      total: all.length,
-      shown: visible.length,
-      integration: 0,
-      open: 0,
-      rfp: 0,
-      knownTracks: 0,
-      opened: hasReviews ? 0 : null,
-    };
-    for (const entry of all) {
-      const track = entry.id === null ? undefined : tracks.get(entry.id);
-      if (track) {
-        next.knownTracks += 1;
-        next[track] += 1;
-      }
-      if (next.opened !== null && reviewOf(entry).openedCount > 0) next.opened += 1;
-    }
+    availableTracks = TRACKS.filter((track) => [...tracks.values()].includes(track));
+    const next: GridCountsProps = { total: all.length, shown: visible.length };
     counts = next;
     render();
   };
@@ -294,7 +283,7 @@ function openTools(
         sort = value;
         apply();
       }}
-      availableTracks={TRACKS.filter((track) => counts[track] > 0)}
+      availableTracks={availableTracks}
       hasReviews={hasReviews}
       counts={counts}
       isFiltered={isFiltered()}
@@ -302,11 +291,6 @@ function openTools(
         query = '';
         filters = EMPTY_GRID_FILTERS;
         apply();
-      }}
-      isExpanded={expanded}
-      onExpandedChange={(value) => {
-        expanded = value;
-        render();
       }}
       note={
         focused && focused.id !== null
@@ -330,22 +314,23 @@ function openTools(
     />
   );
 
+  const syncTracks = (): void => {
+    const present = new Set(all.map((entry) => entry.id));
+    tracks.clear();
+    for (const [id, data] of readFacts()) {
+      if (data.track && present.has(id)) tracks.set(id, data.track);
+    }
+  };
+
   const refreshData = async (): Promise<void> => {
     if (!hasReviews) return;
     try {
-      const [reviews, submissions] = await Promise.all([
-        store.send('listReviews', undefined),
-        roundNumber ? store.send('listSubmissionsByRound', roundNumber) : [],
-      ]);
+      const reviews = await store.send('listReviews', undefined);
       if (closed) return;
       seeded.clear();
       for (const review of reviews) seeded.set(review.submissionId, review);
       for (const [id, review] of pending) seeded.set(id, review);
       loaded = true;
-      tracks.clear();
-      for (const { value } of submissions) {
-        if (value.track !== 'unknown') tracks.set(value.id, value.track);
-      }
       apply();
     } catch (error) {
       warn('load review data', error);
@@ -412,7 +397,13 @@ function openTools(
     }
   };
 
+  syncTracks();
   apply();
+  const offFacts = onFacts(() => {
+    syncTracks();
+    apply();
+  });
+  signal.addEventListener('abort', offFacts, { once: true });
   grid.before(bar);
   context
     .mount({ anchor: bar, append: 'last', children: toolbar() })
@@ -424,6 +415,11 @@ function openTools(
       }
       ui = handle;
       render();
+      if (seed && query !== '') {
+        const field = searchRef.current;
+        field?.focus();
+        field?.setSelectionRange(query.length, query.length);
+      }
     })
     .catch((error: unknown) => warn('mount', error));
   if (settings.keyboardShortcuts) document.addEventListener('keydown', onKeydown, { signal });
@@ -475,6 +471,87 @@ function openTools(
   };
 }
 
+interface Preview {
+  readonly section: Element;
+  close(): void;
+}
+
+function seeAllButton(section: Element): HTMLElement | null {
+  for (const button of section.querySelectorAll<HTMLElement>(TOGGLE_BUTTON)) {
+    if (norm(button.textContent) === SEE_ALL_TEXT) return button;
+  }
+  return null;
+}
+
+function openPreview(
+  context: FeatureContext,
+  section: Element,
+  records: readonly { id: string }[] | null,
+  choose: (seed: Seed) => void,
+): Preview | null {
+  const heading = section.querySelector(SECTION_HEADING);
+  const row = heading?.parentElement?.parentElement;
+  if (!row) return null;
+  const searchRef = createRef<HTMLInputElement>();
+  const bar = document.createElement('div');
+  bar.setAttribute(OWN_ATTRIBUTE, 'grid-tools-preview');
+  bar.setAttribute(BAR, '');
+  const next = row.nextElementSibling;
+  (next?.getAttribute(OWN_ATTRIBUTE) === 'cards-loader-bar' ? next : row).after(bar);
+
+  const ids = new Set((records ?? []).map((record) => record.id));
+  let closed = false;
+  let ui: MountedUi | null = null;
+
+  const known = (): GridTrack[] => {
+    const found = new Set<GridTrack>();
+    for (const [id, data] of readFacts()) if (data.track && ids.has(id)) found.add(data.track);
+    return TRACKS.filter((track) => found.has(track));
+  };
+
+  const toolbar = () => (
+    <GridToolbar
+      query=""
+      onQueryChange={(query) => choose({ query, filters: EMPTY_GRID_FILTERS, sort: 'site' })}
+      filters={EMPTY_GRID_FILTERS}
+      onFiltersChange={(filters) => choose({ query: '', filters, sort: 'site' })}
+      sort="site"
+      onSortChange={(sort) => choose({ query: '', filters: EMPTY_GRID_FILTERS, sort })}
+      availableTracks={known()}
+      hasReviews
+      counts={{ total: ids.size, shown: ids.size }}
+      isFiltered={false}
+      onReset={() => {}}
+      note={null}
+      searchRef={searchRef}
+    />
+  );
+
+  context
+    .mount({ anchor: bar, append: 'last', children: toolbar() })
+    .then((handle) => {
+      if (!handle) return;
+      if (closed) {
+        handle.remove();
+        return;
+      }
+      ui = handle;
+    })
+    .catch((error: unknown) => context.warn('mount preview', error));
+  const off = onFacts(() => ui?.render(toolbar()));
+
+  return {
+    section,
+    close() {
+      if (closed) return;
+      closed = true;
+      off();
+      ui?.remove();
+      bar.remove();
+    },
+  };
+}
+
 export const feature: Feature = {
   pages: ['round'],
   toggles: ['gridTools'],
@@ -483,8 +560,6 @@ export const feature: Feature = {
     if (page.kind !== 'round') return;
     const records = page.records;
     const match = records ? createCardMatcher(records) : null;
-    const roundNumber =
-      ROUND_NUMBER.exec(page.roundName ?? records?.[0]?.roundName ?? '')?.[1] ?? null;
 
     const style = document.createElement('style');
     style.setAttribute(OWN_ATTRIBUTE, 'grid-tools');
@@ -492,23 +567,43 @@ export const feature: Feature = {
     (document.head ?? document.documentElement).append(style);
 
     let tools: GridTools | null = null;
+    let preview: Preview | null = null;
+    let carry: Seed | null = null;
+
+    const closePreview = (): void => {
+      preview?.close();
+      preview = null;
+    };
 
     const sync = (): void => {
       if (tools?.isIntact()) return;
       const section = findReceivedSection(region);
-      const collected =
-        section && readRoundView(section) === 'grid' ? collect(section, match) : null;
+      const view = section ? readRoundView(section) : null;
+      const collected = section && view === 'grid' ? collect(section, match) : null;
       if (!collected) {
         tools?.close();
         tools = null;
+        if (section && view === 'carousel') {
+          if (preview && !preview.section.isConnected) closePreview();
+          preview ??= openPreview(context, section, records, (seed) => {
+            carry = seed;
+            seeAllButton(section)?.click();
+          });
+        } else {
+          closePreview();
+        }
         return;
       }
+      closePreview();
       if (tools && tools.grid !== collected.grid) {
         tools.close();
         tools = null;
       }
       if (tools) tools.update(collected.entries);
-      else tools = openTools(context, collected, roundNumber);
+      else {
+        tools = openTools(context, collected, carry);
+        carry = null;
+      }
     };
 
     onMutation(sync);
@@ -517,6 +612,7 @@ export const feature: Feature = {
     return () => {
       tools?.close();
       tools = null;
+      closePreview();
       style.remove();
     };
   },
