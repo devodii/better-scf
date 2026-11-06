@@ -40,6 +40,7 @@ type Decision =
   | {
       allowed: false;
       reason: "global" | "client" | "ip";
+      limit: string;
       daily: boolean;
       retryAfterSeconds: number;
     };
@@ -103,6 +104,7 @@ function createRateLimiter(
         return {
           allowed: false,
           reason: "global",
+          limit: "GLOBAL_DAILY_CAP",
           daily: true,
           retryAfterSeconds: retryAfter(global, DAY_MS, limits.globalPerDay, t),
         };
@@ -114,6 +116,7 @@ function createRateLimiter(
         return {
           allowed: false,
           reason: "client",
+          limit: "BURST_PER_MINUTE",
           daily: false,
           retryAfterSeconds: retryAfter(
             minute,
@@ -127,6 +130,7 @@ function createRateLimiter(
         return {
           allowed: false,
           reason: "client",
+          limit: "DAILY_CAP_PER_CLIENT",
           daily: true,
           retryAfterSeconds: retryAfter(day, DAY_MS, limits.clientPerDay, t),
         };
@@ -137,6 +141,7 @@ function createRateLimiter(
         return {
           allowed: false,
           reason: "ip",
+          limit: "IP_DAILY_CAP",
           daily: true,
           retryAfterSeconds: retryAfter(ipDay, DAY_MS, limits.ipPerDay, t),
         };
@@ -164,6 +169,15 @@ export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
       await next();
       return;
     }
+    console.warn(
+      JSON.stringify({
+        event: "limit",
+        limit: decision.limit,
+        clientId,
+        ip,
+        retryAfterSeconds: decision.retryAfterSeconds,
+      }),
+    );
     c.header("Retry-After", String(decision.retryAfterSeconds));
     const { retryAfterSeconds } = decision;
     if (decision.reason === "global") {

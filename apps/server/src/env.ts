@@ -2,6 +2,8 @@ import { z } from "zod";
 
 const DEFAULT_MODEL = "claude-sonnet-5-5";
 
+const requiredInt = () => z.coerce.number().int().positive();
+
 const intWithDefault = (fallback: number) =>
   z.coerce.number().int().positive().default(fallback);
 
@@ -21,10 +23,11 @@ const envSchema = z
           .filter((id) => id.length > 0),
       ),
     PORT: intWithDefault(8787),
-    DAILY_CAP_PER_CLIENT: intWithDefault(300),
-    BURST_PER_MINUTE: intWithDefault(24),
-    GLOBAL_DAILY_CAP: intWithDefault(6000),
-    DAILY_TOKEN_CAP_PER_CLIENT: intWithDefault(1_500_000),
+    DAILY_CAP_PER_CLIENT: requiredInt(),
+    BURST_PER_MINUTE: requiredInt(),
+    GLOBAL_DAILY_CAP: requiredInt(),
+    DAILY_TOKEN_CAP_PER_CLIENT: requiredInt(),
+    IP_DAILY_CAP: requiredInt(),
     MODEL: z.string().min(1).default(DEFAULT_MODEL),
   })
   .superRefine((value, ctx) => {

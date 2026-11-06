@@ -17,8 +17,6 @@ import { createHealthRoute } from "./routes/health.js";
 
 const SERVER_VERSION = "0.1.0";
 
-const IP_DAILY_CAP = 600;
-
 interface AppDeps extends Partial<Omit<ChatRouteDeps, "now">> {
   now?: () => number;
 }
@@ -46,7 +44,7 @@ function createApp(env: Env, deps: AppDeps = {}) {
       limits: {
         clientPerMinute: env.BURST_PER_MINUTE,
         clientPerDay: env.DAILY_CAP_PER_CLIENT,
-        ipPerDay: IP_DAILY_CAP,
+        ipPerDay: env.IP_DAILY_CAP,
         globalPerDay: env.GLOBAL_DAILY_CAP,
       },
       ...(deps.now ? { now: deps.now } : {}),

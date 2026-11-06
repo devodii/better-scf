@@ -53,6 +53,16 @@ export function createTokenBudget(
             1,
             Math.ceil(((first?.at ?? t) + DAY_MS - t) / 1000),
           );
+          console.warn(
+            JSON.stringify({
+              event: "limit",
+              limit: "DAILY_TOKEN_CAP_PER_CLIENT",
+              clientId,
+              used: total,
+              cap: perClientPerDay,
+              retryAfterSeconds,
+            }),
+          );
           c.header("Retry-After", String(retryAfterSeconds));
           return c.json(
             chatError(
