@@ -1,4 +1,4 @@
-import styles from './GridSort.module.scss';
+import { Select } from '../Select';
 
 export type GridSortKey = 'site' | 'budgetDesc' | 'budgetAsc' | 'title' | 'opened';
 
@@ -18,22 +18,11 @@ const OPTIONS: readonly { value: GridSortKey; label: string }[] = [
 
 export function GridSort({ value, onChange, hasReviews }: GridSortProps) {
   return (
-    <label className={styles.root}>
-      <span className={styles.label}>Sort</span>
-      <select
-        className={styles.select}
-        value={value}
-        onChange={(event) => {
-          const next = OPTIONS.find((option) => option.value === event.target.value);
-          if (next) onChange(next.value);
-        }}
-      >
-        {OPTIONS.filter((option) => hasReviews || option.value !== 'opened').map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <Select
+      label="Sort"
+      value={value}
+      options={OPTIONS.filter((option) => hasReviews || option.value !== 'opened')}
+      onChange={onChange}
+    />
   );
 }
