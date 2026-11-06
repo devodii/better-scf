@@ -6,6 +6,7 @@ on:
     paths:
       - "apps/server/**"
       - "packages/shared/**"
+      - "railway.toml"
   workflow_dispatch:
 
 permissions:
