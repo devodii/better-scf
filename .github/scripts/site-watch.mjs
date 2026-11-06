@@ -5,8 +5,13 @@ const SUBMISSION = '/submissions/recuKWaSdUL8Lkw9o';
 const AGENT = 'better-scf-site-watch (daily check of the public pages the extension relies on)';
 
 const get = async (path) => {
-  const response = await fetch(ORIGIN + path, { headers: { 'user-agent': AGENT } });
-  if (!response.ok) throw new Error(`${path} answered ${response.status}`);
+  const response = await fetch(ORIGIN + path, {
+    headers: { 'user-agent': AGENT, 'cache-control': 'no-cache' },
+  });
+  if (!response.ok) {
+    const hint = path === SUBMISSION ? ' (the pinned example proposal may have been removed)' : '';
+    throw new Error(`${path} answered ${response.status}${hint}`);
+  }
   return response.text();
 };
 
