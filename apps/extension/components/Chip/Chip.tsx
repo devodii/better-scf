@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, Ref } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 import styles from './Chip.module.scss';
 
 export type ChipVariant = 'purple' | 'olive' | 'yellow' | 'muted';
@@ -7,12 +7,30 @@ export type ChipVariant = 'purple' | 'olive' | 'yellow' | 'muted';
 export interface ChipProps extends ComponentPropsWithoutRef<'span'> {
   variant?: ChipVariant;
   href?: string | null | undefined;
+  icon?: ReactNode;
   ref?: Ref<HTMLSpanElement>;
 }
 
-export function Chip({ variant = 'purple', href, className, children, ref, ...rest }: ChipProps) {
+export function Chip({
+  variant = 'purple',
+  href,
+  icon,
+  className,
+  children,
+  ref,
+  ...rest
+}: ChipProps) {
   const classes = clsx(styles.root, styles[variant], className);
-  const label = <span className={styles.label}>{children}</span>;
+  const label = (
+    <>
+      {icon ? (
+        <span className={styles.icon} aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
+      <span className={styles.label}>{children}</span>
+    </>
+  );
 
   if (href) {
     return (

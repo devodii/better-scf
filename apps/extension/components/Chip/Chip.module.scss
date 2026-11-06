@@ -26,6 +26,12 @@
   }
 }
 
+.icon {
+  display: inline-flex;
+  flex: none;
+  margin-inline-end: -0.125rem;
+}
+
 .label {
   @include truncate;
 
