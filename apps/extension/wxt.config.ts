@@ -34,7 +34,7 @@ export default defineConfig({
     version: rootPackage.version,
     description:
       "Smarter tools for communityfund.stellar.org: badges, filters, private notes and an AI assistant.",
-    key: EXTENSION_PUBLIC_KEY,
+    ...(process.env.OMIT_MANIFEST_KEY ? {} : { key: EXTENSION_PUBLIC_KEY }),
     minimum_chrome_version: "111",
     permissions: ["storage", "scripting"],
     host_permissions: [

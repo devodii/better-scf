@@ -10,6 +10,7 @@
     "build:dev": "wxt build --mode development",
     "build:prod": "wxt build --mode production",
     "zip": "wxt zip",
+    "zip:store": "OMIT_MANIFEST_KEY=1 wxt zip",
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit && tsc --noEmit -p .storybook",
     "storybook": "storybook dev -p 6006 --no-open",
