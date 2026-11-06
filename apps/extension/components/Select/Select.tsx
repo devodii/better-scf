@@ -1,13 +1,5 @@
 import clsx from 'clsx';
-import {
-  Fragment,
-  type KeyboardEvent,
-  type ToggleEvent,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type KeyboardEvent, type ToggleEvent, useEffect, useId, useRef, useState } from 'react';
 import styles from './Select.module.scss';
 
 export interface SelectOption<T extends string> {
@@ -36,6 +28,11 @@ export interface MultiSelectProps<T extends string> extends SelectBaseProps<T> {
 
 export type SelectProps<T extends string> = SingleSelectProps<T> | MultiSelectProps<T>;
 
+interface Column<T extends string> {
+  group: string | undefined;
+  items: { option: SelectOption<T>; index: number }[];
+}
+
 export function Select<T extends string>(props: SelectProps<T>) {
   const { label, options, className } = props;
   const id = useId();
@@ -50,6 +47,16 @@ export function Select<T extends string>(props: SelectProps<T>) {
   );
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(firstPicked);
+  const columns = useMemo(() => {
+    const out: Column<T>[] = [];
+    options.forEach((option, index) => {
+      const last = out[out.length - 1];
+      if (last && last.group === option.group) last.items.push({ option, index });
+      else out.push({ group: option.group, items: [{ option, index }] });
+    });
+    return out;
+  }, [options]);
+  const isColumns = columns.length > 1;
 
   useEffect(() => {
     const element = panel.current;
@@ -99,6 +106,21 @@ export function Select<T extends string>(props: SelectProps<T>) {
       Home: 0,
       End: last,
     };
+    const sideways = isColumns && (event.key === 'ArrowRight' || event.key === 'ArrowLeft');
+    if (sideways) {
+      const from = columns.findIndex((column) =>
+        column.items.some((item) => item.index === active),
+      );
+      const row = columns[from]?.items.findIndex((item) => item.index === active) ?? 0;
+      const to =
+        columns[
+          Math.min(Math.max(from + (event.key === 'ArrowRight' ? 1 : -1), 0), columns.length - 1)
+        ];
+      const target = to?.items[Math.min(row, to.items.length - 1)];
+      event.preventDefault();
+      if (target) setActive(target.index);
+      return;
+    }
     const move = moves[event.key];
     if (move !== undefined) {
       event.preventDefault();
@@ -158,7 +180,7 @@ export function Select<T extends string>(props: SelectProps<T>) {
       <div
         ref={panel}
         popover="auto"
-        className={styles.panel}
+        className={clsx(styles.panel, isColumns && styles.isWide)}
         style={{ positionAnchor: anchor }}
         onToggle={handleToggle}
       >
@@ -166,46 +188,53 @@ export function Select<T extends string>(props: SelectProps<T>) {
           ref={list}
           role="listbox"
           tabIndex={-1}
-          className={styles.list}
+          className={clsx(styles.list, isColumns && styles.isColumns)}
           aria-label={label}
           aria-multiselectable={props.multiple ? true : undefined}
           aria-activedescendant={`${id}-option-${active}`}
           onKeyDown={handleListKey}
         >
-          {options.map((option, index) => (
-            <Fragment key={option.value}>
-              {option.group !== undefined && option.group !== options[index - 1]?.group && (
+          {columns.map((column) => (
+            <fieldset
+              key={column.group ?? 'all'}
+              className={styles.column}
+              aria-label={column.group ?? label}
+            >
+              {column.group !== undefined && (
                 <div className={styles.group} aria-hidden="true">
-                  {option.group}
+                  {column.group}
                 </div>
               )}
-              <button
-                type="button"
-                tabIndex={-1}
-                id={`${id}-option-${index}`}
-                role="option"
-                aria-selected={picked.includes(option.value)}
-                className={clsx(styles.option, index === active && styles.isActive)}
-                onPointerMove={() => setActive(index)}
-                onClick={() => choose(index)}
-              >
-                <span className={styles.optionLabel}>{option.label}</span>
-                {picked.includes(option.value) && (
-                  <svg
-                    className={styles.check}
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3.5 8.5l3 3 6-7" />
-                  </svg>
-                )}
-              </button>
-            </Fragment>
+              {column.items.map(({ option, index }) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  tabIndex={-1}
+                  id={`${id}-option-${index}`}
+                  role="option"
+                  aria-selected={picked.includes(option.value)}
+                  className={clsx(styles.option, index === active && styles.isActive)}
+                  onPointerMove={() => setActive(index)}
+                  onClick={() => choose(index)}
+                >
+                  <span className={styles.optionLabel}>{option.label}</span>
+                  {picked.includes(option.value) && (
+                    <svg
+                      className={styles.check}
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M3.5 8.5l3 3 6-7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </fieldset>
           ))}
         </div>
       </div>

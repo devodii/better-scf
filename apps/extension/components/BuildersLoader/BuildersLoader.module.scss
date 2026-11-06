@@ -58,3 +58,17 @@
     background: var(--bscf-accent-yellow);
   }
 }
+
+.compact {
+  gap: 0.5rem;
+
+  .label {
+    color: var(--bscf-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .bar {
+    flex: 0 1 6rem;
+    min-width: 3rem;
+  }
+}

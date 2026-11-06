@@ -8,6 +8,7 @@
   flex-direction: column;
   gap: 0.25rem;
   margin-inline: -0.5rem;
+  margin-bottom: 1rem;
   padding: 0.75rem 0.5rem 0.5rem;
   border-bottom: 0.0625rem solid var(--bscf-muted-chip);
   background: var(--bscf-bg);
@@ -33,6 +34,11 @@
 
 .searchInput {
   height: 2.75rem;
+}
+
+.trailing {
+  min-width: 0;
+  margin-left: auto;
 }
 
 .status {

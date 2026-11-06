@@ -1,4 +1,4 @@
-import type { KeyboardEvent, Ref } from 'react';
+import type { KeyboardEvent, ReactNode, Ref } from 'react';
 import { GridCounts, type GridCountsProps } from '../GridCounts';
 import { type GridFilterState, GridFilters, type GridTrack } from '../GridFilters';
 import { GridNote } from '../GridNote';
@@ -29,6 +29,7 @@ export interface GridToolbarProps {
   isFiltered: boolean;
   onReset: () => void;
   note: GridToolbarNote | null;
+  trailing?: ReactNode;
   searchRef?: Ref<HTMLInputElement>;
 }
 
@@ -45,6 +46,7 @@ export function GridToolbar({
   isFiltered,
   onReset,
   note,
+  trailing,
   searchRef,
 }: GridToolbarProps) {
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -104,6 +106,7 @@ export function GridToolbar({
           hasReviews={hasReviews}
         />
         <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
+        {trailing ? <div className={styles.trailing}>{trailing}</div> : null}
       </div>
       {isFiltered && (
         <div className={styles.status}>

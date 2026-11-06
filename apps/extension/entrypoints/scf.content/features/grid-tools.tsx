@@ -1,5 +1,6 @@
 import { createRef } from 'react';
 import type { ReviewState, Stance } from 'shared';
+import { BuildersLoader } from '../../../components/BuildersLoader';
 import type { GridCountsProps } from '../../../components/GridCounts';
 import {
   EMPTY_GRID_FILTERS,
@@ -8,6 +9,7 @@ import {
 } from '../../../components/GridFilters';
 import type { GridSortKey } from '../../../components/GridSort';
 import { GridToolbar } from '../../../components/GridToolbar';
+import { onLoader, readLoader } from '../../../lib/site/loader-store';
 import {
   type CardMatcher,
   createCardMatcher,
@@ -78,6 +80,22 @@ function blankReview(submissionId: string): ReviewState {
     lastOpenedAt: null,
     openedCount: 0,
   };
+}
+
+function loaderStatus() {
+  const loader = readLoader();
+  if (!loader) return null;
+  return (
+    <BuildersLoader
+      compact
+      status={loader.status}
+      done={loader.done}
+      total={loader.total}
+      message={loader.message}
+      onStart={loader.start}
+      onCancel={loader.cancel}
+    />
+  );
 }
 
 const norm = (text: string | null | undefined): string =>
@@ -310,6 +328,7 @@ function openTools(
             }
           : null
       }
+      trailing={loaderStatus()}
       searchRef={searchRef}
     />
   );
@@ -404,6 +423,7 @@ function openTools(
     apply();
   });
   signal.addEventListener('abort', offFacts, { once: true });
+  signal.addEventListener('abort', onLoader(render), { once: true });
   grid.before(bar);
   context
     .mount({ anchor: bar, append: 'last', children: toolbar() })
@@ -496,8 +516,9 @@ function openPreview(
   const bar = document.createElement('div');
   bar.setAttribute(OWN_ATTRIBUTE, 'grid-tools-preview');
   bar.setAttribute(BAR, '');
-  const next = row.nextElementSibling;
-  (next?.getAttribute(OWN_ATTRIBUTE) === 'cards-loader-bar' ? next : row).after(bar);
+  const description = row.parentElement?.querySelector(':scope > p');
+  if (description) description.after(bar);
+  else row.after(bar);
 
   const ids = new Set((records ?? []).map((record) => record.id));
   let closed = false;
@@ -523,6 +544,7 @@ function openPreview(
       isFiltered={false}
       onReset={() => {}}
       note={null}
+      trailing={loaderStatus()}
       searchRef={searchRef}
     />
   );
@@ -539,6 +561,7 @@ function openPreview(
     })
     .catch((error: unknown) => context.warn('mount preview', error));
   const off = onFacts(() => ui?.render(toolbar()));
+  const offLoader = onLoader(() => ui?.render(toolbar()));
 
   return {
     section,
@@ -546,6 +569,7 @@ function openPreview(
       if (closed) return;
       closed = true;
       off();
+      offLoader();
       ui?.remove();
       bar.remove();
     },

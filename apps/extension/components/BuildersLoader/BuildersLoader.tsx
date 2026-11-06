@@ -13,6 +13,7 @@ export interface BuildersLoaderProps {
   message?: string | null | undefined;
   onStart: () => void;
   onCancel: () => void;
+  compact?: boolean;
   className?: string | undefined;
 }
 
@@ -71,6 +72,7 @@ export function BuildersLoader({
   message,
   onStart,
   onCancel,
+  compact = false,
   className,
 }: BuildersLoaderProps) {
   const progress = `${done} of ${total}`;
@@ -84,7 +86,7 @@ export function BuildersLoader({
   }[status];
 
   return (
-    <div className={clsx(styles.root, className)}>
+    <div className={clsx(styles.root, compact && styles.compact, className)}>
       {running && <Spinner size="sm" label="Loading tracks and teams" />}
       {status === 'done' && (
         <span className={styles.check}>

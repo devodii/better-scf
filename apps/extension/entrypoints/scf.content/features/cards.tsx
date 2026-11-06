@@ -16,6 +16,7 @@ import {
   onEnrichBlock,
   readEnrichBlock,
 } from '../../../lib/site/enrich';
+import { clearLoader, publishLoader } from '../../../lib/site/loader-store';
 import {
   findAwardedSection,
   findReceivedSection,
@@ -506,7 +507,14 @@ export const feature: Feature = {
       />
     );
 
-    const renderLoader = (): void => loaderUi?.render(loaderView());
+    const renderLoader = (): void => {
+      loaderUi?.render(loaderView());
+      if (!enrichable) return;
+      publishLoader(
+        { ...loader, total: loader.total || entries.size },
+        { start: () => void runBatch(), cancel: () => batch?.abort() },
+      );
+    };
 
     const stopLoader = (reason: EnrichBlock): void => {
       loader = { ...loader, status: 'stopped', message: enrichBlockMessage(reason) };
@@ -568,7 +576,7 @@ export const feature: Feature = {
     }
 
     const syncLoader = (section: Element): void => {
-      if (!enrichable || loaderBar?.isConnected) return;
+      if (!enrichable || settings.gridTools || loaderBar?.isConnected) return;
       const row = section.querySelector(SECTION_HEADING)?.parentElement?.parentElement;
       if (!row) {
         warn('round header row not found');
@@ -612,6 +620,7 @@ export const feature: Feature = {
 
     sync();
     onMutation(sync);
+    renderLoader();
     if (enrichable) {
       const start = window.setTimeout(() => {
         if (!signal.aborted && !batch && loader.status === 'idle') void runBatch();
@@ -650,6 +659,7 @@ export const feature: Feature = {
 
     return () => {
       batch?.abort();
+      clearLoader();
       loaderUi?.remove();
       loaderBar?.remove();
       for (const entry of [...entries.values()]) detach(entry);
