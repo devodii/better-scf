@@ -9,6 +9,10 @@ export const SEARCH_PREFIX = 'bscf-search:';
 export const TTL_MS = 30 * 60 * 1000;
 export const WAIT_MS = 3000;
 const RING_MS = 1200;
+const QUIET_MS = 120;
+const STABLE_MAX_MS = 1500;
+const MAX_CORRECTIONS = 3;
+const CENTER_TOLERANCE = 4;
 const SWIPER_REQUEST = 'bscf-swiper-request';
 const SWIPER_RESPONSE = 'bscf-swiper-response';
 const MAX_CLIMB = 10;
@@ -198,6 +202,82 @@ export function centerInView(element: Element): void {
   const rect = element.getBoundingClientRect();
   const top = window.scrollY + rect.top + rect.height / 2 - window.innerHeight / 2;
   window.scrollTo({ top: Math.max(0, Math.round(top)), behavior: 'instant' });
+}
+
+const frame = (signal: AbortSignal): Promise<void> =>
+  new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const done = (): void => {
+      cancelAnimationFrame(id);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const id = requestAnimationFrame(done);
+    signal.addEventListener('abort', done, { once: true });
+  });
+
+const fontsReady = (): Promise<void> =>
+  new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(done, STABLE_MAX_MS);
+    void document.fonts.ready.then(done);
+  });
+
+function quiet(signal: AbortSignal, watch: readonly Element[]): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const done = (): void => {
+      observer.disconnect();
+      clearTimeout(timer);
+      clearTimeout(cap);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(done, QUIET_MS);
+    });
+    const cap = setTimeout(done, STABLE_MAX_MS);
+    signal.addEventListener('abort', done, { once: true });
+    for (const node of [document.documentElement, document.body, ...watch]) observer.observe(node);
+  });
+}
+
+function isCentered(element: Element): boolean {
+  const rect = element.getBoundingClientRect();
+  const offset = rect.top + rect.height / 2 - window.innerHeight / 2;
+  if (Math.abs(offset) > CENTER_TOLERANCE) return false;
+  return rect.height > window.innerHeight || (rect.top >= 0 && rect.bottom <= window.innerHeight);
+}
+
+export async function landOn(
+  place: () => Element | null,
+  cancel: AbortSignal,
+  watch: readonly Element[],
+): Promise<Element | null> {
+  await fontsReady();
+  await frame(cancel);
+  await frame(cancel);
+  await quiet(cancel, watch);
+  let element: Element | null = null;
+  for (let attempt = 0; attempt <= MAX_CORRECTIONS; attempt++) {
+    if (cancel.aborted) return element;
+    element = place();
+    if (!element) return null;
+    await frame(cancel);
+    if (cancel.aborted || isCentered(element)) return element;
+  }
+  return element;
 }
 
 export function untilInput(): AbortController {
@@ -445,12 +525,20 @@ export const feature: Feature = {
         false,
       );
       if (cancel.aborted) return;
-      const element = findCard(region, wantedCard);
+      const element = await landOn(
+        () => {
+          const found = findCard(region, wantedCard);
+          if (found) showCard(region, wantedCard, found);
+          return found;
+        },
+        cancel,
+        [region],
+      );
+      if (cancel.aborted) return;
       if (!element) {
         warn('returned card not found');
         return;
       }
-      showCard(region, wantedCard, element);
       warn(`scrolled to card ${wantedCard.index} of "${wantedCard.section}" [${key}]`);
       showRing(element);
       warn(`ring shown [${key}]`);

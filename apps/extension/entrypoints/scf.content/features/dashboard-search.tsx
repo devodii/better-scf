@@ -14,6 +14,7 @@ import {
   centerInView,
   currentEntry,
   isReturning,
+  landOn,
   markRestored,
   SEARCH_PREFIX,
   showRing,
@@ -368,6 +369,17 @@ export const feature: Feature = {
       );
     };
 
+    const finishAnimations = (): void => {
+      if (!page) return;
+      const running = [
+        ...page.results.getAnimations({ subtree: true }),
+        ...(page.resultsUi?.shadow.getAnimations() ?? []),
+      ];
+      for (const animation of running) {
+        if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish();
+      }
+    };
+
     const settle = async (
       wanted: SavedSearch,
       shadow: ShadowRoot,
@@ -376,7 +388,7 @@ export const feature: Feature = {
       const href = wanted.id === null ? null : PROJECT_HREF + wanted.id;
       const find = (): Element | null => {
         if (href === null) return null;
-        for (const link of shadow.querySelectorAll('a')) {
+        for (const link of (page?.resultsUi?.shadow ?? shadow).querySelectorAll('a')) {
           if (link.getAttribute('href') === href) return link;
         }
         return null;
@@ -387,14 +399,30 @@ export const feature: Feature = {
       if (href === null && wanted.y <= 0) return;
       await until(shadow, ready, cancel, performance.now() + WAIT_MS, false);
       if (cancel.aborted) return;
-      for (const animation of page?.results.getAnimations() ?? []) animation.finish();
-      const link = find();
-      if (link) {
-        centerInView(link);
-        note(`scrolled to ${wanted.id}`);
-        showRing(link);
-        note('ring shown');
-      } else if (href === null && tall()) {
+      if (href !== null) {
+        const link = await landOn(
+          () => {
+            setSections('gone');
+            finishAnimations();
+            const found = find();
+            if (found) centerInView(found);
+            return found;
+          },
+          cancel,
+          page ? [region, page.results] : [region],
+        );
+        if (cancel.aborted) return;
+        if (link) {
+          note(`scrolled to ${wanted.id}`);
+          showRing(link);
+          note('ring shown');
+        } else {
+          warn('returned result not found');
+        }
+        return;
+      }
+      finishAnimations();
+      if (tall()) {
         window.scrollTo({ top: wanted.y, behavior: 'instant' });
         note(`scrolled to y ${wanted.y}`);
       } else {
