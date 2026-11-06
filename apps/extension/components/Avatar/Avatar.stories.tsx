@@ -36,6 +36,27 @@ export const LinkFocused: Story = {
   ],
 };
 
+export const LinkHover: Story = {
+  args: { href: 'https://github.com/octocat', size: 'lg' },
+  decorators: [
+    (Story) => (
+      <div data-force-hover style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Narrow390: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', maxWidth: '390px' }}>
+      <Avatar {...args} size="sm" />
+      <Avatar {...args} size="md" src={PHOTO} />
+      <Avatar {...args} size="lg" href="https://github.com/octocat" />
+    </div>
+  ),
+};
+
 export const Small: Story = { args: { size: 'sm' } };
 
 export const Large: Story = { args: { size: 'lg', src: PHOTO } };

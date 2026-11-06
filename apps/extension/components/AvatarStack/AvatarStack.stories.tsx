@@ -44,4 +44,26 @@ export const FocusedLinks: Story = {
   ],
 };
 
+export const Hover: Story = {
+  args: { people: TEAM, size: 'md' },
+  decorators: [
+    (Story) => (
+      <div data-force-hover style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Narrow390: Story = {
+  args: { people: TEAM, size: 'lg' },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: '390px' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const Empty: Story = { args: { people: [] } };

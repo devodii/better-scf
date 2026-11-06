@@ -2,17 +2,17 @@
 
 .root {
   @include base;
+  @include hairline;
+  @include type-chip;
 
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 50%;
-  background: var(--bscf-muted-chip);
-  color: var(--bscf-text-muted);
-  font-weight: 500;
-  line-height: 1;
+  border-radius: var(--bscf-radius-pill);
+  background: var(--bscf-button-bg);
+  color: var(--bscf-text);
   text-decoration: none;
 }
 
@@ -36,6 +36,11 @@
 
 .link {
   @include focus-ring;
+  @include quick-transition(border-color);
+
+  @include on-hover {
+    border-color: var(--bscf-link);
+  }
 }
 
 .image {

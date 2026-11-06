@@ -8,7 +8,7 @@ const meta = {
   args: { label: 'Track chips on cards', checked: false, onChange: fn() },
   decorators: [
     (Story) => (
-      <div style={{ width: '20rem' }}>
+      <div style={{ maxWidth: '24.375rem' }}>
         <Story />
       </div>
     ),
@@ -34,6 +34,27 @@ export const Focused: Story = {
   decorators: [
     (Story) => (
       <div data-force-focus style={{ padding: '0.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Hover: Story = {
+  decorators: [
+    (Story) => (
+      <div data-force-hover>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const Narrow390: Story = {
+  args: { checked: true },
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: '390px' }}>
         <Story />
       </div>
     ),

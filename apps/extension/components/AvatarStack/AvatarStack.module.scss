@@ -12,7 +12,7 @@
 
 .item {
   display: flex;
-  border-radius: 50%;
+  border-radius: var(--bscf-radius-pill);
   box-shadow: 0 0 0 0.125rem var(--bscf-surface);
 
   & + & {
@@ -21,14 +21,16 @@
 }
 
 .more {
+  @include hairline;
+  @include type-chip;
+
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: var(--bscf-muted-chip);
+  border-radius: var(--bscf-radius-pill);
+  background: var(--bscf-button-bg);
   color: var(--bscf-text);
-  font-weight: 500;
-  line-height: 1;
 }
 
 .sm .more {
