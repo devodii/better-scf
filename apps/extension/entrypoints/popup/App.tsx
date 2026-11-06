@@ -27,9 +27,8 @@ const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
   },
   { label: "Search and filters", keys: ["gridTools"] },
   {
-    label: "Small improvements",
+    label: "Proposal pages",
     keys: [
-      "roundHeader",
       "tableOfContents",
       "trancheSummary",
       "addressPills",
@@ -38,9 +37,10 @@ const GROUPS: readonly { label: string; keys: readonly FeatureKey[] }[] = [
       "shareButton",
       "coverNormalization",
       "hoverZoom",
-      "navigationMemory",
     ],
   },
+  { label: "Round page header", keys: ["roundHeader"] },
+  { label: "Return to where you left off", keys: ["navigationMemory"] },
   { label: "AI assistant", keys: ["aiDock"] },
 ];
 
