@@ -16,7 +16,10 @@ export abstract class AppError<Kind extends string> extends Error {
   readonly kind: Kind;
 
   protected constructor({ name, kind, message, cause }: AppErrorInit<Kind>) {
-    super(message.slice(0, MAX_MESSAGE_CHARS), cause === undefined ? undefined : { cause });
+    super(
+      message.slice(0, MAX_MESSAGE_CHARS),
+      cause === undefined ? undefined : { cause },
+    );
     this.name = name;
     this.kind = kind;
   }

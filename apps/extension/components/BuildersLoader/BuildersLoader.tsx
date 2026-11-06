@@ -1,10 +1,11 @@
-import clsx from 'clsx';
-import { IconButton } from '../IconButton';
-import { Spinner } from '../Spinner';
-import { Tooltip } from '../Tooltip';
-import styles from './BuildersLoader.module.scss';
+import clsx from "clsx";
+import { IconButton } from "../IconButton";
+import { Spinner } from "../Spinner";
+import { Tooltip } from "../Tooltip";
+import styles from "./BuildersLoader.module.scss";
 
-export type BuildersLoaderStatus = 'idle' | 'running' | 'done' | 'cancelled' | 'stopped';
+export type BuildersLoaderStatus =
+  "idle" | "running" | "done" | "cancelled" | "stopped";
 
 export interface BuildersLoaderProps {
   status: BuildersLoaderStatus;
@@ -76,11 +77,11 @@ export function BuildersLoader({
   className,
 }: BuildersLoaderProps) {
   const progress = `${done} of ${total}`;
-  const running = status === 'running';
+  const running = status === "running";
   const label = {
-    idle: 'Tracks and teams not loaded yet',
+    idle: "Tracks and teams not loaded yet",
     running: `Reading proposals for tracks and teams, ${progress}`,
-    done: 'Tracks and teams up to date',
+    done: "Tracks and teams up to date",
     cancelled: `Paused at ${progress}`,
     stopped: message ?? `Stopped at ${progress}`,
   }[status];
@@ -88,13 +89,13 @@ export function BuildersLoader({
   return (
     <div className={clsx(styles.root, compact && styles.compact, className)}>
       {running && <Spinner size="sm" label="Loading tracks and teams" />}
-      {status === 'done' && (
+      {status === "done" && (
         <span className={styles.check}>
           <CheckIcon />
         </span>
       )}
       <span
-        className={clsx(styles.label, status === 'stopped' && styles.warning)}
+        className={clsx(styles.label, status === "stopped" && styles.warning)}
         role="status"
         aria-live="polite"
       >
@@ -107,7 +108,11 @@ export function BuildersLoader({
       )}
       {running ? (
         <Tooltip content="Cancel">
-          <IconButton label="Cancel loading" variant="surface" onClick={onCancel}>
+          <IconButton
+            label="Cancel loading"
+            variant="surface"
+            onClick={onCancel}
+          >
             <CancelIcon />
           </IconButton>
         </Tooltip>
@@ -116,7 +121,7 @@ export function BuildersLoader({
           <IconButton
             label="Reload tracks and teams"
             variant="surface"
-            disabled={status === 'stopped' || total === 0}
+            disabled={status === "stopped" || total === 0}
             onClick={onStart}
           >
             <ReloadIcon />

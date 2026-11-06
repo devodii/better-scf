@@ -78,6 +78,10 @@
   color: var(--bscf-bg);
 
   @include on-hover {
-    background: color-mix(in srgb, var(--bscf-accent-yellow) 85%, var(--bscf-text));
+    background: color-mix(
+      in srgb,
+      var(--bscf-accent-yellow) 85%,
+      var(--bscf-text)
+    );
   }
 }

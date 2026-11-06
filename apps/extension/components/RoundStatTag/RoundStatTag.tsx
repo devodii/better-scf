@@ -1,6 +1,6 @@
-import { Chip, type ChipVariant } from '../Chip';
-import { Tooltip } from '../Tooltip';
-import styles from './RoundStatTag.module.scss';
+import { Chip, type ChipVariant } from "../Chip";
+import { Tooltip } from "../Tooltip";
+import styles from "./RoundStatTag.module.scss";
 
 export interface RoundStatTagProps {
   label: string;
@@ -12,7 +12,7 @@ export interface RoundStatTagProps {
 export function RoundStatTag({
   label,
   hint,
-  variant = 'purple',
+  variant = "purple",
   isHintOpen = false,
 }: RoundStatTagProps) {
   return (

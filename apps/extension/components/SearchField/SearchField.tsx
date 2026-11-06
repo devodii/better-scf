@@ -1,7 +1,7 @@
-import clsx from 'clsx';
-import type { KeyboardEvent, Ref } from 'react';
-import { TextField } from '../TextField';
-import styles from './SearchField.module.scss';
+import clsx from "clsx";
+import type { KeyboardEvent, Ref } from "react";
+import { TextField } from "../TextField";
+import styles from "./SearchField.module.scss";
 
 export interface SearchFieldProps {
   value: string;
@@ -21,11 +21,11 @@ export function SearchField({
   ref,
 }: SearchFieldProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (value === '') return;
-    if (event.key === 'Escape') {
+    if (value === "") return;
+    if (event.key === "Escape") {
       event.stopPropagation();
-      onValueChange('');
-    } else if (event.key === 'Enter' || event.key === 'ArrowDown') {
+      onValueChange("");
+    } else if (event.key === "Enter" || event.key === "ArrowDown") {
       event.preventDefault();
       onMoveDown?.();
     }
@@ -46,7 +46,7 @@ export function SearchField({
       spellCheck={false}
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={handleKeyDown}
-      onClear={() => onValueChange('')}
+      onClear={() => onValueChange("")}
       leadingIcon={
         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path d="M8.5 2a6.5 6.5 0 0 1 5.2 10.4l4.4 4.4-1.3 1.3-4.4-4.4A6.5 6.5 0 1 1 8.5 2zm0 1.8a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4z" />

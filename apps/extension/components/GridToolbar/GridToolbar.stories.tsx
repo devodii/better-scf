@@ -1,18 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import { fn } from 'storybook/test';
-import { EMPTY_GRID_FILTERS } from '../GridFilters';
-import { GridToolbar, type GridToolbarProps } from './GridToolbar';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import { fn } from "storybook/test";
+import { EMPTY_GRID_FILTERS } from "../GridFilters";
+import { GridToolbar, type GridToolbarProps } from "./GridToolbar";
 
 const meta = {
-  title: 'Grid/GridToolbar',
+  title: "Grid/GridToolbar",
   component: GridToolbar,
   args: {
-    query: '',
+    query: "",
     onQueryChange: fn(),
     filters: EMPTY_GRID_FILTERS,
     onFiltersChange: fn(),
-    sort: 'site',
+    sort: "site",
     onSortChange: fn(),
     availableTracks: [],
     hasReviews: true,
@@ -23,7 +23,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ minHeight: '22rem' }}>
+      <div style={{ minHeight: "22rem" }}>
         <Story />
       </div>
     ),
@@ -38,9 +38,9 @@ function Interactive(args: GridToolbarProps) {
   const [filters, setFilters] = useState(args.filters);
   const [sort, setSort] = useState(args.sort);
   const [isNoteOpen, setNoteOpen] = useState(args.note?.isOpen ?? false);
-  const [noteValue, setNoteValue] = useState(args.note?.value ?? '');
+  const [noteValue, setNoteValue] = useState(args.note?.value ?? "");
   const isFiltered =
-    query !== '' ||
+    query !== "" ||
     filters.stances.length > 0 ||
     filters.tracks.length > 0 ||
     filters.shortlisted ||
@@ -56,7 +56,7 @@ function Interactive(args: GridToolbarProps) {
       onSortChange={setSort}
       isFiltered={isFiltered}
       onReset={() => {
-        setQuery('');
+        setQuery("");
         setFilters(EMPTY_GRID_FILTERS);
       }}
       note={
@@ -73,8 +73,8 @@ function Interactive(args: GridToolbarProps) {
 }
 
 const noteArgs = {
-  title: 'Onchain Analytics for Stellar',
-  value: '',
+  title: "Onchain Analytics for Stellar",
+  value: "",
   isOpen: false,
   onOpenChange: fn(),
   onChange: fn(),
@@ -84,7 +84,7 @@ export const Default: Story = { render: (args) => <Interactive {...args} /> };
 
 export const WithKnownTracks: Story = {
   args: {
-    availableTracks: ['integration', 'open'],
+    availableTracks: ["integration", "open"],
     counts: { total: 34, shown: 34 },
   },
   render: (args) => <Interactive {...args} />,
@@ -92,8 +92,13 @@ export const WithKnownTracks: Story = {
 
 export const Filtered: Story = {
   args: {
-    query: 'stellar',
-    filters: { stances: ['support'], tracks: [], shortlisted: true, unread: false },
+    query: "stellar",
+    filters: {
+      stances: ["support"],
+      tracks: [],
+      shortlisted: true,
+      unread: false,
+    },
     isFiltered: true,
     counts: { total: 34, shown: 6 },
   },
@@ -101,7 +106,7 @@ export const Filtered: Story = {
 
 export const NoMatches: Story = {
   args: {
-    query: 'zzz',
+    query: "zzz",
     isFiltered: true,
     counts: { total: 34, shown: 0 },
   },
@@ -124,13 +129,13 @@ export const NoteOpen: Story = {
     note: {
       ...noteArgs,
       isOpen: true,
-      value: 'Strong integration plan, budget for tranche 2 looks high.',
+      value: "Strong integration plan, budget for tranche 2 looks high.",
     },
   },
   render: (args) => <Interactive {...args} />,
   decorators: [
     (Story) => (
-      <div style={{ minHeight: '26rem' }}>
+      <div style={{ minHeight: "26rem" }}>
         <Story />
       </div>
     ),
@@ -153,7 +158,7 @@ export const Narrow: Story = {
   render: (args) => <Interactive {...args} />,
   decorators: [
     (Story) => (
-      <div style={{ width: '24.375rem' }}>
+      <div style={{ width: "24.375rem" }}>
         <Story />
       </div>
     ),
@@ -161,11 +166,11 @@ export const Narrow: Story = {
 };
 
 export const Medium: Story = {
-  args: { availableTracks: ['integration', 'open'], note: noteArgs },
+  args: { availableTracks: ["integration", "open"], note: noteArgs },
   render: (args) => <Interactive {...args} />,
   decorators: [
     (Story) => (
-      <div style={{ width: '48rem' }}>
+      <div style={{ width: "48rem" }}>
         <Story />
       </div>
     ),

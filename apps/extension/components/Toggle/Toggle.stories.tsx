@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
-import { Toggle } from './Toggle';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+import { Toggle } from "./Toggle";
 
 const meta = {
-  title: 'UI/Toggle',
+  title: "UI/Toggle",
   component: Toggle,
-  args: { label: 'Track chips on cards', checked: false, onChange: fn() },
+  args: { label: "Track chips on cards", checked: false, onChange: fn() },
   decorators: [
     (Story) => (
-      <div style={{ maxWidth: '24.375rem' }}>
+      <div style={{ maxWidth: "24.375rem" }}>
         <Story />
       </div>
     ),
@@ -25,7 +25,8 @@ export const On: Story = { args: { checked: true } };
 export const LongLabel: Story = {
   args: {
     checked: true,
-    label: 'Show opened instead of unread on every card of the round grid and carousel',
+    label:
+      "Show opened instead of unread on every card of the round grid and carousel",
   },
 };
 
@@ -33,7 +34,7 @@ export const Focused: Story = {
   args: { checked: true },
   decorators: [
     (Story) => (
-      <div data-force-focus style={{ padding: '0.5rem' }}>
+      <div data-force-focus style={{ padding: "0.5rem" }}>
         <Story />
       </div>
     ),
@@ -54,7 +55,7 @@ export const Narrow390: Story = {
   args: { checked: true },
   decorators: [
     (Story) => (
-      <div style={{ maxWidth: '390px' }}>
+      <div style={{ maxWidth: "390px" }}>
         <Story />
       </div>
     ),

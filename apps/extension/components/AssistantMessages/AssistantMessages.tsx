@@ -1,16 +1,19 @@
-import clsx from 'clsx';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import clsx from "clsx";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   type AssistantDecision,
   AssistantMessage,
   type AssistantMessageItem,
-} from '../AssistantMessage';
-import { type AssistantPromptItem, AssistantPrompts } from '../AssistantPrompts';
-import { Chip } from '../Chip';
-import styles from './AssistantMessages.module.scss';
+} from "../AssistantMessage";
+import {
+  type AssistantPromptItem,
+  AssistantPrompts,
+} from "../AssistantPrompts";
+import { Chip } from "../Chip";
+import styles from "./AssistantMessages.module.scss";
 
 export interface AssistantNotice {
-  tone: 'error' | 'limit';
+  tone: "error" | "limit";
   text: string;
 }
 
@@ -46,7 +49,7 @@ export function AssistantMessages({
   const [isAway, setIsAway] = useState(false);
 
   useLayoutEffect(() => {
-    if (messages.length > count.current && messages.at(-1)?.role === 'user') {
+    if (messages.length > count.current && messages.at(-1)?.role === "user") {
       isStuck.current = true;
     }
     count.current = messages.length;
@@ -67,7 +70,8 @@ export function AssistantMessages({
     const element = list.current;
     if (!element) return;
     const away =
-      element.scrollHeight - element.scrollTop - element.clientHeight > STICK_DISTANCE_PX;
+      element.scrollHeight - element.scrollTop - element.clientHeight >
+      STICK_DISTANCE_PX;
     isStuck.current = !away;
     setIsAway(away);
   };
@@ -76,7 +80,9 @@ export function AssistantMessages({
     const element = list.current;
     if (!element) return;
     isStuck.current = true;
-    const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
     element.scrollTo({ top: element.scrollHeight, behavior });
   };
 
@@ -101,14 +107,25 @@ export function AssistantMessages({
                 Ask about what is on this page, or start with one of these.
               </p>
               <Chip variant="muted">{contextLabel}</Chip>
-              <AssistantPrompts prompts={prompts} isDisabled={isBusy} onSelect={onPromptSelect} />
+              <AssistantPrompts
+                prompts={prompts}
+                isDisabled={isBusy}
+                onSelect={onPromptSelect}
+              />
             </div>
           )}
           {messages.map((message) => (
-            <AssistantMessage key={message.id} message={message} onDecision={onDecision} />
+            <AssistantMessage
+              key={message.id}
+              message={message}
+              onDecision={onDecision}
+            />
           ))}
           {notice && (
-            <p className={clsx(styles.notice, styles[notice.tone])} role="alert">
+            <p
+              className={clsx(styles.notice, styles[notice.tone])}
+              role="alert"
+            >
               {notice.text}
             </p>
           )}

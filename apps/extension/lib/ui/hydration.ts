@@ -1,5 +1,5 @@
-const REQUEST = 'bscf-hydration-request';
-const HYDRATED = 'bscf-hydrated';
+const REQUEST = "bscf-hydration-request";
+const HYDRATED = "bscf-hydrated";
 const CEILING_MS = 6000;
 
 export interface HydrationGate {
@@ -13,7 +13,10 @@ interface HydrationOptions {
   onTimeout(): void;
 }
 
-export function watchHydration({ onHydrated, onTimeout }: HydrationOptions): HydrationGate {
+export function watchHydration({
+  onHydrated,
+  onTimeout,
+}: HydrationOptions): HydrationGate {
   let hydrated = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 

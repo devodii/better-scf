@@ -1,12 +1,15 @@
-import { formatBudget } from '../../lib/format/money';
-import { RoundHeaderStat } from '../RoundHeaderStat';
-import { type RoundHeaderTrackCounts, RoundHeaderTracks } from '../RoundHeaderTracks';
-import { StatIcon, type StatIconKind } from '../StatIcon';
-import styles from './RoundHeader.module.scss';
+import { formatBudget } from "../../lib/format/money";
+import { RoundHeaderStat } from "../RoundHeaderStat";
+import {
+  type RoundHeaderTrackCounts,
+  RoundHeaderTracks,
+} from "../RoundHeaderTracks";
+import { StatIcon, type StatIconKind } from "../StatIcon";
+import styles from "./RoundHeader.module.scss";
 
 export interface RoundCountdown {
   phase: string;
-  verb: 'starts' | 'ends';
+  verb: "starts" | "ends";
   when: string;
 }
 
@@ -21,11 +24,11 @@ export interface RoundHeaderProps {
 }
 
 function phaseIcon(phase: string): StatIconKind {
-  if (/submission/i.test(phase)) return 'submit';
-  if (/review/i.test(phase)) return 'review';
-  if (/vote/i.test(phase)) return 'vote';
-  if (/award|distribution|notification/i.test(phase)) return 'award';
-  return 'clock';
+  if (/submission/i.test(phase)) return "submit";
+  if (/review/i.test(phase)) return "review";
+  if (/vote/i.test(phase)) return "vote";
+  if (/award|distribution|notification/i.test(phase)) return "award";
+  return "clock";
 }
 
 export function RoundHeader({
@@ -47,7 +50,7 @@ export function RoundHeader({
           </span>
           <p className={styles.countdown}>
             <span className={styles.phaseLabel}>
-              {countdown.verb === 'ends' ? 'In progress' : 'Next up'}
+              {countdown.verb === "ends" ? "In progress" : "Next up"}
             </span>
             <span className={styles.phaseLine}>
               <strong className={styles.phaseName}>{countdown.phase}</strong>

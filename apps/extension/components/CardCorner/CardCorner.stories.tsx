@@ -1,19 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import type { Stance } from 'shared';
-import { fn } from 'storybook/test';
-import { CardCorner, type CardCornerProps } from './CardCorner';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import type { Stance } from "shared";
+import { fn } from "storybook/test";
+import { CardCorner, type CardCornerProps } from "./CardCorner";
 
 const COVER =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90'%3E%3Crect width='160' height='90' fill='%23b8a2ff'/%3E%3Ccircle cx='110' cy='30' r='24' fill='%23ffda00'/%3E%3C/svg%3E\")";
 
 const meta = {
-  title: 'Cards/CardCorner',
+  title: "Cards/CardCorner",
   component: CardCorner,
   args: {
-    dot: 'unread',
+    dot: "unread",
     shortlisted: false,
-    stance: 'none',
+    stance: "none",
     isFit: false,
     onShortlistChange: fn(),
     onStanceChange: fn(),
@@ -23,14 +23,14 @@ const meta = {
     (Story) => (
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'flex-start',
-          padding: '0.5rem',
-          height: '8rem',
-          maxWidth: '22rem',
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "flex-start",
+          padding: "0.5rem",
+          height: "8rem",
+          maxWidth: "22rem",
           background: COVER,
-          backgroundSize: 'cover',
+          backgroundSize: "cover",
         }}
       >
         <Story />
@@ -40,7 +40,11 @@ const meta = {
   parameters: {
     viewport: {
       options: {
-        phone: { name: 'Phone 390', styles: { width: '390px', height: '844px' }, type: 'mobile' },
+        phone: {
+          name: "Phone 390",
+          styles: { width: "390px", height: "844px" },
+          type: "mobile",
+        },
       },
     },
   },
@@ -51,22 +55,22 @@ type Story = StoryObj<typeof meta>;
 
 export const Unread: Story = {};
 
-export const OpenedInverted: Story = { args: { dot: 'opened' } };
+export const OpenedInverted: Story = { args: { dot: "opened" } };
 
 export const ReadNoDot: Story = { args: { dot: null } };
 
 export const Shortlisted: Story = { args: { shortlisted: true } };
 
-export const Support: Story = { args: { stance: 'support' } };
+export const Support: Story = { args: { stance: "support" } };
 
-export const Unsure: Story = { args: { stance: 'unsure' } };
+export const Unsure: Story = { args: { stance: "unsure" } };
 
-export const Against: Story = { args: { stance: 'against' } };
+export const Against: Story = { args: { stance: "against" } };
 
 export const FitOn: Story = { args: { isFit: true } };
 
 export const AllSet: Story = {
-  args: { dot: 'unread', shortlisted: true, stance: 'support', isFit: true },
+  args: { dot: "unread", shortlisted: true, stance: "support", isFit: true },
 };
 
 export const DotOnly: Story = {
@@ -100,7 +104,7 @@ export const Focused: Story = {
 
 function Interactive(args: CardCornerProps) {
   const [shortlisted, setShortlisted] = useState(false);
-  const [stance, setStance] = useState<Stance>('none');
+  const [stance, setStance] = useState<Stance>("none");
   const [isFit, setIsFit] = useState(false);
   return (
     <CardCorner
@@ -120,6 +124,6 @@ export const Playground: Story = {
 };
 
 export const Narrow: Story = {
-  args: { shortlisted: true, stance: 'unsure', isFit: true },
-  globals: { viewport: { value: 'phone', isRotated: false } },
+  args: { shortlisted: true, stance: "unsure", isFit: true },
+  globals: { viewport: { value: "phone", isRotated: false } },
 };

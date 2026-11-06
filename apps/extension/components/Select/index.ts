@@ -4,4 +4,4 @@ export {
   type SelectOption,
   type SelectProps,
   type SingleSelectProps,
-} from './Select';
+} from "./Select";

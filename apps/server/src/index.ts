@@ -1,38 +1,43 @@
-import { Hono } from 'hono';
-import { HTTPException } from 'hono/http-exception';
-import { chatError } from 'shared';
-import { type Env, loadEnv } from './env.js';
-import { PINNED_EXTENSION_ID } from './extension-id.js';
-import { client } from './middleware/client.js';
-import { origin } from './middleware/origin.js';
-import { createRateLimit } from './middleware/ratelimit.js';
-import { createTokenBudget } from './middleware/tokenbudget.js';
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { chatError } from "shared";
+import { type Env, loadEnv } from "./env.js";
+import { PINNED_EXTENSION_ID } from "./extension-id.js";
+import { client } from "./middleware/client.js";
+import { origin } from "./middleware/origin.js";
+import { createRateLimit } from "./middleware/ratelimit.js";
+import { createTokenBudget } from "./middleware/tokenbudget.js";
 import {
   type ChatRouteDeps,
   createChatRoute,
   createModelFactory,
   logChatEntry,
-} from './routes/chat.js';
-import { createHealthRoute } from './routes/health.js';
+} from "./routes/chat.js";
+import { createHealthRoute } from "./routes/health.js";
 
-const SERVER_VERSION = '0.1.0';
+const SERVER_VERSION = "0.1.0";
 
 const IP_DAILY_CAP = 600;
 
-interface AppDeps extends Partial<Omit<ChatRouteDeps, 'now'>> {
+interface AppDeps extends Partial<Omit<ChatRouteDeps, "now">> {
   now?: () => number;
 }
 
 function createApp(env: Env, deps: AppDeps = {}) {
   const app = new Hono();
 
-  app.route('/health', createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }));
+  app.route(
+    "/health",
+    createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }),
+  );
 
   const v1 = new Hono();
   v1.use(
     origin({
-      allowedExtensionIds: [...new Set([PINNED_EXTENSION_ID, ...env.ALLOWED_EXTENSION_IDS])],
-      development: env.NODE_ENV === 'development',
+      allowedExtensionIds: [
+        ...new Set([PINNED_EXTENSION_ID, ...env.ALLOWED_EXTENSION_IDS]),
+      ],
+      development: env.NODE_ENV === "development",
     }),
   );
   v1.use(client);
@@ -50,7 +55,7 @@ function createApp(env: Env, deps: AppDeps = {}) {
   const budget = createTokenBudget(env.DAILY_TOKEN_CAP_PER_CLIENT, deps.now);
   v1.use(budget.middleware);
   v1.route(
-    '/chat',
+    "/chat",
     createChatRoute({
       getModel: deps.getModel ?? createModelFactory(env),
       log: deps.log ?? logChatEntry,
@@ -58,16 +63,22 @@ function createApp(env: Env, deps: AppDeps = {}) {
       ...(deps.now ? { now: deps.now } : {}),
     }),
   );
-  app.route('/v1', v1);
+  app.route("/v1", v1);
 
-  app.notFound((c) => c.json(chatError('bad_request', 'Not found.'), 404));
+  app.notFound((c) => c.json(chatError("bad_request", "Not found."), 404));
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
-      return c.json(chatError('bad_request', 'The request could not be handled.'), err.status);
+      return c.json(
+        chatError("bad_request", "The request could not be handled."),
+        err.status,
+      );
     }
     console.error(`unhandled error: ${err.name}`);
-    return c.json(chatError('internal', 'Something went wrong. Please try again.'), 500);
+    return c.json(
+      chatError("internal", "Something went wrong. Please try again."),
+      500,
+    );
   });
 
   return app;

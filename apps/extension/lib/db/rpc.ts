@@ -3,7 +3,7 @@ import {
   type ExtensionMessenger,
   type GetDataType,
   type GetReturnType,
-} from '@webext-core/messaging';
+} from "@webext-core/messaging";
 import {
   type ChatMessage,
   chatMessageSchema,
@@ -20,17 +20,17 @@ import {
   roundSchema,
   type Submission,
   submissionSchema,
-} from 'shared';
-import { z } from 'zod';
-import { DbError } from './errors';
-import { type Cached, createMirror, type Mirror, type Repo } from './repo';
+} from "shared";
+import { z } from "zod";
+import { DbError } from "./errors";
+import { type Cached, createMirror, type Mirror, type Repo } from "./repo";
 import {
   type AvatarRecord,
   avatarRecordSchema,
   type ProjectIndexRecord,
   projectIndexRecordSchema,
   TTL_MS,
-} from './schema';
+} from "./schema";
 
 export interface RpcProtocol {
   getSubmission(id: string): Cached<Submission> | null;
@@ -107,7 +107,8 @@ const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
 
 export type RpcMessenger = ExtensionMessenger<RpcProtocol>;
 
-export const { sendMessage, onMessage } = defineExtensionMessaging<RpcProtocol>();
+export const { sendMessage, onMessage } =
+  defineExtensionMessaging<RpcProtocol>();
 
 export interface RpcDeps {
   getRepo: () => Promise<Repo>;
@@ -122,9 +123,12 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
   const repo = deps.getRepo;
   return {
     getSubmission: async (id) => (await repo()).getSubmission(id),
-    putSubmissions: async (submissions) => (await repo()).putSubmissions(submissions),
-    listSubmissionsByRound: async (id) => (await repo()).listSubmissionsByRound(id),
-    listSubmissionsByProject: async (id) => (await repo()).listSubmissionsByProject(id),
+    putSubmissions: async (submissions) =>
+      (await repo()).putSubmissions(submissions),
+    listSubmissionsByRound: async (id) =>
+      (await repo()).listSubmissionsByRound(id),
+    listSubmissionsByProject: async (id) =>
+      (await repo()).listSubmissionsByProject(id),
     getProject: async (id) => (await repo()).getProject(id),
     putProject: async (project) => (await repo()).putProject(project),
     mergeProject: async (project) => (await repo()).mergeProject(project),
@@ -152,7 +156,7 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
 
 export function registerRpcHandlers(
   handlers: RpcHandlers,
-  messenger: Pick<RpcMessenger, 'onMessage'> = { onMessage },
+  messenger: Pick<RpcMessenger, "onMessage"> = { onMessage },
 ): void {
   function register<K extends RpcType>(type: K): void {
     messenger.onMessage(type, async (message) => {
@@ -201,7 +205,7 @@ function fresh<T>(value: T, fetchedAt: number): Cached<T> {
 }
 
 export function createRpcClient(
-  messenger: Pick<RpcMessenger, 'sendMessage'> = { sendMessage },
+  messenger: Pick<RpcMessenger, "sendMessage"> = { sendMessage },
 ): RpcClient {
   const submissions = createMirror<Submission>({ ttlMs: TTL_MS.submissions });
   const projects = createMirror<Project>({ ttlMs: TTL_MS.projects });
@@ -220,57 +224,63 @@ export function createRpcClient(
   return {
     peekSubmission: (id) => submissions.peek(id),
     getSubmission: (id) =>
-      submissions.readThrough(id, () => messenger.sendMessage('getSubmission', id)),
+      submissions.readThrough(id, () =>
+        messenger.sendMessage("getSubmission", id),
+      ),
     async putSubmissions(list) {
-      await messenger.sendMessage('putSubmissions', list);
+      await messenger.sendMessage("putSubmissions", list);
       for (const s of list) submissions.set(s.id, fresh(s, s.fetchedAt));
     },
 
     peekProject: (id) => projects.peek(id),
-    getProject: (id) => projects.readThrough(id, () => messenger.sendMessage('getProject', id)),
+    getProject: (id) =>
+      projects.readThrough(id, () => messenger.sendMessage("getProject", id)),
     async putProject(project) {
-      await messenger.sendMessage('putProject', project);
+      await messenger.sendMessage("putProject", project);
       projects.set(project.id, fresh(project, project.fetchedAt));
     },
     async mergeProject(project) {
-      const merged = await messenger.sendMessage('mergeProject', project);
+      const merged = await messenger.sendMessage("mergeProject", project);
       projects.set(merged.id, fresh(merged, merged.fetchedAt));
       return merged;
     },
 
     peekRound: (id) => rounds.peek(id),
-    getRound: (id) => rounds.readThrough(id, () => messenger.sendMessage('getRound', id)),
+    getRound: (id) =>
+      rounds.readThrough(id, () => messenger.sendMessage("getRound", id)),
     async putRound(round) {
-      await messenger.sendMessage('putRound', round);
+      await messenger.sendMessage("putRound", round);
       rounds.set(round.id, fresh(round, round.fetchedAt));
     },
 
     peekReview: (id) => reviews.peek(id),
-    getReview: (id) => reviews.readThrough(id, () => messenger.sendMessage('getReview', id)),
+    getReview: (id) =>
+      reviews.readThrough(id, () => messenger.sendMessage("getReview", id)),
     async putReview(review) {
-      await messenger.sendMessage('putReview', review);
+      await messenger.sendMessage("putReview", review);
       reviews.set(review.submissionId, review);
     },
     async markOpened(submissionId) {
-      const review = await messenger.sendMessage('markOpened', submissionId);
+      const review = await messenger.sendMessage("markOpened", submissionId);
       reviews.set(submissionId, review);
       return review;
     },
 
     peekHorizon: (id) => horizon.peek(id),
-    getHorizon: (id) => horizon.readThrough(id, () => messenger.sendMessage('getHorizon', id)),
+    getHorizon: (id) =>
+      horizon.readThrough(id, () => messenger.sendMessage("getHorizon", id)),
     async putHorizon(summary) {
-      await messenger.sendMessage('putHorizon', summary);
+      await messenger.sendMessage("putHorizon", summary);
       horizon.set(summary.accountId, fresh(summary, summary.fetchedAt));
     },
 
-    getProjectIndex: () => messenger.sendMessage('getProjectIndex', undefined),
+    getProjectIndex: () => messenger.sendMessage("getProjectIndex", undefined),
     async putProjectIndex(index) {
-      await messenger.sendMessage('putProjectIndex', index);
+      await messenger.sendMessage("putProjectIndex", index);
     },
 
     async clearCache() {
-      await messenger.sendMessage('clearCache', undefined);
+      await messenger.sendMessage("clearCache", undefined);
       clearMirrors();
     },
 

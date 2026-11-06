@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import styles from './GridNote.module.scss';
+import { useEffect, useRef } from "react";
+import styles from "./GridNote.module.scss";
 
 export interface GridNoteProps {
   title: string;

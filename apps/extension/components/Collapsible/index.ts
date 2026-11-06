@@ -1,1 +1,1 @@
-export { Collapsible, type CollapsibleProps } from './Collapsible';
+export { Collapsible, type CollapsibleProps } from "./Collapsible";

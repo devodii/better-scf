@@ -1,6 +1,6 @@
-import clsx from 'clsx';
-import type { ReactNode } from 'react';
-import styles from './Collapsible.module.scss';
+import clsx from "clsx";
+import type { ReactNode } from "react";
+import styles from "./Collapsible.module.scss";
 
 export interface CollapsibleProps {
   isOpen: boolean;
@@ -20,7 +20,10 @@ export function Collapsible({
   keepInteractive = false,
 }: CollapsibleProps) {
   return (
-    <div id={id} className={clsx(styles.root, isOpen && styles.isOpen, className)}>
+    <div
+      id={id}
+      className={clsx(styles.root, isOpen && styles.isOpen, className)}
+    >
       <div
         className={clsx(styles.inner, innerClassName)}
         inert={keepInteractive ? undefined : !isOpen}

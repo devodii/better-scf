@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import searchCss from '../../entrypoints/scf.content/styles/dashboard-search.scss?inline';
-import { SearchField } from './SearchField';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import searchCss from "../../entrypoints/scf.content/styles/dashboard-search.scss?inline";
+import { SearchField } from "./SearchField";
 
 const PAGE_CSS = `
 .repro{box-sizing:border-box;min-height:100vh;padding:3.5rem 1.5rem;background:#0f0f0f;color:#fff;font-family:Arial,sans-serif}
@@ -15,20 +15,26 @@ const PAGE_CSS = `
 `;
 
 const INTRO =
-  'The Stellar Community Fund has several opportunities to get funding and support for teams building on Stellar. Find the latest details on upcoming and completed award rounds or cohorts below.';
+  "The Stellar Community Fund has several opportunities to get funding and support for teams building on Stellar. Find the latest details on upcoming and completed award rounds or cohorts below.";
 
 interface PageHeadingProps {
   withSearch: boolean;
 }
 
 function PageHeading({ withSearch }: PageHeadingProps) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
   return (
     <div className="repro">
       <style>{PAGE_CSS}</style>
       <style>{searchCss}</style>
-      <div className="repro-page" {...(withSearch ? { 'data-bscf-search-row': '' } : {})}>
-        <h2 className="repro-heading" {...(withSearch ? { 'data-bscf-search-heading': '' } : {})}>
+      <div
+        className="repro-page"
+        {...(withSearch ? { "data-bscf-search-row": "" } : {})}
+      >
+        <h2
+          className="repro-heading"
+          {...(withSearch ? { "data-bscf-search-heading": "" } : {})}
+        >
           Award Rounds
         </h2>
         {withSearch && (
@@ -44,9 +50,9 @@ function PageHeading({ withSearch }: PageHeadingProps) {
 }
 
 const meta = {
-  title: 'Search/SearchField/Page heading',
+  title: "Search/SearchField/Page heading",
   component: PageHeading,
-  parameters: { layout: 'fullscreen' },
+  parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof PageHeading>;
 
 export default meta;

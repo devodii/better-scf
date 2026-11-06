@@ -1,10 +1,10 @@
-import clsx from 'clsx';
-import { useLayoutEffect, useRef } from 'react';
-import { AddressSummary, type AddressSummaryState } from '../AddressSummary';
-import styles from './AddressPopover.module.scss';
+import clsx from "clsx";
+import { useLayoutEffect, useRef } from "react";
+import { AddressSummary, type AddressSummaryState } from "../AddressSummary";
+import styles from "./AddressPopover.module.scss";
 
-export type AddressKind = 'account' | 'contract';
-export type AddressPopoverPlacement = 'top' | 'bottom';
+export type AddressKind = "account" | "contract";
+export type AddressPopoverPlacement = "top" | "bottom";
 
 export interface AddressPopoverProps {
   id: string;
@@ -17,7 +17,7 @@ export interface AddressPopoverProps {
   placement?: AddressPopoverPlacement;
 }
 
-const LOADING: AddressSummaryState = { status: 'loading' };
+const LOADING: AddressSummaryState = { status: "loading" };
 
 export function AddressPopover({
   id,
@@ -27,15 +27,15 @@ export function AddressPopover({
   y,
   summary = LOADING,
   isOpen = true,
-  placement = 'bottom',
+  placement = "bottom",
 }: AddressPopoverProps) {
   const panel = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const element = panel.current;
     if (!element) return;
-    element.style.setProperty('--x', `${x}px`);
-    element.style.setProperty('--y', `${y}px`);
+    element.style.setProperty("--x", `${x}px`);
+    element.style.setProperty("--y", `${y}px`);
     element.togglePopover(isOpen);
   }, [x, y, isOpen]);
 
@@ -47,7 +47,7 @@ export function AddressPopover({
       popover="manual"
       className={clsx(styles.root, styles[placement])}
     >
-      {kind === 'account' ? (
+      {kind === "account" ? (
         <AddressSummary address={address} state={summary} />
       ) : (
         <div className={styles.contract}>

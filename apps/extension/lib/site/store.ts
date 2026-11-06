@@ -1,29 +1,37 @@
-import { createRpcClient, type RpcClient, type RpcMessenger, sendMessage } from '../db/rpc';
+import {
+  createRpcClient,
+  type RpcClient,
+  type RpcMessenger,
+  sendMessage,
+} from "../db/rpc";
 import {
   findReceivedSection,
   parseRoundPayload,
   readInlineScripts,
   type SubmissionSummary,
-} from './round';
-import { fetchRoundRecords } from './round-fetch';
-import type { Route } from './routes';
-import { SUBMISSION_SELECTORS as SEL, SUBMISSION_TEXT as TXT } from './selectors/submission';
-import { parseSubmissionPage, type SubmissionPage } from './submission';
+} from "./round";
+import { fetchRoundRecords } from "./round-fetch";
+import type { Route } from "./routes";
+import {
+  SUBMISSION_SELECTORS as SEL,
+  SUBMISSION_TEXT as TXT,
+} from "./selectors/submission";
+import { parseSubmissionPage, type SubmissionPage } from "./submission";
 
 export type PageData =
   | {
-      kind: 'round';
+      kind: "round";
       roundId: string;
       roundName: string | null;
       records: readonly SubmissionSummary[] | null;
     }
-  | { kind: 'submission'; submissionId: string; page: SubmissionPage | null }
-  | { kind: 'publicSubmission'; submissionId: string }
-  | { kind: 'roundList' | 'myProjects' | 'other' };
+  | { kind: "submission"; submissionId: string; page: SubmissionPage | null }
+  | { kind: "publicSubmission"; submissionId: string }
+  | { kind: "roundList" | "myProjects" | "other" };
 
 export interface SiteStore {
   readonly rpc: RpcClient;
-  readonly send: RpcMessenger['sendMessage'];
+  readonly send: RpcMessenger["sendMessage"];
   isReady(route: Route, region: Element): boolean;
   load(route: Route, region: Element, debug: boolean): Promise<PageData>;
   save(page: SubmissionPage): Promise<void>;
@@ -42,9 +50,10 @@ interface InlineRound {
 
 const NO_RECORDS: InlineRound = { roundName: null, records: null };
 
-const clean = (text: string | null | undefined): string => (text ?? '').replace(/\s+/g, ' ').trim();
+const clean = (text: string | null | undefined): string =>
+  (text ?? "").replace(/\s+/g, " ").trim();
 
-function readTitle(region: Element): Omit<Seen, 'id'> | null {
+function readTitle(region: Element): Omit<Seen, "id"> | null {
   const node = region.querySelector(SEL.title);
   return node ? { node, text: clean(node.textContent) } : null;
 }
@@ -62,7 +71,7 @@ export function createSiteStore(initial: Route): SiteStore {
   let inlineRound: InlineRound | undefined;
   let inlineSummary: { summary: SubmissionSummary } | null | undefined;
   let lastSubmission: Seen | null = null;
-  let lastRound: Omit<Seen, 'text'> | null = null;
+  let lastRound: Omit<Seen, "text"> | null = null;
 
   const inlineScripts = (): string[] => {
     scripts ??= readInlineScripts(document);
@@ -70,18 +79,28 @@ export function createSiteStore(initial: Route): SiteStore {
   };
 
   const roundRecords = (roundId: string): InlineRound => {
-    if (initial.kind !== 'round' || initial.roundId !== roundId) return NO_RECORDS;
+    if (initial.kind !== "round" || initial.roundId !== roundId)
+      return NO_RECORDS;
     if (!inlineRound) {
-      const { roundName, submissions } = parseRoundPayload(inlineScripts(), roundId);
-      inlineRound = roundName === null ? NO_RECORDS : { roundName, records: submissions };
+      const { roundName, submissions } = parseRoundPayload(
+        inlineScripts(),
+        roundId,
+      );
+      inlineRound =
+        roundName === null ? NO_RECORDS : { roundName, records: submissions };
     }
     return inlineRound;
   };
 
-  const submissionPayload = (id: string): { summary: SubmissionSummary } | undefined => {
-    if (initial.kind !== 'submission' || initial.submissionId !== id) return undefined;
+  const submissionPayload = (
+    id: string,
+  ): { summary: SubmissionSummary } | undefined => {
+    if (initial.kind !== "submission" || initial.submissionId !== id)
+      return undefined;
     if (inlineSummary === undefined) {
-      const summary = parseRoundPayload(inlineScripts(), null).submissions.find((r) => r.id === id);
+      const summary = parseRoundPayload(inlineScripts(), null).submissions.find(
+        (r) => r.id === id,
+      );
       inlineSummary = summary ? { summary } : null;
     }
     return inlineSummary ?? undefined;
@@ -92,8 +111,9 @@ export function createSiteStore(initial: Route): SiteStore {
     send: sendMessage,
 
     isReady(route, region) {
-      if (route.kind === 'submission') {
-        if (document.readyState === 'loading' || !hasProjectStats(region)) return false;
+      if (route.kind === "submission") {
+        if (document.readyState === "loading" || !hasProjectStats(region))
+          return false;
         const title = readTitle(region);
         if (!title) return false;
         const last = lastSubmission;
@@ -104,8 +124,8 @@ export function createSiteStore(initial: Route): SiteStore {
           last.text !== title.text
         );
       }
-      if (route.kind === 'round') {
-        if (document.readyState === 'loading') return false;
+      if (route.kind === "round") {
+        if (document.readyState === "loading") return false;
         const section = findReceivedSection(region);
         if (!section) return false;
         const last = lastRound;
@@ -115,14 +135,16 @@ export function createSiteStore(initial: Route): SiteStore {
     },
 
     async load(route, region, debug) {
-      if (route.kind === 'round') {
+      if (route.kind === "round") {
         const section = findReceivedSection(region);
         if (section) lastRound = { id: route.roundId, node: section };
         const inline = roundRecords(route.roundId);
-        const found = inline.records ? inline : await fetchRoundRecords(route.roundId);
-        return { kind: 'round', roundId: route.roundId, ...found };
+        const found = inline.records
+          ? inline
+          : await fetchRoundRecords(route.roundId);
+        return { kind: "round", roundId: route.roundId, ...found };
       }
-      if (route.kind === 'submission') {
+      if (route.kind === "submission") {
         const id = route.submissionId;
         const title = readTitle(region);
         const page = await parseSubmissionPage(region, {
@@ -131,10 +153,10 @@ export function createSiteStore(initial: Route): SiteStore {
           debug,
         });
         if (title) lastSubmission = { id, ...title };
-        return { kind: 'submission', submissionId: id, page };
+        return { kind: "submission", submissionId: id, page };
       }
-      if (route.kind === 'publicSubmission') {
-        return { kind: 'publicSubmission', submissionId: route.submissionId };
+      if (route.kind === "publicSubmission") {
+        return { kind: "publicSubmission", submissionId: route.submissionId };
       }
       return { kind: route.kind };
     },

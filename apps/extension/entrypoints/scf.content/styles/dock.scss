@@ -47,7 +47,8 @@ $sides: left, right;
     }
 
     [data-bscf-pin="bar"] {
-      transition: width var(--bscf-assistant-duration) var(--bscf-assistant-ease);
+      transition: width var(--bscf-assistant-duration)
+        var(--bscf-assistant-ease);
     }
 
     [data-bscf-pin="edge"] {

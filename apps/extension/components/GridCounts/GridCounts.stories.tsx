@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { GridCounts } from './GridCounts';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { GridCounts } from "./GridCounts";
 
 const meta = {
-  title: 'Grid/GridCounts',
+  title: "Grid/GridCounts",
   component: GridCounts,
   args: { total: 34, shown: 12 },
 } satisfies Meta<typeof GridCounts>;
@@ -19,7 +19,7 @@ export const NothingHidden: Story = { args: { shown: 34 } };
 export const Narrow: Story = {
   decorators: [
     (Story) => (
-      <div style={{ width: '24.375rem' }}>
+      <div style={{ width: "24.375rem" }}>
         <Story />
       </div>
     ),

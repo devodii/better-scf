@@ -1,4 +1,4 @@
-import type { Enrichment } from './enrich';
+import type { Enrichment } from "./enrich";
 
 const TTL_MS = 10 * 60_000;
 

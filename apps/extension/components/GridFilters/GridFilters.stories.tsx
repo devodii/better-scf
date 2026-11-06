@@ -1,10 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import { fn } from 'storybook/test';
-import { EMPTY_GRID_FILTERS, GridFilters, type GridFiltersProps } from './GridFilters';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import { fn } from "storybook/test";
+import {
+  EMPTY_GRID_FILTERS,
+  GridFilters,
+  type GridFiltersProps,
+} from "./GridFilters";
 
 const meta = {
-  title: 'Grid/GridFilters',
+  title: "Grid/GridFilters",
   component: GridFilters,
   args: {
     value: EMPTY_GRID_FILTERS,
@@ -25,19 +29,24 @@ function Interactive(args: GridFiltersProps) {
 export const Default: Story = {};
 
 export const Interacting: Story = {
-  args: { availableTracks: ['integration', 'open'] },
+  args: { availableTracks: ["integration", "open"] },
   render: (args) => <Interactive {...args} />,
 };
 
 export const WithActiveFilters: Story = {
   args: {
-    value: { stances: ['support', 'unsure'], tracks: ['open'], shortlisted: true, unread: false },
-    availableTracks: ['integration', 'open', 'rfp'],
+    value: {
+      stances: ["support", "unsure"],
+      tracks: ["open"],
+      shortlisted: true,
+      unread: false,
+    },
+    availableTracks: ["integration", "open", "rfp"],
   },
 };
 
 export const TracksOnly: Story = {
-  args: { hasReviews: false, availableTracks: ['integration', 'open'] },
+  args: { hasReviews: false, availableTracks: ["integration", "open"] },
 };
 
 export const Empty: Story = {
@@ -53,7 +62,7 @@ export const Empty: Story = {
 export const Focused: Story = {
   decorators: [
     (Story) => (
-      <div data-force-focus style={{ padding: '0.5rem' }}>
+      <div data-force-focus style={{ padding: "0.5rem" }}>
         <Story />
       </div>
     ),
@@ -61,10 +70,10 @@ export const Focused: Story = {
 };
 
 export const Narrow: Story = {
-  args: { availableTracks: ['integration', 'open', 'rfp'] },
+  args: { availableTracks: ["integration", "open", "rfp"] },
   decorators: [
     (Story) => (
-      <div style={{ width: '24.375rem' }}>
+      <div style={{ width: "24.375rem" }}>
         <Story />
       </div>
     ),

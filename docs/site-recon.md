@@ -42,22 +42,22 @@ How the data reaches the page on communityfund.stellar.org. Method: one gentle p
 
 ## Dashboard map (logged in, 2026-11-05)
 
-| Path | Page | Carousels and grids | Data it carries |
-|---|---|---|---|
-| `/dashboard/award-rounds` | Award Rounds | Open Rounds (1 slide), Completed Rounds (45 slides, "See All") | round list payload with per-round stats (below) |
-| `/dashboard/award-rounds/<recId>` | one round | Received submissions carousel and the in-place "See All" grid | submission records (see the data model above) |
-| `/dashboard/submissions/<recId>` | one submission | none | project object and the proposal DOM |
-| `/dashboard/projects` | My Projects | 2 carousels (2 and 3 slides), 2 "See All" | the user's projects and submissions |
-| `/dashboard/tasks` | Tasks | none | |
-| `/dashboard/tiers` | Verified Members | 2 carousels (4 slides each) | `GET /backend/dashboard/tier/request`, `tier_nomination` |
-| `/dashboard/delegate-trust` | Delegates and Trust | none | `GET /backend/dashboard/vote/trust`, `tier/request`, `tier_nomination` |
-| `/dashboard/vote` | Community Vote | none | `GET /backend/dashboard/vote_history/nqg_graph`, `vote/delegate` |
-| `/dashboard/voting-history` | Community Vote History | none | `GET /backend/dashboard/vote_history/your_voting_statistics/<round>`, `nqg_graph` |
-| `/dashboard/analytics` | Analytics | one horizontally scrolling region | `GET /backend/dashboard/analytics/insights`, `analytics/all-rounds`; subpage `/dashboard/analytics/how-nqg-works` |
-| `/dashboard/account` | Account | none | the account form (`/backend/dashboard/user`) |
-| `/projects` (public) | Funded projects | 6 category carousels (134, 99, 23, 112, 104, 59 slides), "See All" each, a Search field and a select | all 528 projects in the inline payload |
-| `/project/<slug>` | a project | | |
-| `/awards`, `/governance`, `/` | public marketing pages | | |
+| Path                              | Page                   | Carousels and grids                                                                                  | Data it carries                                                                                                   |
+| --------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/dashboard/award-rounds`         | Award Rounds           | Open Rounds (1 slide), Completed Rounds (45 slides, "See All")                                       | round list payload with per-round stats (below)                                                                   |
+| `/dashboard/award-rounds/<recId>` | one round              | Received submissions carousel and the in-place "See All" grid                                        | submission records (see the data model above)                                                                     |
+| `/dashboard/submissions/<recId>`  | one submission         | none                                                                                                 | project object and the proposal DOM                                                                               |
+| `/dashboard/projects`             | My Projects            | 2 carousels (2 and 3 slides), 2 "See All"                                                            | the user's projects and submissions                                                                               |
+| `/dashboard/tasks`                | Tasks                  | none                                                                                                 |                                                                                                                   |
+| `/dashboard/tiers`                | Verified Members       | 2 carousels (4 slides each)                                                                          | `GET /backend/dashboard/tier/request`, `tier_nomination`                                                          |
+| `/dashboard/delegate-trust`       | Delegates and Trust    | none                                                                                                 | `GET /backend/dashboard/vote/trust`, `tier/request`, `tier_nomination`                                            |
+| `/dashboard/vote`                 | Community Vote         | none                                                                                                 | `GET /backend/dashboard/vote_history/nqg_graph`, `vote/delegate`                                                  |
+| `/dashboard/voting-history`       | Community Vote History | none                                                                                                 | `GET /backend/dashboard/vote_history/your_voting_statistics/<round>`, `nqg_graph`                                 |
+| `/dashboard/analytics`            | Analytics              | one horizontally scrolling region                                                                    | `GET /backend/dashboard/analytics/insights`, `analytics/all-rounds`; subpage `/dashboard/analytics/how-nqg-works` |
+| `/dashboard/account`              | Account                | none                                                                                                 | the account form (`/backend/dashboard/user`)                                                                      |
+| `/projects` (public)              | Funded projects        | 6 category carousels (134, 99, 23, 112, 104, 59 slides), "See All" each, a Search field and a select | all 528 projects in the inline payload                                                                            |
+| `/project/<slug>`                 | a project              |                                                                                                      |                                                                                                                   |
+| `/awards`, `/governance`, `/`     | public marketing pages |                                                                                                      |                                                                                                                   |
 
 Dashboard pages without a carousel need only scroll restoration. Carousels are Swiper instances (`.swiper`, `.swiper-slide`, `.swiper-slide-active`) driven by a pair of yellow round buttons; there is no anchor on a slide.
 
@@ -98,23 +98,23 @@ Source: the 67 route chunks the dashboard pages reference, searched for backend 
 
 ### Reads the assistant may use (GET)
 
-| Path | Holds |
-|---|---|
-| `dashboard/user` | the user's account (personal: name, email, discord, links) |
-| `dashboard/user/email_status` | `{ emailStatus }` |
-| `dashboard/form_items/essential` | the user's rounds, interest-form projects and assigned projects |
-| `dashboard/tier/request` | the user's tier request state: button label, blocking reasons, voting power threshold, target tier |
-| `dashboard/tier_nomination` | tier nominations (own and self) and the thresholds per tier |
-| `dashboard/vote/trust` | the user's trusted users |
-| `dashboard/vote/delegate` | the user's delegates (list of ids) |
-| `dashboard/vote/category_delegate` | delegation per category (object, empty when none) |
-| `dashboard/vote/quarterly_category_delegate` | `{ integration_track[], open_track[], rfp_track[] }`: the quarterly delegation per track |
-| `dashboard/vote_history/nqg_graph` | `{ nqgOverTime[[round, ...]] }` |
-| `dashboard/vote_history/your_voting_statistics/<round>` | the user's neuron scores and `totalNQGScore` for a round |
-| `dashboard/analytics/rounds` | `{ rounds[{ round, computedAt }] }` |
-| `dashboard/analytics/round/<round>` | per-round analytics: awarded count, average and median budget, budget buckets, category breakdown, community size, voters, delegation network, Lorenz curve, neuron breakdown and deep dive (and `submissionDetails[]` in older rounds) |
-| `dashboard/analytics/all-rounds` | the series across rounds (see above) |
-| `dashboard/analytics/insights` | generated insights and per-round summaries |
+| Path                                                    | Holds                                                                                                                                                                                                                                   |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dashboard/user`                                        | the user's account (personal: name, email, discord, links)                                                                                                                                                                              |
+| `dashboard/user/email_status`                           | `{ emailStatus }`                                                                                                                                                                                                                       |
+| `dashboard/form_items/essential`                        | the user's rounds, interest-form projects and assigned projects                                                                                                                                                                         |
+| `dashboard/tier/request`                                | the user's tier request state: button label, blocking reasons, voting power threshold, target tier                                                                                                                                      |
+| `dashboard/tier_nomination`                             | tier nominations (own and self) and the thresholds per tier                                                                                                                                                                             |
+| `dashboard/vote/trust`                                  | the user's trusted users                                                                                                                                                                                                                |
+| `dashboard/vote/delegate`                               | the user's delegates (list of ids)                                                                                                                                                                                                      |
+| `dashboard/vote/category_delegate`                      | delegation per category (object, empty when none)                                                                                                                                                                                       |
+| `dashboard/vote/quarterly_category_delegate`            | `{ integration_track[], open_track[], rfp_track[] }`: the quarterly delegation per track                                                                                                                                                |
+| `dashboard/vote_history/nqg_graph`                      | `{ nqgOverTime[[round, ...]] }`                                                                                                                                                                                                         |
+| `dashboard/vote_history/your_voting_statistics/<round>` | the user's neuron scores and `totalNQGScore` for a round                                                                                                                                                                                |
+| `dashboard/analytics/rounds`                            | `{ rounds[{ round, computedAt }] }`                                                                                                                                                                                                     |
+| `dashboard/analytics/round/<round>`                     | per-round analytics: awarded count, average and median budget, budget buckets, category breakdown, community size, voters, delegation network, Lorenz curve, neuron breakdown and deep dive (and `submissionDetails[]` in older rounds) |
+| `dashboard/analytics/all-rounds`                        | the series across rounds (see above)                                                                                                                                                                                                    |
+| `dashboard/analytics/insights`                          | generated insights and per-round summaries                                                                                                                                                                                              |
 
 ### Not for the assistant
 

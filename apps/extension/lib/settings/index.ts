@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { defineStorageItem } from '../db/storage';
+import { z } from "zod";
+import { defineStorageItem } from "../db/storage";
 
 const settingsSchema = z.object({
   navigationMemory: z.boolean().default(true),
@@ -26,7 +26,7 @@ const settingsSchema = z.object({
   aiDock: z.boolean().default(true),
   includeRepositoryLink: z.boolean().default(false),
   debugLogging: z.boolean().default(false),
-  serverUrlOverride: z.string().default(''),
+  serverUrlOverride: z.string().default(""),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -38,7 +38,7 @@ export type FeatureKey = {
 export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});
 
 export const settingsItem = defineStorageItem<Settings>({
-  key: 'settings',
+  key: "settings",
   schema: settingsSchema,
   defaults: DEFAULT_SETTINGS,
 });

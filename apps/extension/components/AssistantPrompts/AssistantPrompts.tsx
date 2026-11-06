@@ -1,5 +1,5 @@
-import clsx from 'clsx';
-import styles from './AssistantPrompts.module.scss';
+import clsx from "clsx";
+import styles from "./AssistantPrompts.module.scss";
 
 export interface AssistantPromptItem {
   id: string;
@@ -21,7 +21,10 @@ export function AssistantPrompts({
 }: AssistantPromptsProps) {
   if (prompts.length === 0) return null;
   return (
-    <fieldset className={clsx(styles.root, className)} aria-label="Suggested questions">
+    <fieldset
+      className={clsx(styles.root, className)}
+      aria-label="Suggested questions"
+    >
       {prompts.map((prompt) => (
         <button
           key={prompt.id}

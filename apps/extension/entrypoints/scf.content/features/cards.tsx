@@ -1,11 +1,17 @@
-import type { ReactNode } from 'react';
-import type { ReviewState, Submission } from 'shared';
-import type { AvatarStackPerson } from '../../../components/AvatarStack';
-import { BuildersLoader, type BuildersLoaderStatus } from '../../../components/BuildersLoader';
-import { CardCorner, type CardCornerProps } from '../../../components/CardCorner';
-import { CardMeta, type CardMetaProps } from '../../../components/CardMeta';
-import { formatBudget, trackLabel } from '../../../lib/export/format';
-import type { Settings } from '../../../lib/settings';
+import type { ReactNode } from "react";
+import type { ReviewState, Submission } from "shared";
+import type { AvatarStackPerson } from "../../../components/AvatarStack";
+import {
+  BuildersLoader,
+  type BuildersLoaderStatus,
+} from "../../../components/BuildersLoader";
+import {
+  CardCorner,
+  type CardCornerProps,
+} from "../../../components/CardCorner";
+import { CardMeta, type CardMetaProps } from "../../../components/CardMeta";
+import { formatBudget, trackLabel } from "../../../lib/export/format";
+import type { Settings } from "../../../lib/settings";
 import {
   ENRICH_CONCURRENCY,
   type EnrichBlock,
@@ -15,29 +21,37 @@ import {
   enrichSubmission,
   onEnrichBlock,
   readEnrichBlock,
-} from '../../../lib/site/enrich';
-import { clearLoader, publishLoader } from '../../../lib/site/loader-store';
+} from "../../../lib/site/enrich";
+import { clearLoader, publishLoader } from "../../../lib/site/loader-store";
 import {
   findAwardedSection,
   findReceivedSection,
   mapRoundCards,
   readRoundPhases,
-} from '../../../lib/site/round';
-import { onFacts, publishFacts, readFacts } from '../../../lib/site/round-facts';
-import { SECTION_HEADING } from '../../../lib/site/selectors/round';
-import type { Feature } from '../../../lib/ui/feature';
-import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
-import cardsCss from '../styles/cards.scss?inline';
+} from "../../../lib/site/round";
+import {
+  onFacts,
+  publishFacts,
+  readFacts,
+} from "../../../lib/site/round-facts";
+import { SECTION_HEADING } from "../../../lib/site/selectors/round";
+import type { Feature } from "../../../lib/ui/feature";
+import { type MountedUi, OWN_ATTRIBUTE } from "../../../lib/ui/mount";
+import cardsCss from "../styles/cards.scss?inline";
 
-const COVER_IMAGE = 'img:not([data-bscf])';
-const COVER_ATTRIBUTE = 'data-bscf-cover';
-const CARD_ATTRIBUTE = 'data-bscf-card';
-const META_SLOT = 'cards-meta-slot';
-const CORNER_SLOT = 'cards-corner-slot';
-const BACKDROP = 'cards-backdrop';
-const LOADER_SLOT = 'cards-loader-bar';
+const COVER_IMAGE = "img:not([data-bscf])";
+const COVER_ATTRIBUTE = "data-bscf-cover";
+const CARD_ATTRIBUTE = "data-bscf-card";
+const META_SLOT = "cards-meta-slot";
+const CORNER_SLOT = "cards-corner-slot";
+const BACKDROP = "cards-backdrop";
+const LOADER_SLOT = "cards-loader-bar";
 const HOVER_DELAY_MS = 350;
-const TRACK_VARIANT = { open: 'olive', integration: 'purple', rfp: 'yellow' } as const;
+const TRACK_VARIANT = {
+  open: "olive",
+  integration: "purple",
+  rfp: "yellow",
+} as const;
 
 interface Entry {
   id: string;
@@ -56,28 +70,30 @@ interface Entry {
   gone: boolean;
 }
 
-type ReviewPatch = Partial<Pick<ReviewState, 'stance' | 'shortlisted'>>;
+type ReviewPatch = Partial<Pick<ReviewState, "stance" | "shortlisted">>;
 
 let coverFit = false;
 
 function blankReview(submissionId: string): ReviewState {
   return {
     submissionId,
-    stance: 'none',
+    stance: "none",
     shortlisted: false,
-    note: '',
+    note: "",
     lastOpenedAt: null,
     openedCount: 0,
   };
 }
 
 function trackHint(
-  source: Submission['trackSource'],
-  track: Submission['track'] | null,
+  source: Submission["trackSource"],
+  track: Submission["track"] | null,
 ): string | null {
-  if (source === 'api') return "From the site's track field";
-  if (source === 'heuristic' && track === 'rfp') return 'The proposal says it responds to an RFP';
-  if (source === 'heuristic') return "Derived from the proposal's on-chain metric section";
+  if (source === "api") return "From the site's track field";
+  if (source === "heuristic" && track === "rfp")
+    return "The proposal says it responds to an RFP";
+  if (source === "heuristic")
+    return "Derived from the proposal's on-chain metric section";
   return null;
 }
 
@@ -89,8 +105,8 @@ function githubOwner(url: string | null): string | null {
   if (!url) return null;
   try {
     const parsed = new URL(url);
-    if (parsed.hostname !== 'github.com') return null;
-    return parsed.pathname.split('/').find((part) => part.length > 0) ?? null;
+    if (parsed.hostname !== "github.com") return null;
+    return parsed.pathname.split("/").find((part) => part.length > 0) ?? null;
   } catch {
     return null;
   }
@@ -112,11 +128,13 @@ function builderPeople(facts: Enrichment): AvatarStackPerson[] {
   const owner = githubOwner(facts.projectGithub);
   if (
     owner &&
-    !facts.builders.some(({ github }) => github?.toLowerCase() === owner.toLowerCase())
+    !facts.builders.some(
+      ({ github }) => github?.toLowerCase() === owner.toLowerCase(),
+    )
   ) {
     people.unshift({
       name: owner,
-      role: 'On GitHub',
+      role: "On GitHub",
       src: githubAvatar(owner),
       href: facts.projectGithub,
     });
@@ -124,7 +142,10 @@ function builderPeople(facts: Enrichment): AvatarStackPerson[] {
   return people;
 }
 
-function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaProps | null {
+function metaProps(
+  facts: Enrichment | undefined,
+  settings: Settings,
+): CardMetaProps | null {
   if (!facts) return null;
   const props: CardMetaProps = {};
   const hint = trackHint(facts.trackSource, facts.track);
@@ -139,37 +160,41 @@ function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaP
   const awarded = facts.awardedUsd;
   if (settings.awardedChip && awarded !== null && awarded > 0) {
     const count = facts.awardedCount;
-    const amount = formatBudget(awarded).replace(/\.0(?=[KM])/, '');
+    const amount = formatBudget(awarded).replace(/\.0(?=[KM])/, "");
     props.awarded = {
       label: `Awarded before ${amount}`,
       shortLabel: `Awarded ${amount}`,
-      variant: 'yellow',
+      variant: "yellow",
       hint:
         count === null
-          ? 'Total awarded to this project before'
-          : `${count} awarded ${count === 1 ? 'submission' : 'submissions'}`,
+          ? "Total awarded to this project before"
+          : `${count} awarded ${count === 1 ? "submission" : "submissions"}`,
     };
   }
-  if (settings.avatarStack && (facts.builders.length > 0 || facts.projectGithub)) {
+  if (
+    settings.avatarStack &&
+    (facts.builders.length > 0 || facts.projectGithub)
+  ) {
     props.people = builderPeople(facts);
   }
   return props.track || props.awarded || props.people ? props : null;
 }
 
 export const feature: Feature = {
-  pages: ['round'],
+  pages: ["round"],
   toggles: [
-    'trackChips',
-    'awardedChip',
-    'avatarStack',
-    'readState',
-    'shortlistAndStance',
-    'coverNormalization',
+    "trackChips",
+    "awardedChip",
+    "avatarStack",
+    "readState",
+    "shortlistAndStance",
+    "coverNormalization",
   ],
   mount({ page, region, settings, store, signal, mount, onMutation, warn }) {
-    if (page.kind !== 'round' || !page.records) return;
+    if (page.kind !== "round" || !page.records) return;
     const records = page.records;
-    const wantsMeta = settings.trackChips || settings.awardedChip || settings.avatarStack;
+    const wantsMeta =
+      settings.trackChips || settings.awardedChip || settings.avatarStack;
     const wantsReviews = settings.readState || settings.shortlistAndStance;
     const wantsCorner = wantsReviews || settings.coverNormalization;
 
@@ -183,8 +208,8 @@ export const feature: Feature = {
     const entries = new Map<Element, Entry>();
     const byId = new Map<string, Set<Entry>>();
 
-    const style = document.createElement('style');
-    style.setAttribute(OWN_ATTRIBUTE, 'cards');
+    const style = document.createElement("style");
+    style.setAttribute(OWN_ATTRIBUTE, "cards");
     style.textContent = cardsCss;
     (document.head ?? document.documentElement).append(style);
 
@@ -197,20 +222,21 @@ export const feature: Feature = {
         entry.backdrop = null;
         return;
       }
-      image.style.objectFit = 'contain';
+      image.style.objectFit = "contain";
       if (entry.backdrop) return;
       const place = (): void => {
-        if (!coverFit || entry.gone || entry.backdrop || !image.currentSrc) return;
-        const backdrop = document.createElement('img');
+        if (!coverFit || entry.gone || entry.backdrop || !image.currentSrc)
+          return;
+        const backdrop = document.createElement("img");
         backdrop.setAttribute(OWN_ATTRIBUTE, BACKDROP);
-        backdrop.alt = '';
-        backdrop.decoding = 'async';
+        backdrop.alt = "";
+        backdrop.decoding = "async";
         backdrop.src = image.currentSrc;
         cover.prepend(backdrop);
         entry.backdrop = backdrop;
       };
       if (image.currentSrc) place();
-      else image.addEventListener('load', place, { once: true, signal });
+      else image.addEventListener("load", place, { once: true, signal });
     };
 
     const cornerProps = (entry: Entry): CardCornerProps => {
@@ -218,13 +244,15 @@ export const feature: Feature = {
       const props: CardCornerProps = {};
       if (settings.readState && reviewsLoaded) {
         const opened = review.openedCount > 0;
-        if (settings.showOpenedInsteadOfUnread) props.dot = opened ? 'opened' : null;
-        else props.dot = opened ? null : 'unread';
+        if (settings.showOpenedInsteadOfUnread)
+          props.dot = opened ? "opened" : null;
+        else props.dot = opened ? null : "unread";
       }
       if (settings.shortlistAndStance) {
         props.shortlisted = review.shortlisted;
         props.stance = review.stance;
-        props.onShortlistChange = (shortlisted) => save(entry.id, { shortlisted });
+        props.onShortlistChange = (shortlisted) =>
+          save(entry.id, { shortlisted });
         props.onStanceChange = (stance) => save(entry.id, { stance });
       }
       if (settings.coverNormalization && entry.image) {
@@ -249,13 +277,13 @@ export const feature: Feature = {
       renderId(id);
       writes = writes
         .then(async () => {
-          const stored = await store.send('getReview', id);
+          const stored = await store.send("getReview", id);
           const next = { ...(stored ?? blankReview(id)), ...patch };
           await store.rpc.putReview(next);
           reviews.set(id, next);
           renderId(id);
         })
-        .catch((error: unknown) => warn('save review', error));
+        .catch((error: unknown) => warn("save review", error));
     }
 
     function setFit(next: boolean): void {
@@ -269,11 +297,14 @@ export const feature: Feature = {
     const place = async (
       entry: Entry,
       anchor: Element,
-      part: 'meta' | 'corner',
+      part: "meta" | "corner",
       children: ReactNode,
     ): Promise<void> => {
-      const slot = document.createElement('div');
-      slot.setAttribute(OWN_ATTRIBUTE, part === 'meta' ? META_SLOT : CORNER_SLOT);
+      const slot = document.createElement("div");
+      slot.setAttribute(
+        OWN_ATTRIBUTE,
+        part === "meta" ? META_SLOT : CORNER_SLOT,
+      );
       anchor.append(slot);
       entry.slots.push(slot);
       const ui = await mount({ name: part, anchor: slot, children });
@@ -286,12 +317,14 @@ export const feature: Feature = {
         return;
       }
       entry.uis.push(ui);
-      if (part === 'corner') {
+      if (part === "corner") {
         entry.corner = ui;
         if (reviewsLoaded && wantsReviews) renderCorner(entry);
       } else {
         entry.meta = ui;
-        ui.render(<CardMeta {...(metaProps(facts.get(entry.id), settings) ?? {})} />);
+        ui.render(
+          <CardMeta {...(metaProps(facts.get(entry.id), settings) ?? {})} />,
+        );
       }
     };
 
@@ -305,21 +338,24 @@ export const feature: Feature = {
       if (entry.hasMeta) return;
       const frame = entry.cover?.parentElement ?? null;
       if (!frame) {
-        warn('card cover not found for the badges');
+        warn("card cover not found for the badges");
         return;
       }
       entry.hasMeta = true;
-      void place(entry, frame, 'meta', <CardMeta {...meta} />);
+      void place(entry, frame, "meta", <CardMeta {...meta} />);
     };
 
     let frozenRound = false;
     const roundEnded = (): boolean => {
       const name = page.roundName;
       if (!name) return false;
-      const text = document.body.innerText.replace(/\s+/g, ' ');
+      const text = document.body.innerText.replace(/\s+/g, " ");
       const at = text.indexOf(name);
       return (
-        at >= 0 && /^[^.]{0,40}\bEnded\b/.test(text.slice(at + name.length, at + name.length + 40))
+        at >= 0 &&
+        /^[^.]{0,40}\bEnded\b/.test(
+          text.slice(at + name.length, at + name.length + 40),
+        )
       );
     };
     const isFrozen = (): boolean => {
@@ -342,11 +378,12 @@ export const feature: Feature = {
     };
 
     const adoptKnown = (): void => {
-      for (const [id, data] of readFacts()) if (!facts.has(id)) adoptFacts(data);
+      for (const [id, data] of readFacts())
+        if (!facts.has(id)) adoptFacts(data);
     };
     adoptKnown();
     const offFacts = onFacts(adoptKnown);
-    signal.addEventListener('abort', offFacts, { once: true });
+    signal.addEventListener("abort", offFacts, { once: true });
 
     const stopHover = (entry: Entry): void => {
       window.clearTimeout(entry.hoverTimer);
@@ -373,14 +410,17 @@ export const feature: Feature = {
       if (pumping || !enrichable) return;
       pumping = true;
       try {
-        while (!signal.aborted && document.visibilityState === 'visible') {
+        while (!signal.aborted && document.visibilityState === "visible") {
           let next: Entry | null = null;
           let nearest = Number.POSITIVE_INFINITY;
           for (const entry of nearby) {
-            if (entry.gone || facts.has(entry.id) || tried.has(entry.id)) continue;
+            if (entry.gone || facts.has(entry.id) || tried.has(entry.id))
+              continue;
             const box = entry.card.getBoundingClientRect();
             if (box.width === 0) continue;
-            const distance = Math.abs((box.top + box.bottom) / 2 - window.innerHeight / 2);
+            const distance = Math.abs(
+              (box.top + box.bottom) / 2 - window.innerHeight / 2,
+            );
             if (distance < nearest) {
               next = entry;
               nearest = distance;
@@ -409,16 +449,20 @@ export const feature: Feature = {
             }
             void pump();
           },
-          { rootMargin: '100% 0px' },
+          { rootMargin: "100% 0px" },
         )
       : null;
-    signal.addEventListener('abort', () => watcher?.disconnect(), { once: true });
+    signal.addEventListener("abort", () => watcher?.disconnect(), {
+      once: true,
+    });
     if (enrichable) {
-      document.addEventListener('visibilitychange', () => void pump(), { signal });
+      document.addEventListener("visibilitychange", () => void pump(), {
+        signal,
+      });
     }
 
     const attach = (card: Element, id: string): void => {
-      card.setAttribute(CARD_ATTRIBUTE, '');
+      card.setAttribute(CARD_ATTRIBUTE, "");
       const entry: Entry = {
         id,
         card,
@@ -427,7 +471,7 @@ export const feature: Feature = {
         corner: null,
         cover: null,
         image: null,
-        objectFit: '',
+        objectFit: "",
         backdrop: null,
         meta: null,
         hasMeta: false,
@@ -449,23 +493,28 @@ export const feature: Feature = {
         entry.cover = cover;
         entry.objectFit = image.style.objectFit;
         if (settings.coverNormalization) {
-          cover.setAttribute(COVER_ATTRIBUTE, '');
+          cover.setAttribute(COVER_ATTRIBUTE, "");
           applyFit(entry);
         }
       } else if (wantsCorner) {
-        warn('cover not found');
+        warn("cover not found");
       }
 
       placeMeta(entry);
       if (wantsCorner && frame)
-        void place(entry, frame, 'corner', <CardCorner {...cornerProps(entry)} />);
+        void place(
+          entry,
+          frame,
+          "corner",
+          <CardCorner {...cornerProps(entry)} />,
+        );
       if (enrichable) {
         const listeners = new AbortController();
         const options = { signal: AbortSignal.any([signal, listeners.signal]) };
-        card.addEventListener('pointerenter', () => startHover(entry), options);
-        card.addEventListener('focusin', () => startHover(entry), options);
-        card.addEventListener('pointerleave', () => stopHover(entry), options);
-        card.addEventListener('focusout', () => stopHover(entry), options);
+        card.addEventListener("pointerenter", () => startHover(entry), options);
+        card.addEventListener("focusin", () => startHover(entry), options);
+        card.addEventListener("pointerleave", () => stopHover(entry), options);
+        card.addEventListener("focusout", () => stopHover(entry), options);
         entry.listeners = listeners;
       }
     };
@@ -491,7 +540,7 @@ export const feature: Feature = {
       done: number;
       total: number;
       message: string | null;
-    } = { status: 'idle', done: 0, total: 0, message: null };
+    } = { status: "idle", done: 0, total: 0, message: null };
     let loaderBar: HTMLElement | null = null;
     let loaderUi: MountedUi | null = null;
     let batch: AbortController | null = null;
@@ -517,7 +566,11 @@ export const feature: Feature = {
     };
 
     const stopLoader = (reason: EnrichBlock): void => {
-      loader = { ...loader, status: 'stopped', message: enrichBlockMessage(reason) };
+      loader = {
+        ...loader,
+        status: "stopped",
+        message: enrichBlockMessage(reason),
+      };
       batch?.abort();
       renderLoader();
     };
@@ -537,14 +590,16 @@ export const feature: Feature = {
           Math.min(nearest.get(entry.id) ?? Number.POSITIVE_INFINITY, distance),
         );
       }
-      const ids = [...nearest.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
+      const ids = [...nearest.entries()]
+        .sort((a, b) => a[1] - b[1])
+        .map(([id]) => id);
       const control = new AbortController();
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
       adoptKnown();
       const pending = ids.filter((id) => !facts.has(id));
       loader = {
-        status: 'running',
+        status: "running",
         done: ids.length - pending.length,
         total: ids.length,
         message: null,
@@ -564,32 +619,36 @@ export const feature: Feature = {
         }
       };
       await Promise.all(
-        Array.from({ length: Math.min(ENRICH_CONCURRENCY, pending.length) }, () => worker()),
+        Array.from(
+          { length: Math.min(ENRICH_CONCURRENCY, pending.length) },
+          () => worker(),
+        ),
       );
       batch = null;
-      if (signal.aborted || loader.status === 'stopped') return;
+      if (signal.aborted || loader.status === "stopped") return;
       loader = {
         ...loader,
-        status: control.signal.aborted ? 'cancelled' : 'done',
+        status: control.signal.aborted ? "cancelled" : "done",
       };
       renderLoader();
     }
 
     const syncLoader = (section: Element): void => {
       if (!enrichable || settings.gridTools || loaderBar?.isConnected) return;
-      const row = section.querySelector(SECTION_HEADING)?.parentElement?.parentElement;
+      const row =
+        section.querySelector(SECTION_HEADING)?.parentElement?.parentElement;
       if (!row) {
-        warn('round header row not found');
+        warn("round header row not found");
         return;
       }
       loaderUi?.remove();
       loaderBar?.remove();
-      const bar = document.createElement('div');
+      const bar = document.createElement("div");
       bar.setAttribute(OWN_ATTRIBUTE, LOADER_SLOT);
       row.after(bar);
       loaderBar = bar;
       loaderUi = null;
-      mount({ name: 'cards-loader', anchor: bar, children: loaderView() }).then(
+      mount({ name: "cards-loader", anchor: bar, children: loaderView() }).then(
         (ui) => {
           if (!ui) return;
           if (signal.aborted || loaderBar !== bar) {
@@ -599,7 +658,7 @@ export const feature: Feature = {
           loaderUi = ui;
           ui.render(loaderView());
         },
-        (error: unknown) => warn('mount loader', error),
+        (error: unknown) => warn("mount loader", error),
       );
     };
 
@@ -614,7 +673,8 @@ export const feature: Feature = {
           if (!entries.has(card)) attach(card, record.id);
         }
       }
-      for (const entry of [...entries.values()]) if (!live.has(entry.card)) detach(entry);
+      for (const entry of [...entries.values()])
+        if (!live.has(entry.card)) detach(entry);
       syncLoader(section);
     };
 
@@ -623,19 +683,22 @@ export const feature: Feature = {
     renderLoader();
     if (enrichable) {
       const start = window.setTimeout(() => {
-        if (!signal.aborted && !batch && loader.status === 'idle') void runBatch();
+        if (!signal.aborted && !batch && loader.status === "idle")
+          void runBatch();
       }, 1500);
-      signal.addEventListener('abort', () => window.clearTimeout(start), { once: true });
+      signal.addEventListener("abort", () => window.clearTimeout(start), {
+        once: true,
+      });
     }
 
     if (enrichable) {
       const offBlock = onEnrichBlock(stopLoader);
-      signal.addEventListener('abort', offBlock, { once: true });
+      signal.addEventListener("abort", offBlock, { once: true });
       readEnrichBlock().then(
         (reason) => {
           if (reason && !signal.aborted) stopLoader(reason);
         },
-        (error: unknown) => warn('read enrichment state', error),
+        (error: unknown) => warn("read enrichment state", error),
       );
     }
 
@@ -645,13 +708,13 @@ export const feature: Feature = {
         reviewsLoaded = true;
         for (const entry of entries.values()) renderCorner(entry);
       };
-      store.send('listReviews', undefined).then(
+      store.send("listReviews", undefined).then(
         (list) => {
           for (const review of list) reviews.set(review.submissionId, review);
           settle();
         },
         (error: unknown) => {
-          warn('read reviews', error);
+          warn("read reviews", error);
           settle();
         },
       );

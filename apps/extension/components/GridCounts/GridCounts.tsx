@@ -1,4 +1,4 @@
-import styles from './GridCounts.module.scss';
+import styles from "./GridCounts.module.scss";
 
 export interface GridCountsProps {
   total: number;
@@ -13,7 +13,10 @@ export function GridCounts({ total, shown }: GridCountsProps) {
         Showing {shown} of {total}
       </span>
       {shown === 0 && (
-        <span className={styles.empty}> No submissions match the current filters.</span>
+        <span className={styles.empty}>
+          {" "}
+          No submissions match the current filters.
+        </span>
       )}
     </p>
   );

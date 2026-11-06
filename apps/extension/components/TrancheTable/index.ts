@@ -1,1 +1,5 @@
-export { TrancheTable, type TrancheTableProps, type TrancheTableRow } from './TrancheTable';
+export {
+  TrancheTable,
+  type TrancheTableProps,
+  type TrancheTableRow,
+} from "./TrancheTable";

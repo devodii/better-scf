@@ -1,6 +1,6 @@
-import clsx from 'clsx';
-import { useState } from 'react';
-import styles from './ReviewerTeamAvatar.module.scss';
+import clsx from "clsx";
+import { useState } from "react";
+import styles from "./ReviewerTeamAvatar.module.scss";
 
 export interface ReviewerTeamAvatarProps {
   name: string;
@@ -8,13 +8,24 @@ export interface ReviewerTeamAvatarProps {
   href?: string | null | undefined;
 }
 
-export function ReviewerTeamAvatar({ name, src, href }: ReviewerTeamAvatarProps) {
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading');
+export function ReviewerTeamAvatar({
+  name,
+  src,
+  href,
+}: ReviewerTeamAvatarProps) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(
+    "loading",
+  );
   if (!src) {
     if (!href) return null;
     return (
       <a
-        className={clsx(styles.root, styles.isLoaded, styles.link, styles.linkOnly)}
+        className={clsx(
+          styles.root,
+          styles.isLoaded,
+          styles.link,
+          styles.linkOnly,
+        )}
         href={href}
         target="_blank"
         rel="noopener noreferrer"
@@ -23,20 +34,20 @@ export function ReviewerTeamAvatar({ name, src, href }: ReviewerTeamAvatarProps)
       </a>
     );
   }
-  if (status === 'failed') return null;
+  if (status === "failed") return null;
 
   const image = (
     <img
       className={styles.image}
       src={src}
-      alt={href ? '' : name}
+      alt={href ? "" : name}
       decoding="async"
       referrerPolicy="no-referrer"
-      onLoad={() => setStatus('loaded')}
-      onError={() => setStatus('failed')}
+      onLoad={() => setStatus("loaded")}
+      onError={() => setStatus("failed")}
     />
   );
-  const classes = clsx(styles.root, status === 'loaded' && styles.isLoaded);
+  const classes = clsx(styles.root, status === "loaded" && styles.isLoaded);
 
   if (href) {
     return (

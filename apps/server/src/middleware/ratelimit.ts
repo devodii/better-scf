@@ -1,5 +1,5 @@
-import type { Context, MiddlewareHandler } from 'hono';
-import { chatError } from 'shared';
+import type { Context, MiddlewareHandler } from "hono";
+import { chatError } from "shared";
 
 export interface RateLimits {
   clientPerMinute: number;
@@ -14,7 +14,7 @@ export interface RateLimitOptions {
   getIp?: (c: Context) => string;
 }
 
-const CLIENT_HEADER = 'x-bscf-client';
+const CLIENT_HEADER = "x-bscf-client";
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * 60_000;
@@ -22,24 +22,24 @@ const SWEEP_EVERY = 500;
 
 // Proxies append the connecting address to X-Forwarded-For: only the rightmost entry is trusted, the leftmost can be forged.
 function clientIpFromRequest(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for');
+  const forwarded = c.req.header("x-forwarded-for");
   if (forwarded) {
     const parts = forwarded
-      .split(',')
+      .split(",")
       .map((part) => part.trim())
       .filter((part) => part.length > 0);
     const last = parts[parts.length - 1];
     if (last) return last;
   }
-  const real = c.req.header('x-real-ip')?.trim();
-  return real ? real : 'unknown';
+  const real = c.req.header("x-real-ip")?.trim();
+  return real ? real : "unknown";
 }
 
 type Decision =
   | { allowed: true }
   | {
       allowed: false;
-      reason: 'global' | 'client' | 'ip';
+      reason: "global" | "client" | "ip";
       daily: boolean;
       retryAfterSeconds: number;
     };
@@ -48,7 +48,10 @@ export interface RateLimiter {
   check(clientId: string, ip: string): Decision;
 }
 
-function createRateLimiter(limits: RateLimits, now: () => number = Date.now): RateLimiter {
+function createRateLimiter(
+  limits: RateLimits,
+  now: () => number = Date.now,
+): RateLimiter {
   const clients = new Map<string, number[]>();
   const ips = new Map<string, number[]>();
   let global: number[] = [];
@@ -61,12 +64,22 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
     return i === 0 ? stamps : stamps.slice(i);
   };
 
-  const retryAfter = (stamps: number[], windowMs: number, limit: number, t: number): number => {
+  const retryAfter = (
+    stamps: number[],
+    windowMs: number,
+    limit: number,
+    t: number,
+  ): number => {
     const blocking = stamps[Math.max(0, stamps.length - limit)] ?? t;
     return Math.max(1, Math.ceil((blocking + windowMs - t) / 1000));
   };
 
-  const load = (map: Map<string, number[]>, key: string, windowMs: number, t: number): number[] => {
+  const load = (
+    map: Map<string, number[]>,
+    key: string,
+    windowMs: number,
+    t: number,
+  ): number[] => {
     const stamps = prune(map.get(key) ?? [], windowMs, t);
     if (stamps.length === 0) map.delete(key);
     else map.set(key, stamps);
@@ -89,7 +102,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
       if (global.length >= limits.globalPerDay) {
         return {
           allowed: false,
-          reason: 'global',
+          reason: "global",
           daily: true,
           retryAfterSeconds: retryAfter(global, DAY_MS, limits.globalPerDay, t),
         };
@@ -100,15 +113,20 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
       if (minute.length >= limits.clientPerMinute) {
         return {
           allowed: false,
-          reason: 'client',
+          reason: "client",
           daily: false,
-          retryAfterSeconds: retryAfter(minute, MINUTE_MS, limits.clientPerMinute, t),
+          retryAfterSeconds: retryAfter(
+            minute,
+            MINUTE_MS,
+            limits.clientPerMinute,
+            t,
+          ),
         };
       }
       if (day.length >= limits.clientPerDay) {
         return {
           allowed: false,
-          reason: 'client',
+          reason: "client",
           daily: true,
           retryAfterSeconds: retryAfter(day, DAY_MS, limits.clientPerDay, t),
         };
@@ -118,7 +136,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
       if (ipDay.length >= limits.ipPerDay) {
         return {
           allowed: false,
-          reason: 'ip',
+          reason: "ip",
           daily: true,
           retryAfterSeconds: retryAfter(ipDay, DAY_MS, limits.ipPerDay, t),
         };
@@ -146,13 +164,13 @@ export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
       await next();
       return;
     }
-    c.header('Retry-After', String(decision.retryAfterSeconds));
+    c.header("Retry-After", String(decision.retryAfterSeconds));
     const { retryAfterSeconds } = decision;
-    if (decision.reason === 'global') {
+    if (decision.reason === "global") {
       return c.json(
         chatError(
-          'global_cap',
-          'The assistant has reached its daily capacity. Please try again later.',
+          "global_cap",
+          "The assistant has reached its daily capacity. Please try again later.",
           retryAfterSeconds,
         ),
         503,
@@ -160,10 +178,14 @@ export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
     }
     return c.json(
       decision.daily
-        ? chatError('daily_limit', 'You have reached the daily question limit.', retryAfterSeconds)
+        ? chatError(
+            "daily_limit",
+            "You have reached the daily question limit.",
+            retryAfterSeconds,
+          )
         : chatError(
-            'rate_limited',
-            'You are asking too quickly. Please wait a moment and try again.',
+            "rate_limited",
+            "You are asking too quickly. Please wait a moment and try again.",
             retryAfterSeconds,
           ),
       429,

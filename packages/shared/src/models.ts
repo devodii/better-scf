@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import { CHAT_LIMITS, PAGE_KINDS } from './constants';
+import { z } from "zod";
+import { CHAT_LIMITS, PAGE_KINDS } from "./constants";
 
-const trackSchema = z.enum(['open', 'integration', 'rfp', 'unknown']);
+const trackSchema = z.enum(["open", "integration", "rfp", "unknown"]);
 export type Track = z.infer<typeof trackSchema>;
 
-const stanceSchema = z.enum(['none', 'support', 'unsure', 'against']);
+const stanceSchema = z.enum(["none", "support", "unsure", "against"]);
 export type Stance = z.infer<typeof stanceSchema>;
 
 const pageKindSchema = z.enum(PAGE_KINDS);
@@ -54,9 +54,9 @@ export const submissionSchema = z.object({
   byLine: z.string(),
   budgetUsd: usd,
   status: z.string(),
-  kind: z.enum(['build', 'other']),
+  kind: z.enum(["build", "other"]),
   track: trackSchema,
-  trackSource: z.enum(['api', 'heuristic', 'unknown']),
+  trackSource: z.enum(["api", "heuristic", "unknown"]),
   parserVersion: z.number().int().nonnegative().catch(0),
   category: nullableString,
   tranches: z.array(trancheSchema),
@@ -121,7 +121,7 @@ export type NavState = z.infer<typeof navStateSchema>;
 export const chatMessageSchema = z.object({
   id: z.string().min(1),
   submissionId: z.string().min(1),
-  role: z.enum(['user', 'assistant']),
+  role: z.enum(["user", "assistant"]),
   content: z.string(),
   promptId: z.string().optional(),
   createdAt: z.number(),
@@ -147,13 +147,19 @@ export const proposalContextSchema = z.object({
 });
 export type ProposalContext = z.infer<typeof proposalContextSchema>;
 
-export type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type ParseResult<T> =
+  { ok: true; data: T } | { ok: false; error: string };
 
-export function parseWith<T>(schema: z.ZodType<T>, input: unknown): ParseResult<T> {
+export function parseWith<T>(
+  schema: z.ZodType<T>,
+  input: unknown,
+): ParseResult<T> {
   const result = schema.safeParse(input);
   if (result.success) return { ok: true, data: result.data };
   return {
     ok: false,
-    error: result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+    error: result.error.issues
+      .map((i) => `${i.path.join(".")}: ${i.message}`)
+      .join("; "),
   };
 }

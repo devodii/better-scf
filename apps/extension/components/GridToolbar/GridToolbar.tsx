@@ -1,12 +1,16 @@
-import type { KeyboardEvent, ReactNode, Ref } from 'react';
-import { GridCounts, type GridCountsProps } from '../GridCounts';
-import { type GridFilterState, GridFilters, type GridTrack } from '../GridFilters';
-import { GridNote } from '../GridNote';
-import { GridSort, type GridSortKey } from '../GridSort';
-import { IconButton } from '../IconButton';
-import { Popover } from '../Popover';
-import { TextField } from '../TextField';
-import styles from './GridToolbar.module.scss';
+import type { KeyboardEvent, ReactNode, Ref } from "react";
+import { GridCounts, type GridCountsProps } from "../GridCounts";
+import {
+  type GridFilterState,
+  GridFilters,
+  type GridTrack,
+} from "../GridFilters";
+import { GridNote } from "../GridNote";
+import { GridSort, type GridSortKey } from "../GridSort";
+import { IconButton } from "../IconButton";
+import { Popover } from "../Popover";
+import { TextField } from "../TextField";
+import styles from "./GridToolbar.module.scss";
 
 export interface GridToolbarNote {
   title: string;
@@ -49,10 +53,12 @@ export function GridToolbar({
   trailing,
   searchRef,
 }: GridToolbarProps) {
-  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key !== 'Escape') return;
+  const handleSearchKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+  ): void => {
+    if (event.key !== "Escape") return;
     event.stopPropagation();
-    if (query) onQueryChange('');
+    if (query) onQueryChange("");
     else event.currentTarget.blur();
   };
 
@@ -68,7 +74,7 @@ export function GridToolbar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             onKeyDown={handleSearchKeyDown}
-            onClear={() => onQueryChange('')}
+            onClear={() => onQueryChange("")}
             clearLabel="Clear search"
             autoComplete="off"
             spellCheck={false}
@@ -86,15 +92,27 @@ export function GridToolbar({
               isOpen={note.isOpen}
               onOpenChange={note.onOpenChange}
               trigger={
-                <IconButton label={`Note on ${note.title}`} variant="surface" size="lg">
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <IconButton
+                  label={`Note on ${note.title}`}
+                  variant="surface"
+                  size="lg"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
                     <path d="M4 4h16v12H8l-4 4zm3 4v2h10V8zm0 4v2h7v-2z" />
                   </svg>
                 </IconButton>
               }
             >
               {note.isOpen && (
-                <GridNote title={note.title} value={note.value} onChange={note.onChange} />
+                <GridNote
+                  title={note.title}
+                  value={note.value}
+                  onChange={note.onChange}
+                />
               )}
             </Popover>
           </div>
@@ -105,7 +123,11 @@ export function GridToolbar({
           availableTracks={availableTracks}
           hasReviews={hasReviews}
         />
-        <GridSort value={sort} onChange={onSortChange} hasReviews={hasReviews} />
+        <GridSort
+          value={sort}
+          onChange={onSortChange}
+          hasReviews={hasReviews}
+        />
         {trailing ? <div className={styles.trailing}>{trailing}</div> : null}
       </div>
       {isFiltered && (

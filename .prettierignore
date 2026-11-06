@@ -1,0 +1,9 @@
+node_modules
+.output
+.wxt
+storybook-static
+dist
+coverage
+.playwright-mcp
+pnpm-lock.yaml
+apps/extension/entrypoints/scf.content/styles/tokens.scss

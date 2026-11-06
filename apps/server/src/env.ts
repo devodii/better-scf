@@ -1,19 +1,22 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-const DEFAULT_MODEL = 'claude-sonnet-5-5';
+const DEFAULT_MODEL = "claude-sonnet-5-5";
 
-const intWithDefault = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+const intWithDefault = (fallback: number) =>
+  z.coerce.number().int().positive().default(fallback);
 
 const envSchema = z
   .object({
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("production"),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     ALLOWED_EXTENSION_IDS: z
       .string()
-      .default('')
+      .default("")
       .transform((raw) =>
         raw
-          .split(',')
+          .split(",")
           .map((id) => id.trim())
           .filter((id) => id.length > 0),
       ),
@@ -25,11 +28,11 @@ const envSchema = z
     MODEL: z.string().min(1).default(DEFAULT_MODEL),
   })
   .superRefine((value, ctx) => {
-    if (value.NODE_ENV !== 'test' && value.ANTHROPIC_API_KEY === undefined) {
+    if (value.NODE_ENV !== "test" && value.ANTHROPIC_API_KEY === undefined) {
       ctx.addIssue({
-        code: 'custom',
-        path: ['ANTHROPIC_API_KEY'],
-        message: 'ANTHROPIC_API_KEY is required',
+        code: "custom",
+        path: ["ANTHROPIC_API_KEY"],
+        message: "ANTHROPIC_API_KEY is required",
       });
     }
   });
@@ -41,7 +44,7 @@ export type EnvResult = { ok: true; env: Env } | { ok: false; message: string };
 function parseEnv(source: Record<string, string | undefined>): EnvResult {
   const present: Record<string, string> = {};
   for (const [key, value] of Object.entries(source)) {
-    if (value !== undefined && value.trim() !== '') {
+    if (value !== undefined && value.trim() !== "") {
       present[key] = value;
     }
   }
@@ -50,12 +53,17 @@ function parseEnv(source: Record<string, string | undefined>): EnvResult {
     return { ok: true, env: result.data };
   }
   const problems = result.error.issues.map(
-    (issue) => `${issue.path.join('.') || 'env'}: ${issue.message}`,
+    (issue) => `${issue.path.join(".") || "env"}: ${issue.message}`,
   );
-  return { ok: false, message: `Invalid server configuration: ${problems.join('; ')}` };
+  return {
+    ok: false,
+    message: `Invalid server configuration: ${problems.join("; ")}`,
+  };
 }
 
-export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
+export function loadEnv(
+  source: Record<string, string | undefined> = process.env,
+): Env {
   const result = parseEnv(source);
   if (!result.ok) {
     console.error(result.message);

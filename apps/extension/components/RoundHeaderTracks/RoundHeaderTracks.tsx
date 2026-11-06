@@ -1,6 +1,6 @@
-import { Chip, type ChipVariant } from '../Chip';
-import { TrackIcon, type TrackIconKind } from '../TrackIcon';
-import styles from './RoundHeaderTracks.module.scss';
+import { Chip, type ChipVariant } from "../Chip";
+import { TrackIcon, type TrackIconKind } from "../TrackIcon";
+import styles from "./RoundHeaderTracks.module.scss";
 
 export interface RoundHeaderTrackCounts {
   integration: number;
@@ -19,9 +19,14 @@ const TRACKS: readonly {
   variant: ChipVariant;
   icon: TrackIconKind;
 }[] = [
-  { key: 'integration', label: 'Integration', variant: 'purple', icon: 'integration' },
-  { key: 'open', label: 'Open', variant: 'olive', icon: 'open' },
-  { key: 'rfp', label: 'RFP', variant: 'yellow', icon: 'rfp' },
+  {
+    key: "integration",
+    label: "Integration",
+    variant: "purple",
+    icon: "integration",
+  },
+  { key: "open", label: "Open", variant: "olive", icon: "open" },
+  { key: "rfp", label: "RFP", variant: "yellow", icon: "rfp" },
 ];
 
 export function RoundHeaderTracks({ counts, total }: RoundHeaderTracksProps) {
@@ -41,7 +46,7 @@ export function RoundHeaderTracks({ counts, total }: RoundHeaderTracksProps) {
         role="img"
         aria-label={TRACKS.filter(({ key }) => counts[key] > 0)
           .map(({ key, label }) => `${label} ${counts[key]}`)
-          .join(', ')}
+          .join(", ")}
       >
         {TRACKS.map(({ key, variant }) =>
           counts[key] > 0 ? (
@@ -53,7 +58,10 @@ export function RoundHeaderTracks({ counts, total }: RoundHeaderTracksProps) {
           ) : null,
         )}
         {unknown > 0 && (
-          <span className={`${styles.segment} ${styles.rest}`} style={{ flexGrow: unknown }} />
+          <span
+            className={`${styles.segment} ${styles.rest}`}
+            style={{ flexGrow: unknown }}
+          />
         )}
       </div>
       <ul aria-label="Submissions by track" className={styles.list}>

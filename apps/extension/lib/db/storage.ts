@@ -1,6 +1,6 @@
-import { parseWith } from 'shared';
-import { browser } from 'wxt/browser';
-import { z } from 'zod';
+import { parseWith } from "shared";
+import { browser } from "wxt/browser";
+import { z } from "zod";
 
 export interface StorageItemOptions<T> {
   key: string;
@@ -17,7 +17,9 @@ export interface StorageItem<T> {
   subscribe(listener: (value: T) => void): () => void;
 }
 
-export function defineStorageItem<T>(options: StorageItemOptions<T>): StorageItem<T> {
+export function defineStorageItem<T>(
+  options: StorageItemOptions<T>,
+): StorageItem<T> {
   const { key, schema, defaults } = options;
 
   function parseStored(raw: unknown): T {
@@ -48,7 +50,7 @@ export function defineStorageItem<T>(options: StorageItemOptions<T>): StorageIte
         changes: Record<string, { newValue?: unknown }>,
         areaName: string,
       ): void => {
-        if (areaName !== 'local') return;
+        if (areaName !== "local") return;
         const change = changes[key];
         if (change) listener(parseStored(change.newValue));
       };
@@ -60,13 +62,15 @@ export function defineStorageItem<T>(options: StorageItemOptions<T>): StorageIte
 }
 
 const clientIdSchema = z.uuid();
-const CLIENT_ID_KEY = 'clientId';
+const CLIENT_ID_KEY = "clientId";
 
 let pendingClientId: Promise<string> | undefined;
 
 export function getClientId(): Promise<string> {
   pendingClientId ??= (async () => {
-    const stored = (await browser.storage.local.get(CLIENT_ID_KEY))[CLIENT_ID_KEY];
+    const stored = (await browser.storage.local.get(CLIENT_ID_KEY))[
+      CLIENT_ID_KEY
+    ];
     const parsed = clientIdSchema.safeParse(stored);
     if (parsed.success) return parsed.data;
     const id = crypto.randomUUID();

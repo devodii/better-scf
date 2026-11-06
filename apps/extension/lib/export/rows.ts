@@ -1,5 +1,5 @@
-import type { ReviewState, Submission } from 'shared';
-import { flatten, formatBudget, prepareNote, trackLabel } from './format';
+import type { ReviewState, Submission } from "shared";
+import { flatten, formatBudget, prepareNote, trackLabel } from "./format";
 
 export interface ExportOptions {
   roundId: string;
@@ -23,7 +23,9 @@ interface ExportSummary {
 
 function isReviewed(state: ReviewState | undefined): boolean {
   if (!state) return false;
-  return state.stance !== 'none' || state.shortlisted || state.note.trim() !== '';
+  return (
+    state.stance !== "none" || state.shortlisted || state.note.trim() !== ""
+  );
 }
 
 export function buildSummary(
@@ -41,8 +43,8 @@ export function buildSummary(
       project: flatten(submission.title),
       track: trackLabel(submission.track),
       requested: formatBudget(submission.budgetUsd),
-      stance: state?.stance ?? 'none',
-      note: prepareNote(state?.note ?? ''),
+      stance: state?.stance ?? "none",
+      note: prepareNote(state?.note ?? ""),
     };
   });
   return { rows, reviewed, total: submissions.length };

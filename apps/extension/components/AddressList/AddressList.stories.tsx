@@ -1,29 +1,35 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AddressList } from './AddressList';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { AddressList } from "./AddressList";
 
-const ACCOUNT = 'GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI';
-const CONTRACT = 'CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE';
+const ACCOUNT = "GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI";
+const CONTRACT = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
 const meta = {
-  title: 'Address/AddressList',
+  title: "Address/AddressList",
   component: AddressList,
   args: {
     items: [
       {
         address: ACCOUNT,
-        kind: 'account',
+        kind: "account",
         href: `https://stellar.expert/explorer/public/account/${ACCOUNT}`,
       },
       {
         address: CONTRACT,
-        kind: 'contract',
+        kind: "contract",
         href: `https://stellar.expert/explorer/public/contract/${CONTRACT}`,
       },
     ],
   },
   decorators: [
     (Story) => (
-      <div style={{ padding: '1.5rem', color: 'var(--bscf-text)', lineHeight: 1.6 }}>
+      <div
+        style={{
+          padding: "1.5rem",
+          color: "var(--bscf-text)",
+          lineHeight: 1.6,
+        }}
+      >
         <button type="button">Before the list</button>
         <Story />
         <button type="button">After the list</button>
@@ -51,7 +57,11 @@ export const Focused: Story = {
 };
 
 export const Active: Story = {
-  args: { isRevealed: true, activeAddress: ACCOUNT, describedBy: 'address-popover' },
+  args: {
+    isRevealed: true,
+    activeAddress: ACCOUNT,
+    describedBy: "address-popover",
+  },
 };
 
 export const Empty: Story = { args: { items: [], isRevealed: true } };

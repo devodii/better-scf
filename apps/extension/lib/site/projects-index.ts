@@ -5,13 +5,13 @@ import {
   type ProjectIndexEntry,
   type ProjectIndexRecord,
   TTL_MS,
-} from '../db';
-import { AppError, assertNever } from '../errors';
-import { SITE_ORIGIN } from './routes';
+} from "../db";
+import { AppError, assertNever } from "../errors";
+import { SITE_ORIGIN } from "./routes";
 
 export type ProjectRecord = ProjectIndexEntry;
 
-export type ProjectsIndexErrorKind = 'unavailable' | 'unreadable';
+export type ProjectsIndexErrorKind = "unavailable" | "unreadable";
 
 export class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
   readonly status: number | undefined;
@@ -22,21 +22,26 @@ export class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
     status: number | undefined,
     cause: unknown,
   ) {
-    super({ name: 'ProjectsIndexError', kind, message, cause });
+    super({ name: "ProjectsIndexError", kind, message, cause });
     this.status = status;
   }
 
   static unavailable(statusOrCause?: unknown): ProjectsIndexError {
-    const message = 'The projects list could not be loaded.';
-    return typeof statusOrCause === 'number'
-      ? new ProjectsIndexError('unavailable', message, statusOrCause, undefined)
-      : new ProjectsIndexError('unavailable', message, undefined, statusOrCause);
+    const message = "The projects list could not be loaded.";
+    return typeof statusOrCause === "number"
+      ? new ProjectsIndexError("unavailable", message, statusOrCause, undefined)
+      : new ProjectsIndexError(
+          "unavailable",
+          message,
+          undefined,
+          statusOrCause,
+        );
   }
 
   static unreadable(): ProjectsIndexError {
     return new ProjectsIndexError(
-      'unreadable',
-      'The projects page had no readable project records.',
+      "unreadable",
+      "The projects page had no readable project records.",
       undefined,
       undefined,
     );
@@ -44,10 +49,10 @@ export class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
 
   userMessage(): string {
     switch (this.kind) {
-      case 'unavailable':
-        return 'The project list could not be loaded. Check your connection and try again.';
-      case 'unreadable':
-        return 'The project list could not be read. Try again later.';
+      case "unavailable":
+        return "The project list could not be loaded. Check your connection and try again.";
+      case "unreadable":
+        return "The project list could not be read. Try again later.";
       default:
         return assertNever(this.kind);
     }
@@ -93,7 +98,8 @@ const RETRY_AFTER_FAILURE_MS = 60_000;
 const DEFAULT_LIMIT = 20;
 const MAX_TOKENS = 8;
 const MAX_RECORD_CHARS = 8192;
-const FLIGHT_PUSH = /<script[^>]*>self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g;
+const FLIGHT_PUSH =
+  /<script[^>]*>self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g;
 const RECORD_START = /\{"id":"rec[A-Za-z0-9]+","slug":"/g;
 const MARKS = /\p{M}/gu;
 const WORD_CHAR = /[\p{L}\p{N}]/u;
@@ -108,20 +114,24 @@ let retryAt = 0;
 let loading: Promise<boolean> | null = null;
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function decodeFlight(html: string): string {
   const chunks: string[] = [];
   for (const match of html.matchAll(FLIGHT_PUSH)) {
     try {
-      const entry: unknown = JSON.parse(match[1] ?? '');
-      if (Array.isArray(entry) && entry[0] === 1 && typeof entry[1] === 'string') {
+      const entry: unknown = JSON.parse(match[1] ?? "");
+      if (
+        Array.isArray(entry) &&
+        entry[0] === 1 &&
+        typeof entry[1] === "string"
+      ) {
         chunks.push(entry[1]);
       }
     } catch {}
   }
-  return chunks.join('');
+  return chunks.join("");
 }
 
 function sliceObject(text: string, start: number): string | null {
@@ -152,15 +162,23 @@ function toEntry(raw: string): ProjectRecord | null {
   }
   if (!isObject(record)) return null;
   const { id, slug, title, category, thumbnail, lastAwardedRound } = record;
-  if (typeof id !== 'string' || typeof slug !== 'string' || typeof title !== 'string') return null;
+  if (
+    typeof id !== "string" ||
+    typeof slug !== "string" ||
+    typeof title !== "string"
+  )
+    return null;
   return {
     id,
     slug,
     title,
-    category: typeof category === 'string' ? category : '',
-    thumbnail: isObject(thumbnail) && typeof thumbnail.url === 'string' ? thumbnail.url : null,
+    category: typeof category === "string" ? category : "",
+    thumbnail:
+      isObject(thumbnail) && typeof thumbnail.url === "string"
+        ? thumbnail.url
+        : null,
     lastAwardedRound:
-      typeof lastAwardedRound === 'number' && Number.isFinite(lastAwardedRound)
+      typeof lastAwardedRound === "number" && Number.isFinite(lastAwardedRound)
         ? lastAwardedRound
         : null,
   };
@@ -185,22 +203,28 @@ function parseProjectRecords(html: string): ProjectRecord[] {
 }
 
 function foldChar(ch: string): string {
-  const base = ch.normalize('NFD').replace(MARKS, '').toLowerCase();
+  const base = ch.normalize("NFD").replace(MARKS, "").toLowerCase();
   return base.length > 0 ? base.charAt(0) : ch;
 }
 
 function fold(text: string): string {
-  let out = '';
+  let out = "";
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
-    if (code < 128) out += code >= 65 && code <= 90 ? String.fromCharCode(code + 32) : text[i];
+    if (code < 128)
+      out +=
+        code >= 65 && code <= 90 ? String.fromCharCode(code + 32) : text[i];
     else out += foldChar(text.charAt(i));
   }
   return out;
 }
 
 function prepare(project: ProjectRecord): Prepared {
-  return { project, title: fold(project.title), category: fold(project.category) };
+  return {
+    project,
+    title: fold(project.title),
+    category: fold(project.category),
+  };
 }
 
 function adopt(record: ProjectIndexRecord): void {
@@ -210,13 +234,21 @@ function adopt(record: ProjectIndexRecord): void {
 async function fetchProjects(): Promise<FetchOutcome> {
   try {
     const response = await fetch(PROJECTS_URL, {
-      credentials: 'omit',
+      credentials: "omit",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!response.ok) return { ok: false, error: ProjectsIndexError.unavailable(response.status) };
+    if (!response.ok)
+      return {
+        ok: false,
+        error: ProjectsIndexError.unavailable(response.status),
+      };
     const projects = parseProjectRecords(await response.text());
-    if (projects.length === 0) return { ok: false, error: ProjectsIndexError.unreadable() };
-    return { ok: true, record: { key: PROJECT_INDEX_KEY, projects, fetchedAt: Date.now() } };
+    if (projects.length === 0)
+      return { ok: false, error: ProjectsIndexError.unreadable() };
+    return {
+      ok: true,
+      record: { key: PROJECT_INDEX_KEY, projects, fetchedAt: Date.now() },
+    };
   } catch (cause) {
     return { ok: false, error: ProjectsIndexError.unavailable(cause) };
   }
@@ -280,11 +312,15 @@ function tokenize(query: string): string[] {
   return [...tokens];
 }
 
-function locate(text: string, token: string): { at: number; prefix: boolean } | null {
+function locate(
+  text: string,
+  token: string,
+): { at: number; prefix: boolean } | null {
   const first = text.indexOf(token);
   if (first < 0) return null;
   for (let at = first; at >= 0; at = text.indexOf(token, at + 1)) {
-    if (at === 0 || !WORD_CHAR.test(text.charAt(at - 1))) return { at, prefix: true };
+    if (at === 0 || !WORD_CHAR.test(text.charAt(at - 1)))
+      return { at, prefix: true };
   }
   return { at: first, prefix: false };
 }
@@ -292,9 +328,13 @@ function locate(text: string, token: string): { at: number; prefix: boolean } | 
 function bestHit(item: Prepared, token: string): Hit | null {
   const title = locate(item.title, token);
   const category = locate(item.category, token);
-  const range = (at: number): MatchRange => ({ start: at, end: at + token.length });
+  const range = (at: number): MatchRange => ({
+    start: at,
+    end: at + token.length,
+  });
   if (title?.prefix) return { rank: 0, inTitle: true, range: range(title.at) };
-  if (category?.prefix) return { rank: 1, inTitle: false, range: range(category.at) };
+  if (category?.prefix)
+    return { rank: 1, inTitle: false, range: range(category.at) };
   if (title) return { rank: 2, inTitle: true, range: range(title.at) };
   if (category) return { rank: 3, inTitle: false, range: range(category.at) };
   return null;
@@ -305,7 +345,8 @@ function mergeRanges(ranges: MatchRange[]): MatchRange[] {
   const merged: MatchRange[] = [];
   for (const range of sorted) {
     const last = merged[merged.length - 1];
-    if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+    if (last && range.start <= last.end)
+      last.end = Math.max(last.end, range.end);
     else merged.push(range);
   }
   return merged;
@@ -332,10 +373,14 @@ function scoreItem(
   };
 }
 
-export function searchProjects(query: string, limit: number = DEFAULT_LIMIT): ProjectSearchResult {
+export function searchProjects(
+  query: string,
+  limit: number = DEFAULT_LIMIT,
+): ProjectSearchResult {
   try {
     const tokens = tokenize(query);
-    if (tokens.length === 0) return { matches: [], ready: prepared !== null, error: failure };
+    if (tokens.length === 0)
+      return { matches: [], ready: prepared !== null, error: failure };
     if (needsLoad(Date.now())) void loadProjectsIndex();
     if (!prepared) return { matches: [], ready: false, error: failure };
     const scored: (ProjectMatch & { rank: number })[] = [];
@@ -345,16 +390,25 @@ export function searchProjects(query: string, limit: number = DEFAULT_LIMIT): Pr
     }
     scored.sort(
       (a, b) =>
-        a.rank - b.rank || (b.project.lastAwardedRound ?? -1) - (a.project.lastAwardedRound ?? -1),
+        a.rank - b.rank ||
+        (b.project.lastAwardedRound ?? -1) - (a.project.lastAwardedRound ?? -1),
     );
-    const cap = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : DEFAULT_LIMIT;
-    const matches = scored.slice(0, cap).map(({ project, titleRanges, categoryRanges }) => ({
-      project,
-      titleRanges,
-      categoryRanges,
-    }));
+    const cap = Number.isFinite(limit)
+      ? Math.max(0, Math.floor(limit))
+      : DEFAULT_LIMIT;
+    const matches = scored
+      .slice(0, cap)
+      .map(({ project, titleRanges, categoryRanges }) => ({
+        project,
+        titleRanges,
+        categoryRanges,
+      }));
     return { matches, ready: true, error: null };
   } catch (cause) {
-    return { matches: [], ready: prepared !== null, error: ProjectsIndexError.unavailable(cause) };
+    return {
+      matches: [],
+      ready: prepared !== null,
+      error: ProjectsIndexError.unavailable(cause),
+    };
   }
 }

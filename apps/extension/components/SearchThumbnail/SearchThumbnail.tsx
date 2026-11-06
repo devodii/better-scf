@@ -1,8 +1,11 @@
-import clsx from 'clsx';
-import { type ComponentPropsWithoutRef, type Ref, useState } from 'react';
-import styles from './SearchThumbnail.module.scss';
+import clsx from "clsx";
+import { type ComponentPropsWithoutRef, type Ref, useState } from "react";
+import styles from "./SearchThumbnail.module.scss";
 
-export interface SearchThumbnailProps extends Omit<ComponentPropsWithoutRef<'span'>, 'children'> {
+export interface SearchThumbnailProps extends Omit<
+  ComponentPropsWithoutRef<"span">,
+  "children"
+> {
   src: string | null;
   fallback: string;
   ref?: Ref<HTMLSpanElement>;
@@ -13,17 +16,28 @@ function initials(text: string): string {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((word) => Array.from(word)[0] ?? '')
-    .join('')
+    .map((word) => Array.from(word)[0] ?? "")
+    .join("")
     .toUpperCase();
 }
 
-export function SearchThumbnail({ src, fallback, className, ref, ...rest }: SearchThumbnailProps) {
+export function SearchThumbnail({
+  src,
+  fallback,
+  className,
+  ref,
+  ...rest
+}: SearchThumbnailProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = src !== null && failedSrc !== src;
 
   return (
-    <span ref={ref} aria-hidden="true" className={clsx(styles.root, className)} {...rest}>
+    <span
+      ref={ref}
+      aria-hidden="true"
+      className={clsx(styles.root, className)}
+      {...rest}
+    >
       {showImage ? (
         <img
           className={styles.image}

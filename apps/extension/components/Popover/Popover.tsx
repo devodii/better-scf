@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import clsx from "clsx";
 import {
   cloneElement,
   type ReactElement,
@@ -7,10 +7,10 @@ import {
   useEffect,
   useId,
   useRef,
-} from 'react';
-import styles from './Popover.module.scss';
+} from "react";
+import styles from "./Popover.module.scss";
 
-export type PopoverPlacement = 'top' | 'bottom';
+export type PopoverPlacement = "top" | "bottom";
 
 export interface PopoverProps {
   label: string;
@@ -28,7 +28,7 @@ export function Popover({
   children,
   isOpen,
   onOpenChange,
-  placement = 'bottom',
+  placement = "bottom",
   className,
 }: PopoverProps) {
   const id = useId();
@@ -40,7 +40,7 @@ export function Popover({
   }, [isOpen]);
 
   const handleToggle = (event: ToggleEvent<HTMLDivElement>): void => {
-    const next = event.newState === 'open';
+    const next = event.newState === "open";
     if (next !== isOpen) onOpenChange(next);
   };
 

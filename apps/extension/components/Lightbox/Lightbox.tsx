@@ -1,8 +1,8 @@
-import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
-import { IconButton } from '../IconButton';
-import { Spinner } from '../Spinner';
-import styles from './Lightbox.module.scss';
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "react";
+import { IconButton } from "../IconButton";
+import { Spinner } from "../Spinner";
+import styles from "./Lightbox.module.scss";
 
 export interface LightboxProps {
   src: string;
@@ -20,7 +20,9 @@ function deepActive(): HTMLElement | null {
 }
 
 export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading');
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(
+    "loading",
+  );
   const [isActualSize, setIsActualSize] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -35,20 +37,20 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
     const html = document.documentElement;
     const body = document.body;
     const overflow = [html.style.overflow, body.style.overflow] as const;
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
     closeButton.current?.focus({ preventScroll: true });
 
     const onKeydown = (event: KeyboardEvent): void => {
       const root = dialog.current;
       if (!root) return;
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
         closeHandler.current();
         return;
       }
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
       const targets = root.querySelectorAll<HTMLElement>(FOCUSABLE);
       const first = targets[0];
       const last = targets[targets.length - 1];
@@ -58,7 +60,9 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
       }
       const scope = root.getRootNode();
       const active =
-        scope instanceof ShadowRoot || scope instanceof Document ? scope.activeElement : null;
+        scope instanceof ShadowRoot || scope instanceof Document
+          ? scope.activeElement
+          : null;
       if (!active || !root.contains(active)) {
         event.preventDefault();
         first.focus();
@@ -73,22 +77,30 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
 
     const onFocusIn = (event: FocusEvent): void => {
       const root = dialog.current;
-      if (root && !event.composedPath().includes(root)) closeButton.current?.focus();
+      if (root && !event.composedPath().includes(root))
+        closeButton.current?.focus();
     };
 
-    window.addEventListener('keydown', onKeydown, true);
-    document.addEventListener('focusin', onFocusIn, true);
+    window.addEventListener("keydown", onKeydown, true);
+    document.addEventListener("focusin", onFocusIn, true);
     return () => {
-      window.removeEventListener('keydown', onKeydown, true);
-      document.removeEventListener('focusin', onFocusIn, true);
+      window.removeEventListener("keydown", onKeydown, true);
+      document.removeEventListener("focusin", onFocusIn, true);
       html.style.overflow = overflow[0];
       body.style.overflow = overflow[1];
-      if (opener && opener !== body && opener.isConnected) opener.focus({ preventScroll: true });
+      if (opener && opener !== body && opener.isConnected)
+        opener.focus({ preventScroll: true });
     };
   }, []);
 
   return (
-    <div ref={dialog} className={styles.root} role="dialog" aria-modal="true" aria-label={label}>
+    <div
+      ref={dialog}
+      className={styles.root}
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+    >
       <button
         type="button"
         className={styles.scrim}
@@ -100,12 +112,14 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
         <p className={styles.caption}>{caption}</p>
         <div className={styles.actions}>
           <IconButton
-            label={isActualSize ? 'Fit image to screen' : 'Show image at actual size'}
+            label={
+              isActualSize ? "Fit image to screen" : "Show image at actual size"
+            }
             variant="surface"
             size="lg"
             className={styles.action}
             isPressed={isActualSize}
-            disabled={status !== 'loaded'}
+            disabled={status !== "loaded"}
             onClick={() => setIsActualSize(!isActualSize)}
           >
             <svg
@@ -135,8 +149,10 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
         </div>
       </div>
       <div className={styles.stage}>
-        {status === 'loading' && <Spinner className={styles.spinner} label="Loading image" />}
-        {status === 'failed' ? (
+        {status === "loading" && (
+          <Spinner className={styles.spinner} label="Loading image" />
+        )}
+        {status === "failed" ? (
           <p className={styles.message} role="alert">
             The image could not be loaded.
           </p>
@@ -144,15 +160,15 @@ export function Lightbox({ src, label, caption, onClose }: LightboxProps) {
           <img
             className={clsx(
               styles.image,
-              status === 'loaded' && styles.isLoaded,
+              status === "loaded" && styles.isLoaded,
               isActualSize && styles.isActualSize,
             )}
             src={src}
             alt={label}
             decoding="async"
             referrerPolicy="no-referrer"
-            onLoad={() => setStatus('loaded')}
-            onError={() => setStatus('failed')}
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("failed")}
           />
         )}
       </div>

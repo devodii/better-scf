@@ -1,17 +1,17 @@
-import { TocNav, type TocNavItem } from '../../../components/TocNav';
+import { TocNav, type TocNavItem } from "../../../components/TocNav";
 import {
   findSubmissionSections,
   type SubmissionSectionElement,
-} from '../../../lib/site/submission';
-import type { Feature } from '../../../lib/ui/feature';
-import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
-import tocCss from '../styles/detail-toc.scss?inline';
+} from "../../../lib/site/submission";
+import type { Feature } from "../../../lib/ui/feature";
+import { type MountedUi, OWN_ATTRIBUTE } from "../../../lib/ui/mount";
+import tocCss from "../styles/detail-toc.scss?inline";
 
-const SLOT = 'data-bscf-toc';
-const ROOM = 'data-bscf-toc-room';
-const TOP_VAR = '--bscf-toc-top';
-const WIDE = '(min-width: 80rem)';
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+const SLOT = "data-bscf-toc";
+const ROOM = "data-bscf-toc-room";
+const TOP_VAR = "--bscf-toc-top";
+const WIDE = "(min-width: 80rem)";
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 const RAIL_TOP = 112;
 const ACTIVE_LINE = 140;
 const SCROLL_OFFSET = 120;
@@ -26,14 +26,14 @@ const toItems = (sections: readonly SubmissionSectionElement[]): TocNavItem[] =>
   sections.map(({ id, title }) => ({ id, title }));
 
 export const feature: Feature = {
-  pages: ['submission'],
-  toggles: ['tableOfContents'],
+  pages: ["submission"],
+  toggles: ["tableOfContents"],
   mount({ region, signal, mount, onMutation, warn }) {
     const wide = window.matchMedia(WIDE);
     const reduced = window.matchMedia(REDUCED_MOTION);
 
-    const style = document.createElement('style');
-    style.setAttribute(OWN_ATTRIBUTE, 'detail-toc');
+    const style = document.createElement("style");
+    style.setAttribute(OWN_ATTRIBUTE, "detail-toc");
     style.textContent = tocCss;
     (document.head ?? document.documentElement).append(style);
 
@@ -62,11 +62,17 @@ export const feature: Feature = {
     function select(id: string): void {
       const target = sections.find((section) => section.id === id);
       if (!target?.heading.isConnected) {
-        warn('section not found');
+        warn("section not found");
         return;
       }
-      const top = target.heading.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
-      window.scrollTo({ top, behavior: reduced.matches ? 'instant' : 'smooth' });
+      const top =
+        target.heading.getBoundingClientRect().top +
+        window.scrollY -
+        SCROLL_OFFSET;
+      window.scrollTo({
+        top,
+        behavior: reduced.matches ? "instant" : "smooth",
+      });
     }
 
     const readActive = (): string | null => {
@@ -91,7 +97,10 @@ export const feature: Feature = {
         return;
       }
       const rect = container.getBoundingClientRect();
-      const top = Math.min(Math.max(RAIL_TOP, rect.top), rect.bottom - slot.offsetHeight);
+      const top = Math.min(
+        Math.max(RAIL_TOP, rect.top),
+        rect.bottom - slot.offsetHeight,
+      );
       slot.style.setProperty(TOP_VAR, `${top}px`);
     };
 
@@ -114,14 +123,14 @@ export const feature: Feature = {
     const place = (parent: Element): void => {
       items = toItems(sections);
       activeId = readActive();
-      const own = document.createElement('div');
-      own.setAttribute(OWN_ATTRIBUTE, 'toc-slot');
-      own.setAttribute(SLOT, '');
+      const own = document.createElement("div");
+      own.setAttribute(OWN_ATTRIBUTE, "toc-slot");
+      own.setAttribute(SLOT, "");
       parent.prepend(own);
-      parent.setAttribute(ROOM, '');
+      parent.setAttribute(ROOM, "");
       slot = own;
       container = parent;
-      mount({ anchor: own, append: 'last', children: view() })
+      mount({ anchor: own, append: "last", children: view() })
         .then((handle) => {
           if (!handle) return;
           if (slot === own) {
@@ -131,7 +140,7 @@ export const feature: Feature = {
             handle.remove();
           }
         })
-        .catch((error: unknown) => warn('mount', error));
+        .catch((error: unknown) => warn("mount", error));
     };
 
     const sync = (): void => {
@@ -139,17 +148,21 @@ export const feature: Feature = {
       const first = found[0];
       const last = found.at(-1);
       const parent =
-        first && last && found.length > 1 ? commonAncestor(first.heading, last.heading) : null;
+        first && last && found.length > 1
+          ? commonAncestor(first.heading, last.heading)
+          : null;
       if (!parent) {
         teardown();
-        warn('sections not found');
+        warn("sections not found");
         return;
       }
       sections = found;
       if (slot?.isConnected && parent === container) {
         const unchanged =
           found.length === items.length &&
-          found.every((s, i) => s.id === items[i]?.id && s.title === items[i]?.title);
+          found.every(
+            (s, i) => s.id === items[i]?.id && s.title === items[i]?.title,
+          );
         if (!unchanged) {
           items = toItems(found);
           activeId = readActive();
@@ -161,9 +174,9 @@ export const feature: Feature = {
       place(parent);
     };
 
-    window.addEventListener('scroll', schedule, { passive: true, signal });
-    window.addEventListener('resize', schedule, { passive: true, signal });
-    wide.addEventListener('change', schedule, { signal });
+    window.addEventListener("scroll", schedule, { passive: true, signal });
+    window.addEventListener("resize", schedule, { passive: true, signal });
+    wide.addEventListener("change", schedule, { signal });
     onMutation(sync);
     sync();
 

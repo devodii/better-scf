@@ -1,10 +1,10 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
-import styles from './Chip.module.scss';
+import clsx from "clsx";
+import type { ComponentPropsWithoutRef, ReactNode, Ref } from "react";
+import styles from "./Chip.module.scss";
 
-export type ChipVariant = 'purple' | 'olive' | 'yellow' | 'muted';
+export type ChipVariant = "purple" | "olive" | "yellow" | "muted";
 
-export interface ChipProps extends ComponentPropsWithoutRef<'span'> {
+export interface ChipProps extends ComponentPropsWithoutRef<"span"> {
   variant?: ChipVariant;
   href?: string | null | undefined;
   icon?: ReactNode;
@@ -12,7 +12,7 @@ export interface ChipProps extends ComponentPropsWithoutRef<'span'> {
 }
 
 export function Chip({
-  variant = 'purple',
+  variant = "purple",
   href,
   icon,
   className,

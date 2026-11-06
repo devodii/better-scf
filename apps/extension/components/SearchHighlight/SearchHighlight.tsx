@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import styles from './SearchHighlight.module.scss';
+import type { ReactNode } from "react";
+import styles from "./SearchHighlight.module.scss";
 
 export interface SearchHighlightRange {
   start: number;

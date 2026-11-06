@@ -1,15 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import { fn } from 'storybook/test';
-import { GridSort, type GridSortProps } from './GridSort';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import { fn } from "storybook/test";
+import { GridSort, type GridSortProps } from "./GridSort";
 
 const meta = {
-  title: 'Grid/GridSort',
+  title: "Grid/GridSort",
   component: GridSort,
-  args: { value: 'site', onChange: fn(), hasReviews: true },
+  args: { value: "site", onChange: fn(), hasReviews: true },
   decorators: [
     (Story) => (
-      <div style={{ width: '18rem' }}>
+      <div style={{ width: "18rem" }}>
         <Story />
       </div>
     ),
@@ -26,16 +26,18 @@ function Interactive(args: GridSortProps) {
 
 export const Default: Story = {};
 
-export const Interacting: Story = { render: (args) => <Interactive {...args} /> };
+export const Interacting: Story = {
+  render: (args) => <Interactive {...args} />,
+};
 
-export const BudgetDescending: Story = { args: { value: 'budgetDesc' } };
+export const BudgetDescending: Story = { args: { value: "budgetDesc" } };
 
 export const WithoutReviewData: Story = { args: { hasReviews: false } };
 
 export const Focused: Story = {
   decorators: [
     (Story) => (
-      <div data-force-focus style={{ padding: '0.5rem' }}>
+      <div data-force-focus style={{ padding: "0.5rem" }}>
         <Story />
       </div>
     ),
@@ -45,7 +47,7 @@ export const Focused: Story = {
 export const Narrow: Story = {
   decorators: [
     (Story) => (
-      <div style={{ width: '24.375rem' }}>
+      <div style={{ width: "24.375rem" }}>
         <Story />
       </div>
     ),

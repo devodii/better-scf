@@ -49,16 +49,16 @@ pnpm dev
 
 `pnpm dev` runs the extension (WXT, with hot reload in a managed Chrome) and the server in parallel. Copy `apps/extension/.env.example` and `apps/server/.env.example` to `.env` in each app first; the server needs an Anthropic key for local chat.
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Extension and server in watch mode. |
-| `pnpm build` | Builds the extension and the server. |
-| `pnpm lint` | Biome check across the repository. |
-| `pnpm format` | Biome check with fixes applied. |
-| `pnpm typecheck` | TypeScript check of every package. |
-| `pnpm storybook` | Storybook on port 6006. |
-| `pnpm build-storybook` | Static Storybook build. |
-| `pnpm --filter extension zip` | The release zip. |
+| Command                       | What it does                         |
+| ----------------------------- | ------------------------------------ |
+| `pnpm dev`                    | Extension and server in watch mode.  |
+| `pnpm build`                  | Builds the extension and the server. |
+| `pnpm lint`                   | Biome check across the repository.   |
+| `pnpm format`                 | Biome check with fixes applied.      |
+| `pnpm typecheck`              | TypeScript check of every package.   |
+| `pnpm storybook`              | Storybook on port 6006.              |
+| `pnpm build-storybook`        | Static Storybook build.              |
+| `pnpm --filter extension zip` | The release zip.                     |
 
 ### Building with a server URL
 

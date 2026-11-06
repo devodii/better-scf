@@ -1,15 +1,21 @@
-import { useEffect, useRef } from 'react';
-import { AssistantComposer } from '../AssistantComposer';
-import { AssistantHistory, type AssistantHistoryItem } from '../AssistantHistory';
-import { AssistantLauncher } from '../AssistantLauncher';
-import type { AssistantDecision, AssistantMessageItem } from '../AssistantMessage';
-import { AssistantMessages, type AssistantNotice } from '../AssistantMessages';
-import { AssistantPanel } from '../AssistantPanel';
-import type { AssistantPromptItem } from '../AssistantPrompts';
-import styles from './Assistant.module.scss';
-import { PANEL_SIDE, type PanelSide } from './side';
+import { useEffect, useRef } from "react";
+import { AssistantComposer } from "../AssistantComposer";
+import {
+  AssistantHistory,
+  type AssistantHistoryItem,
+} from "../AssistantHistory";
+import { AssistantLauncher } from "../AssistantLauncher";
+import type {
+  AssistantDecision,
+  AssistantMessageItem,
+} from "../AssistantMessage";
+import { AssistantMessages, type AssistantNotice } from "../AssistantMessages";
+import { AssistantPanel } from "../AssistantPanel";
+import type { AssistantPromptItem } from "../AssistantPrompts";
+import styles from "./Assistant.module.scss";
+import { PANEL_SIDE, type PanelSide } from "./side";
 
-export type AssistantStatus = 'idle' | 'streaming';
+export type AssistantStatus = "idle" | "streaming";
 
 export interface AssistantProps {
   isOpen: boolean;
@@ -38,14 +44,19 @@ export interface AssistantProps {
 
 const ANNOUNCE_CHARS = 160;
 
-function announcementFor(messages: readonly AssistantMessageItem[], isStreaming: boolean): string {
+function announcementFor(
+  messages: readonly AssistantMessageItem[],
+  isStreaming: boolean,
+): string {
   const last = messages.at(-1);
-  if (isStreaming || last?.role !== 'assistant') return '';
+  if (isStreaming || last?.role !== "assistant") return "";
   const text = last.parts
     .map((part) => part.text)
-    .join(' ')
+    .join(" ")
     .trim();
-  return text.length > ANNOUNCE_CHARS ? `${text.slice(0, ANNOUNCE_CHARS)}…` : text;
+  return text.length > ANNOUNCE_CHARS
+    ? `${text.slice(0, ANNOUNCE_CHARS)}…`
+    : text;
 }
 
 export function Assistant({
@@ -60,7 +71,7 @@ export function Assistant({
   onStop,
   placeholder,
   maxLength,
-  status = 'idle',
+  status = "idle",
   messages,
   notice,
   prompts,
@@ -75,7 +86,7 @@ export function Assistant({
   const launcher = useRef<HTMLButtonElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const wasOpen = useRef(isOpen);
-  const isStreaming = status === 'streaming';
+  const isStreaming = status === "streaming";
 
   useEffect(() => {
     if (wasOpen.current === isOpen) return;
@@ -84,7 +95,9 @@ export function Assistant({
       launcher.current?.focus({ preventScroll: true });
       return;
     }
-    const frame = requestAnimationFrame(() => composer.current?.focus({ preventScroll: true }));
+    const frame = requestAnimationFrame(() =>
+      composer.current?.focus({ preventScroll: true }),
+    );
     return () => cancelAnimationFrame(frame);
   }, [isOpen]);
 

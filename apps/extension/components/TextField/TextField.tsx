@@ -1,10 +1,19 @@
-import clsx from 'clsx';
-import { type ComponentPropsWithoutRef, type ReactNode, type Ref, useId, useRef } from 'react';
-import { IconButton } from '../IconButton';
-import { Spinner } from '../Spinner';
-import styles from './TextField.module.scss';
+import clsx from "clsx";
+import {
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  type Ref,
+  useId,
+  useRef,
+} from "react";
+import { IconButton } from "../IconButton";
+import { Spinner } from "../Spinner";
+import styles from "./TextField.module.scss";
 
-export interface TextFieldProps extends Omit<ComponentPropsWithoutRef<'input'>, 'children'> {
+export interface TextFieldProps extends Omit<
+  ComponentPropsWithoutRef<"input">,
+  "children"
+> {
   label?: string | undefined;
   leadingIcon?: ReactNode;
   isLoading?: boolean;
@@ -24,8 +33,8 @@ export function TextField({
   isInvalid = false,
   error,
   onClear,
-  clearLabel = 'Clear',
-  loadingLabel = 'Loading',
+  clearLabel = "Clear",
+  loadingLabel = "Loading",
   wrapperClassName,
   className,
   disabled,
@@ -40,11 +49,15 @@ export function TextField({
   const errorId = `${id}-error`;
   const field = useRef<HTMLDivElement>(null);
   const invalid = isInvalid || Boolean(error);
-  const canClear = Boolean(onClear) && !disabled && !readOnly && String(value ?? '').length > 0;
+  const canClear =
+    Boolean(onClear) &&
+    !disabled &&
+    !readOnly &&
+    String(value ?? "").length > 0;
   const trailing = Number(isLoading) + Number(canClear);
 
   const handleClear = (): void => {
-    field.current?.querySelector('input')?.focus();
+    field.current?.querySelector("input")?.focus();
     onClear?.();
   };
 

@@ -1,1 +1,4 @@
-export { AssistantComposer, type AssistantComposerProps } from './AssistantComposer';
+export {
+  AssistantComposer,
+  type AssistantComposerProps,
+} from "./AssistantComposer";

@@ -1,1 +1,5 @@
-export { ShareButton, type ShareButtonProps, type ShareStatus } from './ShareButton';
+export {
+  ShareButton,
+  type ShareButtonProps,
+  type ShareStatus,
+} from "./ShareButton";

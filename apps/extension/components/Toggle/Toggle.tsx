@@ -1,19 +1,25 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, Ref } from 'react';
-import styles from './Toggle.module.scss';
+import clsx from "clsx";
+import type { ComponentPropsWithoutRef, Ref } from "react";
+import styles from "./Toggle.module.scss";
 
-export interface ToggleProps
-  extends Omit<
-    ComponentPropsWithoutRef<'button'>,
-    'onChange' | 'onClick' | 'children' | 'role' | 'type'
-  > {
+export interface ToggleProps extends Omit<
+  ComponentPropsWithoutRef<"button">,
+  "onChange" | "onClick" | "children" | "role" | "type"
+> {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   ref?: Ref<HTMLButtonElement>;
 }
 
-export function Toggle({ label, checked, onChange, className, ref, ...rest }: ToggleProps) {
+export function Toggle({
+  label,
+  checked,
+  onChange,
+  className,
+  ref,
+  ...rest
+}: ToggleProps) {
   return (
     <button
       ref={ref}

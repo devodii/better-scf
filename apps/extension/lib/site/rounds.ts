@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   ROUND_CARD_BUTTON,
   ROUND_CARD_BUTTON_TEXT,
@@ -8,7 +8,7 @@ import {
   ROUNDS_MAX_RECORD_CHARS,
   ROUNDS_PUSH_PREFIX,
   ROUNDS_RECORD_START,
-} from './selectors/rounds';
+} from "./selectors/rounds";
 
 const count = z.number().finite().catch(0);
 
@@ -23,16 +23,16 @@ const roundStatsSchema = z.object({
 });
 
 const roundDateSchema = z.object({
-  open: z.string().catch(''),
-  close: z.string().catch(''),
+  open: z.string().catch(""),
+  close: z.string().catch(""),
 });
 
 const roundRecordSchema = z.object({
-  id: z.string().startsWith('rec'),
+  id: z.string().startsWith("rec"),
   name: z.string().transform((name) => name.trim()),
   roundNumber: z.number().int(),
-  type: z.string().catch(''),
-  phase: z.string().catch(''),
+  type: z.string().catch(""),
+  phase: z.string().catch(""),
   imageUrl: z.string().nullable().catch(null),
   scfVersion: z.string().nullable().catch(null),
   dates: z.record(z.string(), roundDateSchema).catch({}),
@@ -50,16 +50,22 @@ function decodeFlight(scripts: readonly string[]): string {
   const chunks: string[] = [];
   for (const text of scripts) {
     const start = text.indexOf(ROUNDS_PUSH_PREFIX);
-    const end = text.lastIndexOf(')');
+    const end = text.lastIndexOf(")");
     if (start < 0 || end <= start) continue;
     try {
-      const entry: unknown = JSON.parse(text.slice(start + ROUNDS_PUSH_PREFIX.length, end));
-      if (Array.isArray(entry) && entry[0] === 1 && typeof entry[1] === 'string') {
+      const entry: unknown = JSON.parse(
+        text.slice(start + ROUNDS_PUSH_PREFIX.length, end),
+      );
+      if (
+        Array.isArray(entry) &&
+        entry[0] === 1 &&
+        typeof entry[1] === "string"
+      ) {
         chunks.push(entry[1]);
       }
     } catch {}
   }
-  return chunks.join('');
+  return chunks.join("");
 }
 
 function sliceObject(text: string, start: number): string | null {
@@ -120,15 +126,23 @@ function cardRoundNumber(card: Element): number | null {
   return found;
 }
 
-export function mapRoundCards(root: ParentNode, rounds: readonly RoundRecord[]): RoundCardMatch[] {
+export function mapRoundCards(
+  root: ParentNode,
+  rounds: readonly RoundRecord[],
+): RoundCardMatch[] {
   const matches: RoundCardMatch[] = [];
   try {
     const byNumber = new Map(rounds.map((round) => [round.roundNumber, round]));
     const seen = new Set<Element>();
     for (const button of root.querySelectorAll(ROUND_CARD_BUTTON)) {
-      if (button.textContent?.trim().toLowerCase() !== ROUND_CARD_BUTTON_TEXT) continue;
+      if (button.textContent?.trim().toLowerCase() !== ROUND_CARD_BUTTON_TEXT)
+        continue;
       let node = button.parentElement;
-      for (let i = 0; node && i < ROUND_CARD_MAX_DEPTH; i++, node = node.parentElement) {
+      for (
+        let i = 0;
+        node && i < ROUND_CARD_MAX_DEPTH;
+        i++, node = node.parentElement
+      ) {
         const number = cardRoundNumber(node);
         if (number === null) continue;
         const record = byNumber.get(number);

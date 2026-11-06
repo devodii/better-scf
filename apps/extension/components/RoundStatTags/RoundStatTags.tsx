@@ -1,6 +1,6 @@
-import { formatMoneyCompact } from '../../lib/format/money';
-import { RoundStatTag } from '../RoundStatTag';
-import styles from './RoundStatTags.module.scss';
+import { formatMoneyCompact } from "../../lib/format/money";
+import { RoundStatTag } from "../RoundStatTag";
+import styles from "./RoundStatTags.module.scss";
 
 export interface RoundStatTagsProps {
   awarded?: number | null | undefined;
@@ -10,7 +10,10 @@ export interface RoundStatTagsProps {
 }
 
 function positive(value: number | null | undefined): number | null {
-  return value !== null && value !== undefined && Number.isFinite(value) && value > 0
+  return value !== null &&
+    value !== undefined &&
+    Number.isFinite(value) &&
+    value > 0
     ? value
     : null;
 }
@@ -27,12 +30,14 @@ export function RoundStatTags({
   if (count === null && amount === null) return null;
 
   const hint = [
-    count === null ? null : `${count} ${count === 1 ? 'submission' : 'submissions'} awarded`,
+    count === null
+      ? null
+      : `${count} ${count === 1 ? "submission" : "submissions"} awarded`,
     amount === null ? null : `${formatMoneyCompact(amount)} awarded`,
     paid === null ? null : `${formatMoneyCompact(paid)} paid so far`,
   ]
     .filter((part) => part !== null)
-    .join(' · ');
+    .join(" · ");
 
   return (
     <ul aria-label="Round awards" className={styles.root}>

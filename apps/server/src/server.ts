@@ -1,6 +1,6 @@
-import { serve } from '@hono/node-server';
-import { loadEnv } from './env.js';
-import { app } from './index.js';
+import { serve } from "@hono/node-server";
+import { loadEnv } from "./env.js";
+import { app } from "./index.js";
 
 const { PORT } = loadEnv();
 

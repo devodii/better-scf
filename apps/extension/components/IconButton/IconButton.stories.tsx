@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
-import { IconButton } from './IconButton';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+import { IconButton } from "./IconButton";
 
 const Star = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -15,9 +15,9 @@ const Arrow = () => (
 );
 
 const meta = {
-  title: 'UI/IconButton',
+  title: "UI/IconButton",
   component: IconButton,
-  args: { label: 'Shortlist', children: <Star />, onClick: fn() },
+  args: { label: "Shortlist", children: <Star />, onClick: fn() },
 } satisfies Meta<typeof IconButton>;
 
 export default meta;
@@ -27,19 +27,24 @@ export const Ghost: Story = {};
 
 export const GhostPressed: Story = { args: { isPressed: true } };
 
-export const Surface: Story = { args: { variant: 'surface' } };
+export const Surface: Story = { args: { variant: "surface" } };
 
-export const SurfacePressed: Story = { args: { variant: 'surface', isPressed: true } };
-
-export const Accent: Story = {
-  args: { variant: 'accent', size: 'lg', label: 'Send', children: <Arrow /> },
+export const SurfacePressed: Story = {
+  args: { variant: "surface", isPressed: true },
 };
 
-export const Small: Story = { args: { size: 'sm', variant: 'surface' } };
+export const Accent: Story = {
+  args: { variant: "accent", size: "lg", label: "Send", children: <Arrow /> },
+};
+
+export const Small: Story = { args: { size: "sm", variant: "surface" } };
 
 export const Focused: Story = {
   render: (args) => (
-    <div data-force-focus style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+    <div
+      data-force-focus
+      style={{ display: "flex", gap: "1rem", padding: "0.5rem" }}
+    >
       <IconButton {...args} />
       <IconButton {...args} variant="surface" />
       <IconButton {...args} variant="accent" size="lg" label="Send" />
@@ -48,16 +53,28 @@ export const Focused: Story = {
 };
 
 export const Disabled: Story = {
-  args: { variant: 'accent', size: 'lg', label: 'Send', children: <Arrow />, disabled: true },
+  args: {
+    variant: "accent",
+    size: "lg",
+    label: "Send",
+    children: <Arrow />,
+    disabled: true,
+  },
 };
 
 export const SurfaceDisabled: Story = {
-  args: { variant: 'surface', size: 'lg', label: 'Next', children: <Arrow />, disabled: true },
+  args: {
+    variant: "surface",
+    size: "lg",
+    label: "Next",
+    children: <Arrow />,
+    disabled: true,
+  },
 };
 
 export const Carousel: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+    <div style={{ display: "flex", gap: "1rem", padding: "0.5rem" }}>
       <IconButton {...args} variant="surface" size="lg" label="Previous">
         <Arrow />
       </IconButton>
@@ -70,7 +87,10 @@ export const Carousel: Story = {
 
 export const Hover: Story = {
   render: (args) => (
-    <div data-force-hover style={{ display: 'flex', gap: '1rem', padding: '0.5rem' }}>
+    <div
+      data-force-hover
+      style={{ display: "flex", gap: "1rem", padding: "0.5rem" }}
+    >
       <IconButton {...args} />
       <IconButton {...args} variant="surface" size="lg" />
       <IconButton {...args} variant="accent" size="lg" label="Send" />
@@ -80,7 +100,14 @@ export const Hover: Story = {
 
 export const Narrow390: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', maxWidth: '390px' }}>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "1rem",
+        maxWidth: "390px",
+      }}
+    >
       <IconButton {...args} size="sm" />
       <IconButton {...args} variant="surface" size="md" />
       <IconButton {...args} variant="surface" size="lg" isPressed />

@@ -2,4 +2,4 @@ export {
   type AssistantPromptItem,
   AssistantPrompts,
   type AssistantPromptsProps,
-} from './AssistantPrompts';
+} from "./AssistantPrompts";

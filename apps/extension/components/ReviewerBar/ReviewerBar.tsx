@@ -1,12 +1,12 @@
-import clsx from 'clsx';
-import { useId } from 'react';
-import type { Stance } from 'shared';
-import { CardCorner } from '../CardCorner';
-import { Collapsible } from '../Collapsible';
-import styles from './ReviewerBar.module.scss';
+import clsx from "clsx";
+import { useId } from "react";
+import type { Stance } from "shared";
+import { CardCorner } from "../CardCorner";
+import { Collapsible } from "../Collapsible";
+import styles from "./ReviewerBar.module.scss";
 
-export type ReviewerNoteStatus = 'idle' | 'saving' | 'saved';
-export type ReviewerCopyStatus = 'idle' | 'copied' | 'failed';
+export type ReviewerNoteStatus = "idle" | "saving" | "saved";
+export type ReviewerCopyStatus = "idle" | "copied" | "failed";
 
 export interface ReviewerBarProps {
   stance: Stance;
@@ -23,18 +23,21 @@ export interface ReviewerBarProps {
 }
 
 const STANCE_LABEL: Record<Stance, string> = {
-  none: 'No stance',
-  support: 'Support',
-  unsure: 'Unsure',
-  against: 'Against',
+  none: "No stance",
+  support: "Support",
+  unsure: "Unsure",
+  against: "Against",
 };
 
-function statusText(noteStatus: ReviewerNoteStatus, copyStatus: ReviewerCopyStatus): string {
-  if (copyStatus === 'copied') return 'Summary copied';
-  if (copyStatus === 'failed') return 'Copy failed';
-  if (noteStatus === 'saving') return 'Saving';
-  if (noteStatus === 'saved') return 'Saved';
-  return '';
+function statusText(
+  noteStatus: ReviewerNoteStatus,
+  copyStatus: ReviewerCopyStatus,
+): string {
+  if (copyStatus === "copied") return "Summary copied";
+  if (copyStatus === "failed") return "Copy failed";
+  if (noteStatus === "saving") return "Saving";
+  if (noteStatus === "saved") return "Saved";
+  return "";
 }
 
 export function ReviewerBar({
@@ -44,9 +47,9 @@ export function ReviewerBar({
   onShortlistChange,
   note,
   onNoteChange,
-  noteStatus = 'idle',
+  noteStatus = "idle",
   onCopy,
-  copyStatus = 'idle',
+  copyStatus = "idle",
   isExpanded,
   onExpandedChange,
 }: ReviewerBarProps) {
@@ -65,7 +68,7 @@ export function ReviewerBar({
         <span className={styles.toggleLabel}>My review</span>
         <span className={styles.toggleState}>
           {STANCE_LABEL[stance]}
-          {shortlisted ? ', shortlisted' : ''}
+          {shortlisted ? ", shortlisted" : ""}
         </span>
         <svg
           className={clsx(styles.chevron, isExpanded && styles.isOpen)}
@@ -91,7 +94,7 @@ export function ReviewerBar({
             />
             <span className={styles.stanceLabel}>
               {STANCE_LABEL[stance]}
-              {shortlisted ? ', shortlisted' : ''}
+              {shortlisted ? ", shortlisted" : ""}
             </span>
           </div>
           <label className={styles.noteLabel}>

@@ -1,8 +1,8 @@
-import clsx from 'clsx';
-import { useState } from 'react';
-import styles from './Avatar.module.scss';
+import clsx from "clsx";
+import { useState } from "react";
+import styles from "./Avatar.module.scss";
 
-export type AvatarSize = 'sm' | 'md' | 'lg';
+export type AvatarSize = "sm" | "md" | "lg";
 
 export interface AvatarProps {
   name: string;
@@ -10,24 +10,24 @@ export interface AvatarProps {
   href?: string | null | undefined;
   size?: AvatarSize;
   className?: string | undefined;
-  'aria-describedby'?: string | undefined;
+  "aria-describedby"?: string | undefined;
 }
 
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   const first = words[0];
-  if (!first) return '?';
-  const last = words.length > 1 ? words[words.length - 1] : '';
-  return `${Array.from(first)[0] ?? ''}${Array.from(last ?? '')[0] ?? ''}`.toUpperCase();
+  if (!first) return "?";
+  const last = words.length > 1 ? words[words.length - 1] : "";
+  return `${Array.from(first)[0] ?? ""}${Array.from(last ?? "")[0] ?? ""}`.toUpperCase();
 }
 
 export function Avatar({
   name,
   src,
   href,
-  size = 'md',
+  size = "md",
   className,
-  'aria-describedby': describedBy,
+  "aria-describedby": describedBy,
 }: AvatarProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const content =
@@ -63,7 +63,12 @@ export function Avatar({
     );
   }
   return (
-    <span className={classes} role="img" aria-label={name} aria-describedby={describedBy}>
+    <span
+      className={classes}
+      role="img"
+      aria-label={name}
+      aria-describedby={describedBy}
+    >
       {content}
     </span>
   );

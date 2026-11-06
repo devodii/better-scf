@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { RoundHeader } from './RoundHeader';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { RoundHeader } from "./RoundHeader";
 
 const meta = {
-  title: 'Round/RoundHeader',
+  title: "Round/RoundHeader",
   component: RoundHeader,
   args: {
-    countdown: { phase: 'Community Vote', verb: 'starts', when: 'in 18 days' },
+    countdown: { phase: "Community Vote", verb: "starts", when: "in 18 days" },
     submissions: 34,
     parsed: 31,
     totalRequested: 2_412_000,
@@ -14,7 +14,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ minHeight: '14rem', paddingTop: '3.5rem' }}>
+      <div style={{ minHeight: "14rem", paddingTop: "3.5rem" }}>
         <Story />
       </div>
     ),
@@ -48,9 +48,9 @@ export const Empty: Story = {
 export const LongText: Story = {
   args: {
     countdown: {
-      phase: 'Notification and Award Distribution',
-      verb: 'starts',
-      when: 'in 120 days',
+      phase: "Notification and Award Distribution",
+      verb: "starts",
+      when: "in 120 days",
     },
     submissions: 5196,
     parsed: 5001,
@@ -73,7 +73,7 @@ export const Focused: Story = {
 export const Narrow: Story = {
   decorators: [
     (Story) => (
-      <div style={{ width: '24.375rem' }}>
+      <div style={{ width: "24.375rem" }}>
         <Story />
       </div>
     ),
@@ -83,7 +83,7 @@ export const Narrow: Story = {
 export const Medium: Story = {
   decorators: [
     (Story) => (
-      <div style={{ width: '48rem' }}>
+      <div style={{ width: "48rem" }}>
         <Story />
       </div>
     ),

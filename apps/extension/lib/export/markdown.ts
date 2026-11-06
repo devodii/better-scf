@@ -1,8 +1,8 @@
-import type { ReviewState, Submission } from 'shared';
-import { buildSummary, type ExportOptions } from './rows';
+import type { ReviewState, Submission } from "shared";
+import { buildSummary, type ExportOptions } from "./rows";
 
 function escapeCell(text: string): string {
-  return text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
 
 export function exportMarkdown(
@@ -19,15 +19,15 @@ export function exportMarkdown(
 
   const lines = [
     `SCF #${options.roundId} review notes`,
-    '',
-    '| Project | Track | Requested | Stance | Note |',
-    '|---|---|---|---|---|',
+    "",
+    "| Project | Track | Requested | Stance | Note |",
+    "|---|---|---|---|---|",
     ...rows.map(
       (row) =>
-        `| ${[row.project, row.track, row.requested, row.stance, row.note].map(escapeCell).join(' | ')} |`,
+        `| ${[row.project, row.track, row.requested, row.stance, row.note].map(escapeCell).join(" | ")} |`,
     ),
-    '',
+    "",
     footer,
   ];
-  return `${lines.join('\n')}\n`;
+  return `${lines.join("\n")}\n`;
 }

@@ -8,9 +8,9 @@ const items = new Map<string, unknown>();
 export function saveItem(name: string, value: unknown): string {
   const key =
     name
-      .replace(/[^A-Za-z0-9_]/g, '_')
-      .replace(/^(\d)/, '_$1')
-      .slice(0, MAX_NAME_CHARS) || 'item';
+      .replace(/[^A-Za-z0-9_]/g, "_")
+      .replace(/^(\d)/, "_$1")
+      .slice(0, MAX_NAME_CHARS) || "item";
   items.delete(key);
   items.set(key, value);
   while (items.size > MAX_ITEMS) {
@@ -25,14 +25,16 @@ export function readItems(): Record<string, unknown> {
   return Object.fromEntries(items);
 }
 
-export function describeShapes(objects: readonly Record<string, unknown>[]): unknown[] {
+export function describeShapes(
+  objects: readonly Record<string, unknown>[],
+): unknown[] {
   const groups = new Map<
     string,
     { keys: string[]; count: number; example: Record<string, unknown> }
   >();
   for (const object of objects) {
     const keys = Object.keys(object).slice(0, 12);
-    const signature = keys.join(',');
+    const signature = keys.join(",");
     const group = groups.get(signature);
     if (group) group.count += 1;
     else groups.set(signature, { keys, count: 1, example: object });

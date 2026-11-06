@@ -1,5 +1,5 @@
-import { IconButton } from '../IconButton';
-import styles from './AssistantHistory.module.scss';
+import { IconButton } from "../IconButton";
+import styles from "./AssistantHistory.module.scss";
 
 export interface AssistantHistoryItem {
   id: string;
@@ -14,7 +14,12 @@ export interface AssistantHistoryProps {
   onBack: () => void;
 }
 
-export function AssistantHistory({ items, onSelect, onClear, onBack }: AssistantHistoryProps) {
+export function AssistantHistory({
+  items,
+  onSelect,
+  onClear,
+  onBack,
+}: AssistantHistoryProps) {
   return (
     <section className={styles.root} aria-label="Past questions">
       <div className={styles.header}>
@@ -40,7 +45,11 @@ export function AssistantHistory({ items, onSelect, onClear, onBack }: Assistant
           <ul className={styles.list}>
             {items.map((item) => (
               <li key={item.id}>
-                <button type="button" className={styles.item} onClick={() => onSelect(item)}>
+                <button
+                  type="button"
+                  className={styles.item}
+                  onClick={() => onSelect(item)}
+                >
                   <span className={styles.text}>{item.text}</span>
                   <span className={styles.meta}>{item.meta}</span>
                 </button>

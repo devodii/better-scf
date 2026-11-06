@@ -1,1 +1,4 @@
-export { AssistantLauncher, type AssistantLauncherProps } from './AssistantLauncher';
+export {
+  AssistantLauncher,
+  type AssistantLauncherProps,
+} from "./AssistantLauncher";

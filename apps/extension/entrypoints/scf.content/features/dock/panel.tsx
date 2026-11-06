@@ -1,24 +1,24 @@
-import type { UIMessage } from 'ai';
-import dayjs from 'dayjs';
-import { CHAT_LIMITS, type ChatMessage, quickPromptsFor } from 'shared';
-import { Assistant } from '../../../../components/Assistant';
-import type { AssistantHistoryItem } from '../../../../components/AssistantHistory';
-import type { AssistantPromptItem } from '../../../../components/AssistantPrompts';
-import { createBackgroundFetch } from '../../../../lib/ai/background-fetch';
-import { detectPageKind } from '../../../../lib/ai/context';
+import type { UIMessage } from "ai";
+import dayjs from "dayjs";
+import { CHAT_LIMITS, type ChatMessage, quickPromptsFor } from "shared";
+import { Assistant } from "../../../../components/Assistant";
+import type { AssistantHistoryItem } from "../../../../components/AssistantHistory";
+import type { AssistantPromptItem } from "../../../../components/AssistantPrompts";
+import { createBackgroundFetch } from "../../../../lib/ai/background-fetch";
+import { detectPageKind } from "../../../../lib/ai/context";
 import {
   type BscfChat,
   type ChatPageRequest,
   ChatTransportError,
   createBscfChat,
   type ToolDecision,
-} from '../../../../lib/ai/transport';
-import type { FeatureContext } from '../../../../lib/ui/feature';
-import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
-import dockCss from '../../styles/dock.scss?inline';
-import { createPagePush } from './push';
-import { createRequestSource } from './request';
-import { isToggleShortcut, readOpen, writeOpen } from './state';
+} from "../../../../lib/ai/transport";
+import type { FeatureContext } from "../../../../lib/ui/feature";
+import { type MountedUi, OWN_ATTRIBUTE } from "../../../../lib/ui/mount";
+import dockCss from "../../styles/dock.scss?inline";
+import { createPagePush } from "./push";
+import { createRequestSource } from "./request";
+import { isToggleShortcut, readOpen, writeOpen } from "./state";
 import {
   contextLabelFor,
   describeError,
@@ -29,7 +29,7 @@ import {
   toItems,
   toolIsReady,
   toUiMessage,
-} from './thread';
+} from "./thread";
 
 const RENDER_THROTTLE_MS = 50;
 const NOT_CONFIGURED = describeError(ChatTransportError.notConfigured());
@@ -37,10 +37,10 @@ const NO_DECISIONS: ReadonlyMap<string, ToolDecision> = new Map();
 const HISTORY_LIMIT = 30;
 
 const NO_PAGE: ChatPageRequest = {
-  submissionId: 'page:/',
-  contentHash: 'none',
-  page: 'other',
-  context: '',
+  submissionId: "page:/",
+  contentHash: "none",
+  page: "other",
+  context: "",
 };
 
 export function mountPanel(
@@ -49,17 +49,19 @@ export function mountPanel(
   openAfterMount: boolean,
 ): () => void {
   const { page, settings, store, signal, warn } = context;
-  const threadKey = page.kind === 'submission' ? page.submissionId : SITE_THREAD;
+  const threadKey =
+    page.kind === "submission" ? page.submissionId : SITE_THREAD;
   const subject = subjectOf(page);
   const nextRequest = createRequestSource(page);
-  const serverUrl = settings.serverUrlOverride || import.meta.env.WXT_SERVER_URL || '';
+  const serverUrl =
+    settings.serverUrlOverride || import.meta.env.WXT_SERVER_URL || "";
 
   if (signal.aborted) return () => {};
 
   let restored: UIMessage[] = [];
   const stored = new Map<string, ChatMessage>();
   let lastStamp = 0;
-  let value = '';
+  let value = "";
   let isOpen = readOpen();
   let hasUnread = false;
   let isHistoryOpen = false;
@@ -75,12 +77,13 @@ export function mountPanel(
   const push = createPagePush();
 
   const isBusy = (): boolean =>
-    session?.chat.status === 'submitted' || session?.chat.status === 'streaming';
+    session?.chat.status === "submitted" ||
+    session?.chat.status === "streaming";
 
   const persist = (message: UIMessage, promptId?: string): void => {
-    if (message.role !== 'user' && message.role !== 'assistant') return;
+    if (message.role !== "user" && message.role !== "assistant") return;
     const content = storedText(message);
-    if (content === '') return;
+    if (content === "") return;
     const before = stored.get(message.id);
     if (before?.content === content) return;
     lastStamp = Math.max(Date.now(), lastStamp + 1);
@@ -93,12 +96,14 @@ export function mountPanel(
       ...(promptId === undefined ? {} : { promptId }),
     };
     stored.set(row.id, row);
-    store.send('putChatMessage', row).catch((error: unknown) => warn('save message', error));
+    store
+      .send("putChatMessage", row)
+      .catch((error: unknown) => warn("save message", error));
   };
 
   const persistLast = (): void => {
     const last = session?.chat.messages.at(-1);
-    if (last?.role === 'assistant') persist(last);
+    if (last?.role === "assistant") persist(last);
   };
 
   const view = () => {
@@ -120,13 +125,19 @@ export function mountPanel(
         onStop={() => void session?.chat.stop()}
         placeholder={placeholderFor(kind, subject)}
         maxLength={CHAT_LIMITS.maxUserMessageChars}
-        status={busy ? 'streaming' : 'idle'}
+        status={busy ? "streaming" : "idle"}
         messages={toItems(
           session?.chat.messages ?? restored,
           busy,
           session?.decisions ?? NO_DECISIONS,
         )}
-        notice={serverUrl === '' ? NOT_CONFIGURED : error ? describeError(error) : undefined}
+        notice={
+          serverUrl === ""
+            ? NOT_CONFIGURED
+            : error
+              ? describeError(error)
+              : undefined
+        }
         prompts={quickPromptsFor(kind)}
         onPromptSelect={(prompt) => void submit(prompt.text, prompt)}
         onDecision={(id, decision) => {
@@ -165,11 +176,12 @@ export function mountPanel(
   }
 
   async function loadHistory(): Promise<void> {
-    const keys = threadKey === SITE_THREAD ? [SITE_THREAD] : [threadKey, SITE_THREAD];
+    const keys =
+      threadKey === SITE_THREAD ? [SITE_THREAD] : [threadKey, SITE_THREAD];
     const lists = await Promise.all(
       keys.map((key) =>
-        store.send('listChat', key).catch((error: unknown) => {
-          warn('read history', error);
+        store.send("listChat", key).catch((error: unknown) => {
+          warn("read history", error);
           return [];
         }),
       ),
@@ -178,13 +190,13 @@ export function mountPanel(
     historyItems = lists
       .flatMap((list, index) =>
         list
-          .filter((row) => row.role === 'user')
+          .filter((row) => row.role === "user")
           .map((row) => ({
             at: row.createdAt,
             item: {
               id: row.id,
               text: row.content,
-              meta: `${index === 0 && keys.length > 1 ? 'This submission' : 'Site'} · ${dayjs(row.createdAt).format('D MMM HH:mm')}`,
+              meta: `${index === 0 && keys.length > 1 ? "This submission" : "Site"} · ${dayjs(row.createdAt).format("D MMM HH:mm")}`,
             },
           })),
       )
@@ -208,20 +220,23 @@ export function mountPanel(
     stored.clear();
     historyItems = [];
     isHistoryOpen = false;
-    store.send('clearChat', threadKey).catch((error: unknown) => warn('clear thread', error));
+    store
+      .send("clearChat", threadKey)
+      .catch((error: unknown) => warn("clear thread", error));
     render();
   }
 
   function onMessages(): void {
     const last = session?.chat.messages.at(-1);
-    if (last?.role === 'assistant' && toolIsReady(last)) persist(last);
+    if (last?.role === "assistant" && toolIsReady(last)) persist(last);
   }
 
   function onStatus(): void {
     if (closed) return;
-    if (session?.chat.status === 'ready') {
+    if (session?.chat.status === "ready") {
       persistLast();
-      if (!isOpen && session.chat.messages.at(-1)?.role === 'assistant') hasUnread = true;
+      if (!isOpen && session.chat.messages.at(-1)?.role === "assistant")
+        hasUnread = true;
     }
     render();
   }
@@ -231,21 +246,21 @@ export function mountPanel(
     const created = createBscfChat({
       serverUrl,
       fetch: createBackgroundFetch(),
-      getClientId: () => store.send('getClientId', undefined),
+      getClientId: () => store.send("getClientId", undefined),
       getPageRequest: () => pageRequest,
     });
     created.chat.messages = restored;
     detach = [
-      created.chat['~registerMessagesCallback'](onMessages),
-      created.chat['~registerMessagesCallback'](render, RENDER_THROTTLE_MS),
-      created.chat['~registerStatusCallback'](onStatus),
-      created.chat['~registerErrorCallback'](render),
+      created.chat["~registerMessagesCallback"](onMessages),
+      created.chat["~registerMessagesCallback"](render, RENDER_THROTTLE_MS),
+      created.chat["~registerStatusCallback"](onStatus),
+      created.chat["~registerErrorCallback"](render),
     ];
     session = created;
     return created;
   }
 
-  const thread = store.send('listChat', threadKey).then(
+  const thread = store.send("listChat", threadKey).then(
     (rows) => {
       if (closed || isCleared) return;
       restored = rows.map(toUiMessage);
@@ -253,14 +268,18 @@ export function mountPanel(
       lastStamp = rows.at(-1)?.createdAt ?? 0;
       render();
     },
-    (error: unknown) => warn('read thread', error),
+    (error: unknown) => warn("read thread", error),
   );
 
-  async function submit(text: string, prompt?: AssistantPromptItem): Promise<void> {
+  async function submit(
+    text: string,
+    prompt?: AssistantPromptItem,
+  ): Promise<void> {
     const question = text.trim();
-    if (question === '' || starting || isBusy() || closed || serverUrl === '') return;
+    if (question === "" || starting || isBusy() || closed || serverUrl === "")
+      return;
     starting = true;
-    value = '';
+    value = "";
     isHistoryOpen = false;
     render();
     try {
@@ -268,13 +287,16 @@ export function mountPanel(
       const source = await nextRequest();
       if (closed) return;
       const promptId = prompt && source.cacheable ? prompt.id : undefined;
-      pageRequest = { ...source.request, ...(promptId === undefined ? {} : { promptId }) };
+      pageRequest = {
+        ...source.request,
+        ...(promptId === undefined ? {} : { promptId }),
+      };
       const active = ensureSession();
       await active.expire();
       if (closed) return;
       const sending = active.chat.sendMessage({
         id: crypto.randomUUID(),
-        parts: [{ type: 'text', text: question }],
+        parts: [{ type: "text", text: question }],
       });
       const sent = active.chat.messages.at(-1);
       if (sent) persist(sent, promptId);
@@ -282,7 +304,7 @@ export function mountPanel(
       await sending;
     } catch (error) {
       if (!closed) {
-        warn('send', error);
+        warn("send", error);
         value = question;
         render();
       }
@@ -297,8 +319,8 @@ export function mountPanel(
     setOpen(!isOpen);
   };
 
-  const style = document.createElement('style');
-  style.setAttribute(OWN_ATTRIBUTE, 'dock');
+  const style = document.createElement("style");
+  style.setAttribute(OWN_ATTRIBUTE, "dock");
   style.textContent = dockCss;
   (document.head ?? document.documentElement).append(style);
 
@@ -307,7 +329,7 @@ export function mountPanel(
   ui.render(view());
   if (openAfterMount) setOpen(true);
 
-  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener("keydown", onKeyDown);
   context.onMutation(() => {
     if (location.pathname === seenPath) return;
     seenPath = location.pathname;
@@ -316,7 +338,7 @@ export function mountPanel(
 
   return () => {
     closed = true;
-    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener("keydown", onKeyDown);
     persistLast();
     dropSession();
     push.release();

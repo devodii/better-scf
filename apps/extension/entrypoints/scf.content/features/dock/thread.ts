@@ -1,80 +1,90 @@
-import { getToolName, isToolUIPart, type UIMessage } from 'ai';
-import type { ChatMessage, PageKind } from 'shared';
-import type { AssistantActivityStatus } from '../../../../components/AssistantActivity';
-import type { AssistantMessageItem, AssistantPart } from '../../../../components/AssistantMessage';
-import type { AssistantNotice } from '../../../../components/AssistantMessages';
-import { ChatTransportError, type ToolDecision } from '../../../../lib/ai/transport';
-import { assertNever, isAppError } from '../../../../lib/errors';
-import type { PageData } from '../../../../lib/site/store';
+import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import type { ChatMessage, PageKind } from "shared";
+import type { AssistantActivityStatus } from "../../../../components/AssistantActivity";
+import type {
+  AssistantMessageItem,
+  AssistantPart,
+} from "../../../../components/AssistantMessage";
+import type { AssistantNotice } from "../../../../components/AssistantMessages";
+import {
+  ChatTransportError,
+  type ToolDecision,
+} from "../../../../lib/ai/transport";
+import { assertNever, isAppError } from "../../../../lib/errors";
+import type { PageData } from "../../../../lib/site/store";
 
-export const SITE_THREAD = 'site';
+export const SITE_THREAD = "site";
 
 const CLIP_CHARS = 60;
 const DETAIL_CHARS = 120;
-const GENERIC_ERROR = 'Something went wrong while asking. Please try again.';
+const GENERIC_ERROR = "Something went wrong while asking. Please try again.";
 
 function clip(text: string, max = CLIP_CHARS): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 function readString(input: unknown, key: string): string | null {
-  if (typeof input !== 'object' || input === null) return null;
+  if (typeof input !== "object" || input === null) return null;
   const value: unknown = Reflect.get(input, key);
-  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
 function endpointWords(endpoint: string): string {
   return clip(
     endpoint
-      .replace(/[-_/.:]+/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/[-_/.:]+/g, " ")
+      .replace(/\s+/g, " ")
       .trim(),
   );
 }
 
 function confirmText(name: string, input: unknown): string {
-  if (name === 'navigate') {
-    const target = readString(input, 'target');
-    return target ? `Take you to ${clip(target)}` : 'Take you to another page';
+  if (name === "navigate") {
+    const target = readString(input, "target");
+    return target ? `Take you to ${clip(target)}` : "Take you to another page";
   }
-  const endpoint = readString(input, 'endpoint');
+  const endpoint = readString(input, "endpoint");
   return endpoint
     ? `Read your Community Fund data (${endpointWords(endpoint)}) and send it to the assistant`
-    : 'Read your Community Fund data and send it to the assistant';
+    : "Read your Community Fund data and send it to the assistant";
 }
 
 function activityText(name: string, input: unknown): string {
   switch (name) {
-    case 'navigate': {
-      const target = readString(input, 'target');
-      return target ? `Taking you to ${clip(target)}` : 'Taking you there';
+    case "navigate": {
+      const target = readString(input, "target");
+      return target ? `Taking you to ${clip(target)}` : "Taking you there";
     }
-    case 'backend_get': {
-      const endpoint = readString(input, 'endpoint');
-      return endpoint ? `Looking up ${endpointWords(endpoint)}` : 'Looking up your data';
+    case "backend_get": {
+      const endpoint = readString(input, "endpoint");
+      return endpoint
+        ? `Looking up ${endpointWords(endpoint)}`
+        : "Looking up your data";
     }
-    case 'search_projects': {
-      const query = readString(input, 'query');
-      return query ? `Searching projects for ${clip(query)}` : 'Searching projects';
+    case "search_projects": {
+      const query = readString(input, "query");
+      return query
+        ? `Searching projects for ${clip(query)}`
+        : "Searching projects";
     }
-    case 'read_page':
-      return 'Reading this page';
-    case 'fetch_page': {
-      const path = readString(input, 'path');
-      return path ? `Reading ${clip(path)}` : 'Reading a page';
+    case "read_page":
+      return "Reading this page";
+    case "fetch_page": {
+      const path = readString(input, "path");
+      return path ? `Reading ${clip(path)}` : "Reading a page";
     }
-    case 'run_js':
-      return 'Working out the answer';
-    case 'read_proposals':
-      return 'Reading the proposals';
-    case 'submission_details':
-      return 'Reading the proposal';
-    case 'list_routes':
-      return 'Checking the site map';
-    case 'list_endpoints':
-      return 'Checking what data is available';
+    case "run_js":
+      return "Working out the answer";
+    case "read_proposals":
+      return "Reading the proposals";
+    case "submission_details":
+      return "Reading the proposal";
+    case "list_routes":
+      return "Checking the site map";
+    case "list_endpoints":
+      return "Checking what data is available";
     default:
-      return 'Working on it';
+      return "Working on it";
   }
 }
 
@@ -84,7 +94,7 @@ function runningActivity(message: UIMessage): string | undefined {
     if (
       part &&
       isToolUIPart(part) &&
-      (part.state === 'input-streaming' || part.state === 'input-available')
+      (part.state === "input-streaming" || part.state === "input-available")
     ) {
       return activityText(getToolName(part), part.input);
     }
@@ -93,29 +103,34 @@ function runningActivity(message: UIMessage): string | undefined {
 }
 
 export function toolIsReady(message: UIMessage): boolean {
-  return message.parts.some((part) => isToolUIPart(part) && part.state === 'input-available');
+  return message.parts.some(
+    (part) => isToolUIPart(part) && part.state === "input-available",
+  );
 }
 
 function messageText(message: UIMessage): string {
   const texts: string[] = [];
   for (const part of message.parts) {
-    if (part.type === 'text' && part.text.trim() !== '') texts.push(part.text);
+    if (part.type === "text" && part.text.trim() !== "") texts.push(part.text);
   }
-  return texts.join('\n\n');
+  return texts.join("\n\n");
 }
 
 export function storedText(message: UIMessage): string {
-  return messageText(message) || runningActivity(message) || '';
+  return messageText(message) || runningActivity(message) || "";
 }
 
 function toolDetail(errorText: string): string {
-  const separator = errorText.indexOf(': ');
-  return clip(separator === -1 ? errorText : errorText.slice(separator + 2), DETAIL_CHARS);
+  const separator = errorText.indexOf(": ");
+  return clip(
+    separator === -1 ? errorText : errorText.slice(separator + 2),
+    DETAIL_CHARS,
+  );
 }
 
-function refusalOf(errorText: string): 'denied' | 'expired' | null {
-  if (errorText.startsWith('denied:')) return 'denied';
-  if (errorText.startsWith('expired:')) return 'expired';
+function refusalOf(errorText: string): "denied" | "expired" | null {
+  if (errorText.startsWith("denied:")) return "denied";
+  if (errorText.startsWith("expired:")) return "expired";
   return null;
 }
 
@@ -126,32 +141,39 @@ function toParts(
   const parts: AssistantPart[] = [];
   message.parts.forEach((part, index) => {
     const id = `${message.id}:${index}`;
-    if (part.type === 'text') {
-      if (part.text.trim() !== '') parts.push({ kind: 'text', id, text: part.text });
+    if (part.type === "text") {
+      if (part.text.trim() !== "")
+        parts.push({ kind: "text", id, text: part.text });
       return;
     }
     if (!isToolUIPart(part)) return;
     const text = confirmText(getToolName(part), part.input);
     const decision = decisions.get(part.toolCallId);
-    if (part.state === 'input-available' && decision !== undefined) {
-      const status = decision === 'allowed' ? 'allowed' : 'pending';
-      parts.push({ kind: 'confirm', id: part.toolCallId, text, status });
+    if (part.state === "input-available" && decision !== undefined) {
+      const status = decision === "allowed" ? "allowed" : "pending";
+      parts.push({ kind: "confirm", id: part.toolCallId, text, status });
       return;
     }
-    const refusal = part.state === 'output-error' ? refusalOf(part.errorText) : null;
+    const refusal =
+      part.state === "output-error" ? refusalOf(part.errorText) : null;
     if (refusal) {
-      parts.push({ kind: 'confirm', id: part.toolCallId, text, status: refusal });
+      parts.push({
+        kind: "confirm",
+        id: part.toolCallId,
+        text,
+        status: refusal,
+      });
       return;
     }
-    let status: AssistantActivityStatus = 'running';
+    let status: AssistantActivityStatus = "running";
     let detail: string | undefined;
-    if (part.state === 'output-available') status = 'done';
-    else if (part.state === 'output-error') {
-      status = 'error';
+    if (part.state === "output-available") status = "done";
+    else if (part.state === "output-error") {
+      status = "error";
       detail = toolDetail(part.errorText);
     }
     parts.push({
-      kind: 'activity',
+      kind: "activity",
       id: part.toolCallId,
       text: activityText(getToolName(part), part.input),
       status,
@@ -169,73 +191,91 @@ export function toItems(
   const items: AssistantMessageItem[] = [];
   messages.forEach((message, index) => {
     const isLast = index === messages.length - 1;
-    if (message.role === 'user') {
+    if (message.role === "user") {
       items.push({
         id: message.id,
-        role: 'user',
-        parts: [{ kind: 'text', id: `${message.id}:0`, text: messageText(message) }],
+        role: "user",
+        parts: [
+          { kind: "text", id: `${message.id}:0`, text: messageText(message) },
+        ],
       });
       return;
     }
-    if (message.role !== 'assistant') return;
+    if (message.role !== "assistant") return;
     const parts = toParts(message, decisions);
     const isStreaming = isLast && isBusy;
     if (parts.length === 0 && !isStreaming) return;
-    items.push({ id: message.id, role: 'assistant', parts, isStreaming });
+    items.push({ id: message.id, role: "assistant", parts, isStreaming });
   });
-  if (isBusy && messages.at(-1)?.role === 'user') {
-    items.push({ id: 'pending', role: 'assistant', parts: [], isStreaming: true });
+  if (isBusy && messages.at(-1)?.role === "user") {
+    items.push({
+      id: "pending",
+      role: "assistant",
+      parts: [],
+      isStreaming: true,
+    });
   }
   return items;
 }
 
 export function toUiMessage(row: ChatMessage): UIMessage {
-  return { id: row.id, role: row.role, parts: [{ type: 'text', text: row.content }] };
+  return {
+    id: row.id,
+    role: row.role,
+    parts: [{ type: "text", text: row.content }],
+  };
 }
 
 export function describeError(error: Error): AssistantNotice {
   if (error instanceof ChatTransportError) {
     switch (error.kind) {
-      case 'rate-limited':
-      case 'daily-limit':
-        return { tone: 'limit', text: error.userMessage() };
-      case 'global-cap':
-      case 'server':
-      case 'network':
-      case 'not-configured':
-      case 'not-allowed':
-        return { tone: 'error', text: error.userMessage() };
+      case "rate-limited":
+      case "daily-limit":
+        return { tone: "limit", text: error.userMessage() };
+      case "global-cap":
+      case "server":
+      case "network":
+      case "not-configured":
+      case "not-allowed":
+        return { tone: "error", text: error.userMessage() };
       default:
         return assertNever(error.kind);
     }
   }
-  return { tone: 'error', text: isAppError(error) ? error.userMessage() : GENERIC_ERROR };
+  return {
+    tone: "error",
+    text: isAppError(error) ? error.userMessage() : GENERIC_ERROR,
+  };
 }
 
 export function subjectOf(page: PageData): string | null {
-  if (page.kind === 'submission') return page.page?.submission.title.trim() || null;
-  if (page.kind === 'round') return page.roundName;
+  if (page.kind === "submission")
+    return page.page?.submission.title.trim() || null;
+  if (page.kind === "round") return page.roundName;
   return null;
 }
 
-export function contextLabelFor(kind: PageKind, subject: string | null): string {
+export function contextLabelFor(
+  kind: PageKind,
+  subject: string | null,
+): string {
   switch (kind) {
-    case 'submission':
-      return subject ? clip(subject) : 'This submission';
-    case 'round':
-      return subject ?? 'This round';
-    case 'rounds':
-      return 'Funding rounds';
-    case 'dashboard':
-      return 'SCF dashboard';
-    case 'projects':
-      return 'Funded projects';
-    case 'analytics':
-      return 'Funding analytics';
-    case 'public':
-      return 'Stellar Community Fund';
-    case 'other':
-      return 'This page';
+    case "submission":
+      return subject ? clip(subject) : "This submission";
+    case "round":
+      return subject ?? "This round";
+    case "rounds":
+      return "Funding rounds";
+    case "dashboard":
+      return "SCF dashboard";
+    case "projects":
+      return "Funded projects";
+    case "analytics":
+      return "Funding analytics";
+    case "public":
+      return "Stellar Community Fund";
+    case "other":
+      return "This page";
     default:
       return kind satisfies never;
   }
@@ -243,22 +283,26 @@ export function contextLabelFor(kind: PageKind, subject: string | null): string 
 
 export function placeholderFor(kind: PageKind, subject: string | null): string {
   switch (kind) {
-    case 'submission':
-      return subject ? `Ask about ${clip(subject)}` : 'Ask about this submission';
-    case 'round':
-      return subject ? `Ask about ${clip(subject)} submissions` : 'Ask about this round';
-    case 'rounds':
-      return 'Ask about funding rounds';
-    case 'dashboard':
-      return 'Ask about the SCF dashboard';
-    case 'projects':
-      return 'Ask about funded projects';
-    case 'analytics':
-      return 'Ask about funding analytics';
-    case 'public':
-      return 'Ask about the Stellar Community Fund';
-    case 'other':
-      return 'Ask about this page';
+    case "submission":
+      return subject
+        ? `Ask about ${clip(subject)}`
+        : "Ask about this submission";
+    case "round":
+      return subject
+        ? `Ask about ${clip(subject)} submissions`
+        : "Ask about this round";
+    case "rounds":
+      return "Ask about funding rounds";
+    case "dashboard":
+      return "Ask about the SCF dashboard";
+    case "projects":
+      return "Ask about funded projects";
+    case "analytics":
+      return "Ask about funding analytics";
+    case "public":
+      return "Ask about the Stellar Community Fund";
+    case "other":
+      return "Ask about this page";
     default:
       return kind satisfies never;
   }

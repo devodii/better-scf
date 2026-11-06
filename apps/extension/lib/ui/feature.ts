@@ -1,9 +1,11 @@
-import type { FeatureKey, Settings } from '../settings';
-import type { RouteKind } from '../site/routes';
-import type { PageData, SiteStore } from '../site/store';
-import type { MountedUi, MountOptions } from './mount';
+import type { FeatureKey, Settings } from "../settings";
+import type { RouteKind } from "../site/routes";
+import type { PageData, SiteStore } from "../site/store";
+import type { MountedUi, MountOptions } from "./mount";
 
-export type FeatureMountOptions = Omit<MountOptions, 'name'> & { name?: string };
+export type FeatureMountOptions = Omit<MountOptions, "name"> & {
+  name?: string;
+};
 
 export interface FeatureContext {
   readonly name: string;
@@ -24,5 +26,7 @@ type MaybeCleanup = FeatureCleanup | undefined;
 export interface Feature {
   readonly pages: readonly RouteKind[];
   readonly toggles?: readonly FeatureKey[];
-  mount(context: FeatureContext): void | MaybeCleanup | Promise<void> | Promise<MaybeCleanup>;
+  mount(
+    context: FeatureContext,
+  ): void | MaybeCleanup | Promise<void> | Promise<MaybeCleanup>;
 }

@@ -1,10 +1,12 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, Ref } from 'react';
-import { PANEL_SIDE, type PanelSide } from '../Assistant/side';
-import styles from './AssistantLauncher.module.scss';
+import clsx from "clsx";
+import type { ComponentPropsWithoutRef, Ref } from "react";
+import { PANEL_SIDE, type PanelSide } from "../Assistant/side";
+import styles from "./AssistantLauncher.module.scss";
 
-export interface AssistantLauncherProps
-  extends Omit<ComponentPropsWithoutRef<'button'>, 'aria-label' | 'children'> {
+export interface AssistantLauncherProps extends Omit<
+  ComponentPropsWithoutRef<"button">,
+  "aria-label" | "children"
+> {
   isOpen?: boolean;
   hasUnread?: boolean;
   side?: PanelSide;
@@ -16,18 +18,31 @@ export function AssistantLauncher({
   hasUnread = false,
   side = PANEL_SIDE,
   className,
-  type = 'button',
+  type = "button",
   ref,
   ...rest
 }: AssistantLauncherProps) {
-  const label = isOpen ? 'Close assistant' : 'Ask the assistant';
+  const label = isOpen ? "Close assistant" : "Ask the assistant";
   return (
-    <div className={clsx(styles.root, styles[side], isOpen && styles.isOpen, className)}>
+    <div
+      className={clsx(
+        styles.root,
+        styles[side],
+        isOpen && styles.isOpen,
+        className,
+      )}
+    >
       <button
         ref={ref}
         type={type}
         className={styles.button}
-        aria-label={isOpen ? label : hasUnread ? 'Open assistant, new reply' : 'Open assistant'}
+        aria-label={
+          isOpen
+            ? label
+            : hasUnread
+              ? "Open assistant, new reply"
+              : "Open assistant"
+        }
         aria-expanded={isOpen}
         aria-keyshortcuts="Alt+A"
         {...rest}
@@ -58,7 +73,9 @@ export function AssistantLauncher({
         >
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
-        {hasUnread && !isOpen && <span className={styles.dot} aria-hidden="true" />}
+        {hasUnread && !isOpen && (
+          <span className={styles.dot} aria-hidden="true" />
+        )}
       </button>
       <span className={styles.label} aria-hidden="true">
         {label}

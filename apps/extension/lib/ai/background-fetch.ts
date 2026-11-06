@@ -1,23 +1,29 @@
-import { browser } from 'wxt/browser';
+import { browser } from "wxt/browser";
 
-const PORT_NAME = 'bscf-fetch';
+const PORT_NAME = "bscf-fetch";
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 const BASE64_STEP = 0x8000;
 
 type Header = [string, string];
 
 type Request =
-  | { type: 'start'; url: string; method: string; headers: Header[]; body: string | null }
-  | { type: 'abort' };
+  | {
+      type: "start";
+      url: string;
+      method: string;
+      headers: Header[];
+      body: string | null;
+    }
+  | { type: "abort" };
 
 type Frame =
-  | { type: 'head'; status: number; statusText: string; headers: Header[] }
-  | { type: 'chunk'; data: string }
-  | { type: 'end' }
-  | { type: 'error'; message: string };
+  | { type: "head"; status: number; statusText: string; headers: Header[] }
+  | { type: "chunk"; data: string }
+  | { type: "end" }
+  | { type: "error"; message: string };
 
 function toBase64(bytes: Uint8Array): string {
-  let text = '';
+  let text = "";
   for (let i = 0; i < bytes.length; i += BASE64_STEP) {
     text += String.fromCharCode(...bytes.subarray(i, i + BASE64_STEP));
   }
@@ -32,15 +38,22 @@ function fromBase64(data: string): Uint8Array<ArrayBuffer> {
 }
 
 function abortError(): DOMException {
-  return new DOMException('The request was aborted.', 'AbortError');
+  return new DOMException("The request was aborted.", "AbortError");
 }
 
 export function createBackgroundFetch(): typeof globalThis.fetch {
   return async (input, init) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
     const body = init?.body ?? null;
-    if (body !== null && typeof body !== 'string') {
-      throw new TypeError('Only text request bodies can be sent through the extension.');
+    if (body !== null && typeof body !== "string") {
+      throw new TypeError(
+        "Only text request bodies can be sent through the extension.",
+      );
     }
     const signal = init?.signal ?? undefined;
     if (signal?.aborted) throw abortError();
@@ -68,16 +81,16 @@ export function createBackgroundFetch(): typeof globalThis.fetch {
       };
 
       signal?.addEventListener(
-        'abort',
+        "abort",
         () => {
-          port.postMessage({ type: 'abort' } satisfies Request);
+          port.postMessage({ type: "abort" } satisfies Request);
           fail(abortError());
           port.disconnect();
         },
         { once: true },
       );
       port.onMessage.addListener((frame: Frame) => {
-        if (frame.type === 'head') {
+        if (frame.type === "head") {
           answered = true;
           resolve(
             new Response(NULL_BODY_STATUSES.has(frame.status) ? null : stream, {
@@ -86,9 +99,9 @@ export function createBackgroundFetch(): typeof globalThis.fetch {
               headers: frame.headers,
             }),
           );
-        } else if (frame.type === 'chunk') {
+        } else if (frame.type === "chunk") {
           controller?.enqueue(fromBase64(frame.data));
-        } else if (frame.type === 'end') {
+        } else if (frame.type === "end") {
           finished = true;
           controller?.close();
           port.disconnect();
@@ -97,11 +110,13 @@ export function createBackgroundFetch(): typeof globalThis.fetch {
           port.disconnect();
         }
       });
-      port.onDisconnect.addListener(() => fail(new TypeError('The extension connection closed.')));
+      port.onDisconnect.addListener(() =>
+        fail(new TypeError("The extension connection closed.")),
+      );
       port.postMessage({
-        type: 'start',
+        type: "start",
         url,
-        method: init?.method ?? 'GET',
+        method: init?.method ?? "GET",
         headers: [...new Headers(init?.headers).entries()],
         body,
       } satisfies Request);
@@ -109,33 +124,36 @@ export function createBackgroundFetch(): typeof globalThis.fetch {
   };
 }
 
-export function registerBackgroundFetch(allowedOrigins: () => Promise<readonly string[]>): void {
+export function registerBackgroundFetch(
+  allowedOrigins: () => Promise<readonly string[]>,
+): void {
   browser.runtime.onConnect.addListener((port) => {
-    if (port.name !== PORT_NAME || port.sender?.id !== browser.runtime.id) return;
+    if (port.name !== PORT_NAME || port.sender?.id !== browser.runtime.id)
+      return;
     const controller = new AbortController();
     const send = (frame: Frame): void => {
       if (!controller.signal.aborted) port.postMessage(frame);
     };
     port.onDisconnect.addListener(() => controller.abort());
     port.onMessage.addListener(async (message: Request) => {
-      if (message.type === 'abort') {
+      if (message.type === "abort") {
         controller.abort();
         return;
       }
       try {
         const url = new URL(message.url);
         if (!(await allowedOrigins()).includes(url.origin)) {
-          throw new Error('That address is not allowed.');
+          throw new Error("That address is not allowed.");
         }
         const response = await fetch(url, {
           method: message.method,
           headers: message.headers,
           ...(message.body === null ? {} : { body: message.body }),
-          credentials: 'omit',
+          credentials: "omit",
           signal: controller.signal,
         });
         send({
-          type: 'head',
+          type: "head",
           status: response.status,
           statusText: response.statusText,
           headers: [...response.headers.entries()],
@@ -144,13 +162,13 @@ export function registerBackgroundFetch(allowedOrigins: () => Promise<readonly s
         while (reader) {
           const { done, value } = await reader.read();
           if (done) break;
-          send({ type: 'chunk', data: toBase64(value) });
+          send({ type: "chunk", data: toBase64(value) });
         }
-        send({ type: 'end' });
+        send({ type: "end" });
       } catch (error) {
         send({
-          type: 'error',
-          message: error instanceof Error ? error.message : 'Request failed.',
+          type: "error",
+          message: error instanceof Error ? error.message : "Request failed.",
         });
       }
     });

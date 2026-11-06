@@ -1,21 +1,25 @@
-import { browser } from 'wxt/browser';
-import type { ContentScriptContext } from 'wxt/utils/content-script-context';
-import { defineContentScript } from 'wxt/utils/define-content-script';
-import { DEFAULT_SETTINGS, type Settings, settingsItem } from '../../lib/settings';
-import { setRoundDebug } from '../../lib/site/round';
-import { pageKey, watchRoutes } from '../../lib/site/route-watcher';
-import { parseRoute, type Route } from '../../lib/site/routes';
-import { createSiteStore, type SiteStore } from '../../lib/site/store';
-import type { FeatureCleanup, FeatureContext } from '../../lib/ui/feature';
-import { watchHydration } from '../../lib/ui/hydration';
+import { browser } from "wxt/browser";
+import type { ContentScriptContext } from "wxt/utils/content-script-context";
+import { defineContentScript } from "wxt/utils/define-content-script";
+import {
+  DEFAULT_SETTINGS,
+  type Settings,
+  settingsItem,
+} from "../../lib/settings";
+import { setRoundDebug } from "../../lib/site/round";
+import { pageKey, watchRoutes } from "../../lib/site/route-watcher";
+import { parseRoute, type Route } from "../../lib/site/routes";
+import { createSiteStore, type SiteStore } from "../../lib/site/store";
+import type { FeatureCleanup, FeatureContext } from "../../lib/ui/feature";
+import { watchHydration } from "../../lib/ui/hydration";
 import {
   type MountedUi,
   mountShadowUi,
   OWN_ATTRIBUTE,
   preloadStyles,
   releaseStyles,
-} from '../../lib/ui/mount';
-import { featuresFor } from '../../lib/ui/registry';
+} from "../../lib/ui/mount";
+import { featuresFor } from "../../lib/ui/registry";
 
 const READY_TIMEOUT_MS = 30_000;
 
@@ -35,7 +39,13 @@ interface SessionInput {
   warn: Warn;
 }
 
-function startSession({ route, region, settings, store, warn }: SessionInput): Session {
+function startSession({
+  route,
+  region,
+  settings,
+  store,
+  warn,
+}: SessionInput): Session {
   const controller = new AbortController();
   const { signal } = controller;
   const listeners = new Set<() => void>();
@@ -45,12 +55,16 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
   const run = async (): Promise<void> => {
     const page = await store.load(route, region, settings.debugLogging);
     if (signal.aborted) return;
-    if (page.kind === 'submission') {
-      if (page.page) store.save(page.page).catch((error: unknown) => warn('store: save', error));
-      else warn('submission: page not parsed');
+    if (page.kind === "submission") {
+      if (page.page)
+        store
+          .save(page.page)
+          .catch((error: unknown) => warn("store: save", error));
+      else warn("submission: page not parsed");
     }
     for (const { name, feature } of featuresFor(route.kind, settings)) {
-      const fail = (scope: string, error?: unknown): void => warn(`${name}: ${scope}`, error);
+      const fail = (scope: string, error?: unknown): void =>
+        warn(`${name}: ${scope}`, error);
       const context: FeatureContext = {
         name,
         page,
@@ -81,7 +95,7 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
             mounted.add(handle);
             return handle;
           } catch (error) {
-            fail('mount', error);
+            fail("mount", error);
             return null;
           }
         },
@@ -94,13 +108,13 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
         .then(() => feature.mount(context))
         .then(
           (cleanup) => {
-            if (typeof cleanup !== 'function') return;
+            if (typeof cleanup !== "function") return;
             if (signal.aborted) cleanup();
             else cleanups.push(cleanup);
           },
-          (error: unknown) => fail('failed', error),
+          (error: unknown) => fail("failed", error),
         )
-        .catch((error: unknown) => fail('cleanup', error));
+        .catch((error: unknown) => fail("cleanup", error));
     }
   };
 
@@ -113,7 +127,7 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
         try {
           listener();
         } catch (error) {
-          warn('mutation listener', error);
+          warn("mutation listener", error);
         }
       }
     },
@@ -124,7 +138,7 @@ function startSession({ route, region, settings, store, warn }: SessionInput): S
         try {
           cleanup();
         } catch (error) {
-          warn('cleanup', error);
+          warn("cleanup", error);
         }
       }
       for (const ui of [...mounted]) ui.remove();
@@ -136,7 +150,7 @@ function sameSettings(a: Settings, b: Settings): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-const OWNER_ATTRIBUTE = 'data-bscf-owner';
+const OWNER_ATTRIBUTE = "data-bscf-owner";
 
 function claimPage(ctx: ContentScriptContext): boolean {
   const root = document.documentElement;
@@ -174,12 +188,12 @@ function start(ctx: ContentScriptContext): void {
   const gate = watchHydration({
     onHydrated() {
       if (!document.documentElement.hasAttribute(OWN_ATTRIBUTE)) {
-        document.documentElement.setAttribute(OWN_ATTRIBUTE, 'ready');
+        document.documentElement.setAttribute(OWN_ATTRIBUTE, "ready");
       }
       attempt();
     },
     onTimeout() {
-      warn('hydration: no signal within 6s, continuing');
+      warn("hydration: no signal within 6s, continuing");
     },
   });
 
@@ -241,14 +255,14 @@ function start(ctx: ContentScriptContext): void {
     applySettings(next);
   });
 
-  document.addEventListener('readystatechange', attempt);
+  document.addEventListener("readystatechange", attempt);
   ctx.onInvalidated(() => {
     gate.stop();
     session?.stop();
     session = null;
     waiting = false;
     clearTimeout(waitTimer);
-    document.removeEventListener('readystatechange', attempt);
+    document.removeEventListener("readystatechange", attempt);
     watcher.stop();
     unsubscribe();
     releaseStyles();
@@ -259,9 +273,9 @@ function start(ctx: ContentScriptContext): void {
 }
 
 export default defineContentScript({
-  matches: ['https://communityfund.stellar.org/*'],
-  runAt: 'document_start',
-  cssInjectionMode: 'ui',
+  matches: ["https://communityfund.stellar.org/*"],
+  runAt: "document_start",
+  cssInjectionMode: "ui",
   main(ctx) {
     start(ctx);
   },

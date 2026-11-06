@@ -1,11 +1,14 @@
-import { PANEL_SIDE, type PanelSide } from '../../../../components/Assistant/side';
+import {
+  PANEL_SIDE,
+  type PanelSide,
+} from "../../../../components/Assistant/side";
 
-const ROOT_ATTRIBUTE = 'data-bscf-assistant';
-const SIDE_ATTRIBUTE = 'data-bscf-side';
-const MOTION_ATTRIBUTE = 'data-bscf-motion';
-const WRAPPER_ATTRIBUTE = 'data-bscf-push';
-const PIN_ATTRIBUTE = 'data-bscf-pin';
-const FIXED_SELECTOR = 'nav, header, aside';
+const ROOT_ATTRIBUTE = "data-bscf-assistant";
+const SIDE_ATTRIBUTE = "data-bscf-side";
+const MOTION_ATTRIBUTE = "data-bscf-motion";
+const WRAPPER_ATTRIBUTE = "data-bscf-push";
+const PIN_ATTRIBUTE = "data-bscf-pin";
+const FIXED_SELECTOR = "nav, header, aside";
 const SETTLE_MS = 360;
 const REMOUNT_GRACE_MS = 800;
 const BAR_MIN_WIDTH = 0.9;
@@ -20,19 +23,22 @@ let pinned: Element[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 function findWrapper(): Element {
-  return document.querySelector('main') ?? document.body;
+  return document.querySelector("main") ?? document.body;
 }
 
 function pinFixed(root: Element, side: PanelSide): Element[] {
   const found: Element[] = [];
   for (const element of root.querySelectorAll(FIXED_SELECTOR)) {
-    if (getComputedStyle(element).position !== 'fixed') continue;
+    if (getComputedStyle(element).position !== "fixed") continue;
     const rect = element.getBoundingClientRect();
     if (rect.width === 0) continue;
     const isBar = rect.width >= innerWidth * BAR_MIN_WIDTH;
-    const isOnSide = side === 'left' ? rect.left < innerWidth / 2 : rect.right > innerWidth / 2;
+    const isOnSide =
+      side === "left"
+        ? rect.left < innerWidth / 2
+        : rect.right > innerWidth / 2;
     if (!isBar && !isOnSide) continue;
-    element.setAttribute(PIN_ATTRIBUTE, isBar ? 'bar' : 'edge');
+    element.setAttribute(PIN_ATTRIBUTE, isBar ? "bar" : "edge");
     found.push(element);
   }
   return found;
@@ -56,16 +62,16 @@ export function createPagePush(side: PanelSide = PANEL_SIDE): PagePush {
     set(isOpen, animate) {
       clearTimeout(timer);
       if (!isOpen && !wrapper) return;
-      if (animate) root.setAttribute(MOTION_ATTRIBUTE, 'animate');
+      if (animate) root.setAttribute(MOTION_ATTRIBUTE, "animate");
       else root.removeAttribute(MOTION_ATTRIBUTE);
       if (isOpen) {
         const next = findWrapper();
         if (wrapper !== next) wrapper?.removeAttribute(WRAPPER_ATTRIBUTE);
         if (pinned.length === 0) pinned = pinFixed(next, side);
         wrapper = next;
-        wrapper.setAttribute(WRAPPER_ATTRIBUTE, '');
+        wrapper.setAttribute(WRAPPER_ATTRIBUTE, "");
         root.setAttribute(SIDE_ATTRIBUTE, side);
-        root.setAttribute(ROOT_ATTRIBUTE, 'open');
+        root.setAttribute(ROOT_ATTRIBUTE, "open");
         return;
       }
       root.removeAttribute(ROOT_ATTRIBUTE);

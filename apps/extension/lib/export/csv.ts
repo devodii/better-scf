@@ -1,7 +1,7 @@
-import type { ReviewState, Submission } from 'shared';
-import { buildSummary } from './rows';
+import type { ReviewState, Submission } from "shared";
+import { buildSummary } from "./rows";
 
-const HEADER = ['Project', 'Track', 'Requested', 'Stance', 'Note'];
+const HEADER = ["Project", "Track", "Requested", "Stance", "Note"];
 
 function csvField(text: string): string {
   // A leading = + - @ makes spreadsheets run the cell as a formula
@@ -15,7 +15,7 @@ export function exportCsv(
 ): string {
   const { rows } = buildSummary(submissions, reviewStates);
   const lines = [
-    HEADER.map(csvField).join(','),
+    HEADER.map(csvField).join(","),
     ...rows.map((row) =>
       [
         csvField(row.project),
@@ -23,8 +23,8 @@ export function exportCsv(
         `"${row.requested}"`,
         csvField(row.stance),
         csvField(row.note),
-      ].join(','),
+      ].join(","),
     ),
   ];
-  return `${lines.join('\r\n')}\r\n`;
+  return `${lines.join("\r\n")}\r\n`;
 }

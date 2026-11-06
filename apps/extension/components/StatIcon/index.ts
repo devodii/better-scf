@@ -1,1 +1,1 @@
-export { StatIcon, type StatIconKind, type StatIconProps } from './StatIcon';
+export { StatIcon, type StatIconKind, type StatIconProps } from "./StatIcon";

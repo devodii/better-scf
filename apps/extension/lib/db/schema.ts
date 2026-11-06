@@ -1,4 +1,10 @@
-import { type DBSchema, type IDBPDatabase, openDB, type StoreNames, unwrap } from 'idb';
+import {
+  type DBSchema,
+  type IDBPDatabase,
+  openDB,
+  type StoreNames,
+  unwrap,
+} from "idb";
 import type {
   ChatMessage,
   HorizonSummary,
@@ -7,10 +13,10 @@ import type {
   ReviewState,
   Round,
   Submission,
-} from 'shared';
-import { z } from 'zod';
+} from "shared";
+import { z } from "zod";
 
-const DB_NAME = 'better-scf';
+const DB_NAME = "better-scf";
 const DB_VERSION = 4;
 
 const MINUTE_MS = 60_000;
@@ -27,7 +33,7 @@ export const TTL_MS = {
   projectIndex: 6 * HOUR_MS,
 } as const;
 
-export const PROJECT_INDEX_KEY = 'all';
+export const PROJECT_INDEX_KEY = "all";
 
 const projectIndexEntrySchema = z.object({
   id: z.string().min(1),
@@ -69,7 +75,11 @@ export interface BetterScfDb extends DBSchema {
     value: ChatMessage;
     indexes: { submissionId: string };
   };
-  horizon: { key: string; value: HorizonSummary; indexes: { fetchedAt: number } };
+  horizon: {
+    key: string;
+    value: HorizonSummary;
+    indexes: { fetchedAt: number };
+  };
   avatars: { key: string; value: AvatarRecord };
   projectIndex: { key: string; value: ProjectIndexRecord };
 }
@@ -78,47 +88,57 @@ export type StoreName = StoreNames<BetterScfDb>;
 export type Db = IDBPDatabase<BetterScfDb>;
 
 export const STORE_NAMES = [
-  'submissions',
-  'projects',
-  'rounds',
-  'review',
-  'navstate',
-  'chat',
-  'horizon',
-  'avatars',
-  'projectIndex',
+  "submissions",
+  "projects",
+  "rounds",
+  "review",
+  "navstate",
+  "chat",
+  "horizon",
+  "avatars",
+  "projectIndex",
 ] as const satisfies readonly StoreName[];
 
 export const CACHE_STORE_NAMES = [
-  'submissions',
-  'projects',
-  'rounds',
-  'navstate',
-  'horizon',
-  'avatars',
-  'projectIndex',
+  "submissions",
+  "projects",
+  "rounds",
+  "navstate",
+  "horizon",
+  "avatars",
+  "projectIndex",
 ] as const satisfies readonly StoreName[];
 
 function createStores(db: Db): void {
   const native = unwrap(db);
-  for (const name of [...native.objectStoreNames]) native.deleteObjectStore(name);
+  for (const name of [...native.objectStoreNames])
+    native.deleteObjectStore(name);
 
-  const submissions = db.createObjectStore('submissions', { keyPath: 'id' });
-  submissions.createIndex('roundId', 'roundId');
-  submissions.createIndex('projectId', 'projectId');
-  submissions.createIndex('fetchedAt', 'fetchedAt');
+  const submissions = db.createObjectStore("submissions", { keyPath: "id" });
+  submissions.createIndex("roundId", "roundId");
+  submissions.createIndex("projectId", "projectId");
+  submissions.createIndex("fetchedAt", "fetchedAt");
 
-  db.createObjectStore('projects', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
-  db.createObjectStore('rounds', { keyPath: 'id' }).createIndex('fetchedAt', 'fetchedAt');
-  db.createObjectStore('review', { keyPath: 'submissionId' });
-  db.createObjectStore('navstate', { keyPath: 'routeKey' });
-  db.createObjectStore('chat', { keyPath: ['submissionId', 'id'] }).createIndex(
-    'submissionId',
-    'submissionId',
+  db.createObjectStore("projects", { keyPath: "id" }).createIndex(
+    "fetchedAt",
+    "fetchedAt",
   );
-  db.createObjectStore('horizon', { keyPath: 'accountId' }).createIndex('fetchedAt', 'fetchedAt');
-  db.createObjectStore('avatars', { keyPath: 'handleKey' });
-  db.createObjectStore('projectIndex', { keyPath: 'key' });
+  db.createObjectStore("rounds", { keyPath: "id" }).createIndex(
+    "fetchedAt",
+    "fetchedAt",
+  );
+  db.createObjectStore("review", { keyPath: "submissionId" });
+  db.createObjectStore("navstate", { keyPath: "routeKey" });
+  db.createObjectStore("chat", { keyPath: ["submissionId", "id"] }).createIndex(
+    "submissionId",
+    "submissionId",
+  );
+  db.createObjectStore("horizon", { keyPath: "accountId" }).createIndex(
+    "fetchedAt",
+    "fetchedAt",
+  );
+  db.createObjectStore("avatars", { keyPath: "handleKey" });
+  db.createObjectStore("projectIndex", { keyPath: "key" });
 }
 
 export interface OpenOptions {
@@ -134,6 +154,10 @@ export function openBetterScfDb(options: OpenOptions = {}): Promise<Db> {
   });
 }
 
-export function isStale(fetchedAt: number, ttlMs: number, now: number): boolean {
+export function isStale(
+  fetchedAt: number,
+  ttlMs: number,
+  now: number,
+): boolean {
   return now - fetchedAt >= ttlMs;
 }

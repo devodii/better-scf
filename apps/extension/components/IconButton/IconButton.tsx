@@ -1,12 +1,14 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, Ref } from 'react';
-import styles from './IconButton.module.scss';
+import clsx from "clsx";
+import type { ComponentPropsWithoutRef, Ref } from "react";
+import styles from "./IconButton.module.scss";
 
-export type IconButtonVariant = 'ghost' | 'surface' | 'accent';
-export type IconButtonSize = 'sm' | 'md' | 'lg';
+export type IconButtonVariant = "ghost" | "surface" | "accent";
+export type IconButtonSize = "sm" | "md" | "lg";
 
-export interface IconButtonProps
-  extends Omit<ComponentPropsWithoutRef<'button'>, 'aria-label' | 'aria-pressed'> {
+export interface IconButtonProps extends Omit<
+  ComponentPropsWithoutRef<"button">,
+  "aria-label" | "aria-pressed"
+> {
   label: string;
   variant?: IconButtonVariant;
   size?: IconButtonSize;
@@ -16,10 +18,10 @@ export interface IconButtonProps
 
 export function IconButton({
   label,
-  variant = 'ghost',
-  size = 'md',
+  variant = "ghost",
+  size = "md",
   isPressed,
-  type = 'button',
+  type = "button",
   className,
   children,
   ref,

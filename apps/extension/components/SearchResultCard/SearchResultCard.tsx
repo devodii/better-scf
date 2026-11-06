@@ -1,9 +1,9 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, Ref } from 'react';
-import { Chip } from '../Chip';
-import { SearchHighlight, type SearchHighlightRange } from '../SearchHighlight';
-import { SearchThumbnail } from '../SearchThumbnail';
-import styles from './SearchResultCard.module.scss';
+import clsx from "clsx";
+import type { ComponentPropsWithoutRef, Ref } from "react";
+import { Chip } from "../Chip";
+import { SearchHighlight, type SearchHighlightRange } from "../SearchHighlight";
+import { SearchThumbnail } from "../SearchThumbnail";
+import styles from "./SearchResultCard.module.scss";
 
 export interface SearchResultProject {
   slug: string;
@@ -20,8 +20,10 @@ export interface SearchResultMatch {
   categoryRanges: readonly SearchHighlightRange[];
 }
 
-export interface SearchResultCardProps
-  extends Omit<ComponentPropsWithoutRef<'a'>, 'children' | 'href'> {
+export interface SearchResultCardProps extends Omit<
+  ComponentPropsWithoutRef<"a">,
+  "children" | "href"
+> {
   match: SearchResultMatch;
   isActive?: boolean;
   ref?: Ref<HTMLAnchorElement>;
@@ -44,7 +46,11 @@ export function SearchResultCard({
       className={clsx(styles.root, className)}
       {...rest}
     >
-      <SearchThumbnail className={styles.cover} src={project.thumbnail} fallback={project.title} />
+      <SearchThumbnail
+        className={styles.cover}
+        src={project.thumbnail}
+        fallback={project.title}
+      />
       <span className={styles.body}>
         {project.team && <span className={styles.team}>By {project.team}</span>}
         <span className={styles.title} title={project.title}>
@@ -53,11 +59,16 @@ export function SearchResultCard({
         <span className={styles.chips}>
           {project.category && (
             <Chip variant="purple">
-              <SearchHighlight text={project.category} ranges={categoryRanges} />
+              <SearchHighlight
+                text={project.category}
+                ranges={categoryRanges}
+              />
             </Chip>
           )}
           {project.lastAwardedRound !== null && (
-            <Chip variant="yellow">Last awarded SCF #{project.lastAwardedRound}</Chip>
+            <Chip variant="yellow">
+              Last awarded SCF #{project.lastAwardedRound}
+            </Chip>
           )}
         </span>
       </span>

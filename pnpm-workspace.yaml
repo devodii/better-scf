@@ -5,6 +5,6 @@ packages:
 # pnpm 11 blocks dependency install scripts unless listed here.
 allowBuilds:
   # sass watch mode uses prebuilt platform packages; the install script is only a fallback.
-  '@parcel/watcher': false
+  "@parcel/watcher": false
   # downloads/links the platform binary used by vite, tsx, tsup and wxt.
   esbuild: true

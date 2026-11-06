@@ -4,4 +4,4 @@ export {
   type AssistantMessageItem,
   type AssistantMessageProps,
   type AssistantPart,
-} from './AssistantMessage';
+} from "./AssistantMessage";

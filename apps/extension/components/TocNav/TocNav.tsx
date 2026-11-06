@@ -1,7 +1,7 @@
-import clsx from 'clsx';
-import { useId } from 'react';
-import { Collapsible } from '../Collapsible';
-import styles from './TocNav.module.scss';
+import clsx from "clsx";
+import { useId } from "react";
+import { Collapsible } from "../Collapsible";
+import styles from "./TocNav.module.scss";
 
 export interface TocNavItem {
   id: string;
@@ -16,7 +16,13 @@ export interface TocNavProps {
   onSelect: (id: string) => void;
 }
 
-export function TocNav({ items, activeId, isOpen, onOpenChange, onSelect }: TocNavProps) {
+export function TocNav({
+  items,
+  activeId,
+  isOpen,
+  onOpenChange,
+  onSelect,
+}: TocNavProps) {
   const listId = useId();
   const active = items.find((item) => item.id === activeId);
   return (
@@ -30,7 +36,9 @@ export function TocNav({ items, activeId, isOpen, onOpenChange, onSelect }: TocN
       >
         <span className={styles.heading}>
           <span className={styles.title}>Contents</span>
-          {!isOpen && active && <span className={styles.current}>{active.title}</span>}
+          {!isOpen && active && (
+            <span className={styles.current}>{active.title}</span>
+          )}
         </span>
         <svg
           className={clsx(styles.chevron, isOpen && styles.chevronOpen)}
@@ -50,8 +58,11 @@ export function TocNav({ items, activeId, isOpen, onOpenChange, onSelect }: TocN
               <li key={item.id}>
                 <button
                   type="button"
-                  className={clsx(styles.link, item.id === activeId && styles.isActive)}
-                  aria-current={item.id === activeId ? 'location' : undefined}
+                  className={clsx(
+                    styles.link,
+                    item.id === activeId && styles.isActive,
+                  )}
+                  aria-current={item.id === activeId ? "location" : undefined}
                   onClick={() => onSelect(item.id)}
                 >
                   {item.title}

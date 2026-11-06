@@ -1,1 +1,4 @@
-export { AssistantMarkdown, type AssistantMarkdownProps } from './AssistantMarkdown';
+export {
+  AssistantMarkdown,
+  type AssistantMarkdownProps,
+} from "./AssistantMarkdown";

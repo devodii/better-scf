@@ -1,31 +1,47 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-import { fn } from 'storybook/test';
-import type { AssistantMessageItem } from '../AssistantMessage';
-import { AssistantMessages, type AssistantMessagesProps } from './AssistantMessages';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import { fn } from "storybook/test";
+import type { AssistantMessageItem } from "../AssistantMessage";
+import {
+  AssistantMessages,
+  type AssistantMessagesProps,
+} from "./AssistantMessages";
 
 const PROMPTS = [
-  { id: 'summarize-5', text: 'Summarize in 5 bullets' },
-  { id: 'deliverables-tranches', text: 'List every deliverable with its tranche and amount' },
-  { id: 'team-roles', text: 'Who is on the team and what does each person own?' },
+  { id: "summarize-5", text: "Summarize in 5 bullets" },
+  {
+    id: "deliverables-tranches",
+    text: "List every deliverable with its tranche and amount",
+  },
+  {
+    id: "team-roles",
+    text: "Who is on the team and what does each person own?",
+  },
 ];
 
 function user(id: string, text: string): AssistantMessageItem {
-  return { id, role: 'user', parts: [{ kind: 'text', id: `${id}:t`, text }] };
+  return { id, role: "user", parts: [{ kind: "text", id: `${id}:t`, text }] };
 }
 
 function assistant(id: string, text: string): AssistantMessageItem {
-  return { id, role: 'assistant', parts: [{ kind: 'text', id: `${id}:t`, text }] };
+  return {
+    id,
+    role: "assistant",
+    parts: [{ kind: "text", id: `${id}:t`, text }],
+  };
 }
 
 const CONVERSATION = [
-  user('u1', 'List every deliverable with its tranche and amount'),
+  user("u1", "List every deliverable with its tranche and amount"),
   assistant(
-    'a1',
-    'The submission lists three deliverables:\n\n- **Tranche 1**: SDK core ($40,000)\n- **Tranche 2**: Docs and examples ($25,000)\n- **Tranche 3**: Mainnet launch ($35,000)',
+    "a1",
+    "The submission lists three deliverables:\n\n- **Tranche 1**: SDK core ($40,000)\n- **Tranche 2**: Docs and examples ($25,000)\n- **Tranche 3**: Mainnet launch ($35,000)",
   ),
-  user('u2', 'Who is on the team?'),
-  assistant('a2', 'Three people: Ada (lead), Grace (engineer) and Linus (design).'),
+  user("u2", "Who is on the team?"),
+  assistant(
+    "a2",
+    "Three people: Ada (lead), Grace (engineer) and Linus (design).",
+  ),
 ];
 
 const MANY = Array.from({ length: 8 }, (_, index) => [
@@ -37,11 +53,11 @@ const MANY = Array.from({ length: 8 }, (_, index) => [
 ]).flat();
 
 const meta = {
-  title: 'Assistant/AssistantMessages',
+  title: "Assistant/AssistantMessages",
   component: AssistantMessages,
   args: {
     messages: [],
-    contextLabel: 'Stellar Payments SDK',
+    contextLabel: "Stellar Payments SDK",
     prompts: PROMPTS,
     onPromptSelect: fn(),
   },
@@ -49,10 +65,10 @@ const meta = {
     (Story) => (
       <div
         style={{
-          display: 'flex',
-          width: '25rem',
-          height: '32rem',
-          background: 'var(--bscf-surface)',
+          display: "flex",
+          width: "25rem",
+          height: "32rem",
+          background: "var(--bscf-surface)",
         }}
       >
         <Story />
@@ -72,8 +88,8 @@ export const Thinking: Story = {
   args: {
     isBusy: true,
     messages: [
-      user('u', 'What do I need for the next tier?'),
-      { id: 'a', role: 'assistant', parts: [], isStreaming: true },
+      user("u", "What do I need for the next tier?"),
+      { id: "a", role: "assistant", parts: [], isStreaming: true },
     ],
   },
 };
@@ -82,16 +98,16 @@ export const Streaming: Story = {
   args: {
     isBusy: true,
     messages: [
-      user('u', 'List every deliverable'),
+      user("u", "List every deliverable"),
       {
-        id: 'a',
-        role: 'assistant',
+        id: "a",
+        role: "assistant",
         isStreaming: true,
         parts: [
           {
-            kind: 'text',
-            id: 't',
-            text: 'The submission lists three deliverables:\n\n- **Tranche 1**: SDK core ($40,000)\n- **Tranche 2**: Do',
+            kind: "text",
+            id: "t",
+            text: "The submission lists three deliverables:\n\n- **Tranche 1**: SDK core ($40,000)\n- **Tranche 2**: Do",
           },
         ],
       },
@@ -103,17 +119,17 @@ export const ToolRunning: Story = {
   args: {
     isBusy: true,
     messages: [
-      user('u', 'What do I need for the next tier?'),
+      user("u", "What do I need for the next tier?"),
       {
-        id: 'a',
-        role: 'assistant',
+        id: "a",
+        role: "assistant",
         isStreaming: true,
         parts: [
           {
-            kind: 'activity',
-            id: 'x',
-            text: 'Looking up your tier requirements',
-            status: 'running',
+            kind: "activity",
+            id: "x",
+            text: "Looking up your tier requirements",
+            status: "running",
           },
         ],
       },
@@ -125,13 +141,18 @@ export const ToolDone: Story = {
   args: {
     isBusy: true,
     messages: [
-      user('u', 'What do I need for the next tier?'),
+      user("u", "What do I need for the next tier?"),
       {
-        id: 'a',
-        role: 'assistant',
+        id: "a",
+        role: "assistant",
         isStreaming: true,
         parts: [
-          { kind: 'activity', id: 'x', text: 'Looking up your tier requirements', status: 'done' },
+          {
+            kind: "activity",
+            id: "x",
+            text: "Looking up your tier requirements",
+            status: "done",
+          },
         ],
       },
     ],
@@ -141,19 +162,23 @@ export const ToolDone: Story = {
 export const ToolError: Story = {
   args: {
     messages: [
-      user('u', 'What do I need for the next tier?'),
+      user("u", "What do I need for the next tier?"),
       {
-        id: 'a',
-        role: 'assistant',
+        id: "a",
+        role: "assistant",
         parts: [
           {
-            kind: 'activity',
-            id: 'x',
-            text: 'Looking up your tier requirements',
-            status: 'error',
-            detail: 'The backend is rate limited. Wait before asking again.',
+            kind: "activity",
+            id: "x",
+            text: "Looking up your tier requirements",
+            status: "error",
+            detail: "The backend is rate limited. Wait before asking again.",
           },
-          { kind: 'text', id: 't', text: 'I could not read your tier data right now.' },
+          {
+            kind: "text",
+            id: "t",
+            text: "I could not read your tier data right now.",
+          },
         ],
       },
     ],
@@ -163,7 +188,10 @@ export const ToolError: Story = {
 export const GenericError: Story = {
   args: {
     messages: CONVERSATION.slice(0, 2),
-    notice: { tone: 'error', text: 'Something went wrong while asking. Please try again.' },
+    notice: {
+      tone: "error",
+      text: "Something went wrong while asking. Please try again.",
+    },
   },
 };
 
@@ -171,8 +199,8 @@ export const NetworkError: Story = {
   args: {
     messages: CONVERSATION.slice(0, 1),
     notice: {
-      tone: 'error',
-      text: 'Could not reach the assistant. Check your connection. If it keeps failing, the server may not allow this extension yet.',
+      tone: "error",
+      text: "Could not reach the assistant. Check your connection. If it keeps failing, the server may not allow this extension yet.",
     },
   },
 };
@@ -181,7 +209,7 @@ export const RateLimited: Story = {
   args: {
     messages: CONVERSATION.slice(0, 2),
     notice: {
-      tone: 'limit',
+      tone: "limit",
       text: "You've hit the limit for today (40 questions). Resets at 14:30.",
     },
   },
@@ -191,12 +219,12 @@ export const LongMessage: Story = {
   args: {
     messages: [
       user(
-        'u',
-        'Compare every tranche with the deliverables listed in the architecture section and quote the exact lines you rely on GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        "u",
+        "Compare every tranche with the deliverables listed in the architecture section and quote the exact lines you rely on GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
       ),
       assistant(
-        'a',
-        '## Comparison\n\nThe amounts in **Tranche 2** total $25,000 but the listed deliverables add up to $27,500:\n\n1. Deliverable 2.1: Docs ($10,000)\n2. Deliverable 2.2: Examples ($15,000)\n3. Deliverable 2.3: Integration tests ($2,500)\n\nThe architecture section states `Deliverable 2.3: Integration tests ($2,500)`, which is not repeated in the tranche table. A sample of how the check works:\n\n```\nconst total = deliverables.reduce((sum, item) => sum + item.amount, 0);\nif (total !== tranche.amount) report(tranche);\n```\n\nSee the [Stellar docs](https://developers.stellar.org) for the metric definition.',
+        "a",
+        "## Comparison\n\nThe amounts in **Tranche 2** total $25,000 but the listed deliverables add up to $27,500:\n\n1. Deliverable 2.1: Docs ($10,000)\n2. Deliverable 2.2: Examples ($15,000)\n3. Deliverable 2.3: Integration tests ($2,500)\n\nThe architecture section states `Deliverable 2.3: Integration tests ($2,500)`, which is not repeated in the tranche table. A sample of how the check works:\n\n```\nconst total = deliverables.reduce((sum, item) => sum + item.amount, 0);\nif (total !== tranche.amount) report(tranche);\n```\n\nSee the [Stellar docs](https://developers.stellar.org) for the metric definition.",
       ),
     ],
   },
@@ -212,8 +240,10 @@ function Streamer(args: AssistantMessagesProps) {
       <AssistantMessages {...args} messages={messages} />
       <button
         type="button"
-        style={{ position: 'absolute', top: 8, right: 8 }}
-        onClick={() => setCount((value) => Math.min(value + 1, MANY.length / 2))}
+        style={{ position: "absolute", top: 8, right: 8 }}
+        onClick={() =>
+          setCount((value) => Math.min(value + 1, MANY.length / 2))
+        }
       >
         Add exchange
       </button>

@@ -1,4 +1,4 @@
-import type { BuildersLoaderStatus } from '../../components/BuildersLoader';
+import type { BuildersLoaderStatus } from "../../components/BuildersLoader";
 
 export interface LoaderSnapshot {
   status: BuildersLoaderStatus;
@@ -22,7 +22,10 @@ function notify(): void {
   for (const listener of listeners) listener();
 }
 
-export function publishLoader(next: LoaderSnapshot, handlers: LoaderActions): void {
+export function publishLoader(
+  next: LoaderSnapshot,
+  handlers: LoaderActions,
+): void {
   snapshot = next;
   actions = handlers;
   notify();

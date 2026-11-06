@@ -1,7 +1,7 @@
-import type { Project, Submission } from 'shared';
-import { z } from 'zod';
-import { computeContentHash, type SectionText } from '../ai/context';
-import { detectStellarAddresses } from '../stellar/detect';
+import type { Project, Submission } from "shared";
+import { z } from "zod";
+import { computeContentHash, type SectionText } from "../ai/context";
+import { detectStellarAddresses } from "../stellar/detect";
 import {
   FIRST_TRACK_ROUND,
   PARSER_VERSION,
@@ -9,7 +9,7 @@ import {
   RFP_PHRASES,
   SUBMISSION_SELECTORS as SEL,
   SUBMISSION_TEXT as TXT,
-} from './selectors/submission';
+} from "./selectors/submission";
 
 export interface SubmissionPageInput {
   id: string;
@@ -42,17 +42,17 @@ export interface SubmissionPage {
   bodyText: string;
 }
 
-type Tranche = Submission['tranches'][number];
-type Deliverable = Tranche['deliverables'][number];
-type TeamMember = Submission['team'][number];
-type Links = Submission['links'];
+type Tranche = Submission["tranches"][number];
+type Deliverable = Tranche["deliverables"][number];
+type TeamMember = Submission["team"][number];
+type Links = Submission["links"];
 
 interface Line {
   text: string;
   listItem: boolean;
 }
 
-const SITE_ORIGIN = 'https://communityfund.stellar.org';
+const SITE_ORIGIN = "https://communityfund.stellar.org";
 const AMOUNT = /\$\s?(\d[\d,]*(?:\.\d+)?)\s?([KkMm](?![A-Za-z]))?/;
 const NUMBERED = /^(\d+\.\d+)\.?\s+\S/;
 const BULLET = /^[-•*–]\s+/;
@@ -62,12 +62,14 @@ const TRANCHE_HEADER_LINE = /\b(?:tranche|milestone|allocation|phase)\b/i;
 const TITLE_CUT = /\s+[—–·]\s+|\s+-\s+\$|\s*\$\d/;
 const MAX_TITLE_CHARS = 160;
 const MAX_OTHER_DEPTH = 4;
-const ROLE_AFTER_NAME = /^\s*,\s*([A-Z][^,.;:()\n—–]{1,59}?)\s*(?:[,.;:(\n—–]|$)/;
+const ROLE_AFTER_NAME =
+  /^\s*,\s*([A-Z][^,.;:()\n—–]{1,59}?)\s*(?:[,.;:(\n—–]|$)/;
 
 const looseString = z.string().nullable().catch(null);
 const looseNumber = z
   .preprocess(
-    (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : value),
+    (value) =>
+      typeof value === "string" && value.trim() !== "" ? Number(value) : value,
     z.number().nullable(),
   )
   .catch(null);
@@ -110,44 +112,47 @@ function logMiss(debug: boolean, name: string): void {
 
 const ESCAPED = /&(?:#x([0-9a-f]{1,6})|#(\d{1,7})|amp|quot|apos|lt|gt);/gi;
 const NAMED_ESCAPES: Record<string, string> = {
-  '&amp;': '&',
-  '&quot;': '"',
-  '&apos;': "'",
-  '&lt;': '<',
-  '&gt;': '>',
+  "&amp;": "&",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&lt;": "<",
+  "&gt;": ">",
 };
 const MAX_CODE_POINT = 0x10ffff;
 
 // The site double-escapes team card names (fixture recLgWXAbXzzi08iq: "d&amp;#x27;Orchimont").
 function unescapeTeamName(text: string): string {
-  return text.replace(ESCAPED, (match, hex: string | undefined, dec: string | undefined) => {
-    const code =
-      hex !== undefined
-        ? Number.parseInt(hex, 16)
-        : dec !== undefined
-          ? Number.parseInt(dec, 10)
-          : null;
-    if (code === null) return NAMED_ESCAPES[match.toLowerCase()] ?? match;
-    return code <= MAX_CODE_POINT ? String.fromCodePoint(code) : match;
-  });
+  return text.replace(
+    ESCAPED,
+    (match, hex: string | undefined, dec: string | undefined) => {
+      const code =
+        hex !== undefined
+          ? Number.parseInt(hex, 16)
+          : dec !== undefined
+            ? Number.parseInt(dec, 10)
+            : null;
+      if (code === null) return NAMED_ESCAPES[match.toLowerCase()] ?? match;
+      return code <= MAX_CODE_POINT ? String.fromCodePoint(code) : match;
+    },
+  );
 }
 
 function clean(text: string | null | undefined): string {
-  return (text ?? '').replace(/\s+/g, ' ').trim();
+  return (text ?? "").replace(/\s+/g, " ").trim();
 }
 
 function cleanRecordText(text: string | null): string | null {
   if (text === null) return null;
-  const value = text.replace(/^[\s\\"]+|[\s\\"]+$/g, '');
-  return value === '' ? null : value;
+  const value = text.replace(/^[\s\\"]+|[\s\\"]+$/g, "");
+  return value === "" ? null : value;
 }
 
 function slug(text: string): string {
   return (
     text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'section'
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "section"
   );
 }
 
@@ -155,33 +160,37 @@ function parseUsd(text: string): number | null {
   const match = AMOUNT.exec(text);
   const digits = match?.[1];
   if (digits === undefined) return null;
-  const value = Number(digits.replace(/,/g, ''));
+  const value = Number(digits.replace(/,/g, ""));
   if (!Number.isFinite(value)) return null;
   const suffix = match?.[2]?.toLowerCase();
-  const scaled = suffix === 'k' ? value * 1_000 : suffix === 'm' ? value * 1_000_000 : value;
+  const scaled =
+    suffix === "k" ? value * 1_000 : suffix === "m" ? value * 1_000_000 : value;
   return Math.round(scaled * 100) / 100;
 }
 
 function parseCount(text: string): number | null {
   const match = /\d[\d,]*/.exec(text);
   if (match === null) return null;
-  const value = Number(match[0].replace(/,/g, ''));
+  const value = Number(match[0].replace(/,/g, ""));
   return Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 function toCount(value: number | null): number | null {
-  return value !== null && Number.isSafeInteger(value) && value >= 0 ? value : null;
+  return value !== null && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : null;
 }
 
 function webOnly(url: URL): URL | null {
-  return url.protocol === 'https:' || url.protocol === 'http:' ? url : null;
+  return url.protocol === "https:" || url.protocol === "http:" ? url : null;
 }
 
 function unwrapHref(raw: string | null): URL | null {
-  if (raw === null || raw.trim() === '') return null;
+  if (raw === null || raw.trim() === "") return null;
   try {
     const url = new URL(raw, SITE_ORIGIN);
-    const target = url.pathname === '/redirect' ? url.searchParams.get('url') : null;
+    const target =
+      url.pathname === "/redirect" ? url.searchParams.get("url") : null;
     return webOnly(target === null ? url : new URL(target));
   } catch {
     return null;
@@ -189,7 +198,7 @@ function unwrapHref(raw: string | null): URL | null {
 }
 
 function hostOf(url: URL): string {
-  return url.hostname.toLowerCase().replace(/^www\./, '');
+  return url.hostname.toLowerCase().replace(/^www\./, "");
 }
 
 function onDomain(url: URL, domain: string): boolean {
@@ -198,7 +207,7 @@ function onDomain(url: URL, domain: string): boolean {
 }
 
 function firstPathSegment(url: URL): string | null {
-  const segment = url.pathname.split('/').find((part) => part !== '');
+  const segment = url.pathname.split("/").find((part) => part !== "");
   return segment === undefined ? null : segment;
 }
 
@@ -211,31 +220,41 @@ function readLines(body: Element): Line[] {
   for (const block of body.querySelectorAll(SEL.blocks)) {
     if (!isLeafBlock(block)) continue;
     const text = clean(block.textContent);
-    if (text === '') continue;
-    lines.push({ text, listItem: block.closest('li') !== null || BULLET.test(text) });
+    if (text === "") continue;
+    lines.push({
+      text,
+      listItem: block.closest("li") !== null || BULLET.test(text),
+    });
   }
   if (lines.length === 0) {
     const text = clean(body.textContent);
-    if (text !== '') lines.push({ text, listItem: false });
+    if (text !== "") lines.push({ text, listItem: false });
   }
   return lines;
 }
 
-export function findSubmissionSections(root: ParentNode): SubmissionSectionElement[] {
+export function findSubmissionSections(
+  root: ParentNode,
+): SubmissionSectionElement[] {
   const sections: SubmissionSectionElement[] = [];
   const used = new Map<string, number>();
   let lastBody: Element | null = null;
   for (const heading of root.querySelectorAll(SEL.sectionHeading)) {
     if (lastBody?.contains(heading)) continue;
     let body = heading.nextElementSibling;
-    while (body?.hasAttribute('data-bscf')) body = body.nextElementSibling;
-    if (body === null || body.tagName.toLowerCase() !== 'div') continue;
+    while (body?.hasAttribute("data-bscf")) body = body.nextElementSibling;
+    if (body === null || body.tagName.toLowerCase() !== "div") continue;
     const title = clean(heading.textContent);
-    if (title === '') continue;
+    if (title === "") continue;
     const base = slug(title);
     const count = used.get(base) ?? 0;
     used.set(base, count + 1);
-    sections.push({ id: count === 0 ? base : `${base}-${count + 1}`, title, heading, body });
+    sections.push({
+      id: count === 0 ? base : `${base}-${count + 1}`,
+      title,
+      heading,
+      body,
+    });
     lastBody = body;
   }
   return sections;
@@ -249,14 +268,22 @@ function findHeading(root: ParentNode, pattern: RegExp): Element | null {
 }
 
 function deliverableTitle(text: string): string {
-  const withoutBullet = text.replace(BULLET, '');
+  const withoutBullet = text.replace(BULLET, "");
   const cut = TITLE_CUT.exec(withoutBullet);
-  const title = (cut === null ? withoutBullet : withoutBullet.slice(0, cut.index)).trim();
-  const base = title === '' ? withoutBullet : title;
-  return base.length > MAX_TITLE_CHARS ? `${base.slice(0, MAX_TITLE_CHARS - 1).trimEnd()}…` : base;
+  const title = (
+    cut === null ? withoutBullet : withoutBullet.slice(0, cut.index)
+  ).trim();
+  const base = title === "" ? withoutBullet : title;
+  return base.length > MAX_TITLE_CHARS
+    ? `${base.slice(0, MAX_TITLE_CHARS - 1).trimEnd()}…`
+    : base;
 }
 
-function parseTranche(title: string, index: number, lines: readonly Line[]): Tranche {
+function parseTranche(
+  title: string,
+  index: number,
+  lines: readonly Line[],
+): Tranche {
   const deliverables: Deliverable[] = [];
   let current: Deliverable | null = null;
   let numberedSeen = false;
@@ -266,7 +293,7 @@ function parseTranche(title: string, index: number, lines: readonly Line[]): Tra
 
   for (const line of lines) {
     const amount = parseUsd(line.text);
-    if (NUMBERED.test(line.text.replace(BULLET, ''))) {
+    if (NUMBERED.test(line.text.replace(BULLET, ""))) {
       current = { title: deliverableTitle(line.text), totalUsd: amount };
       deliverables.push(current);
       numberedSeen = true;
@@ -279,17 +306,23 @@ function parseTranche(title: string, index: number, lines: readonly Line[]): Tra
       continue;
     }
     if (current !== null) {
-      if (current.totalUsd === null && BUDGET_LINE.test(line.text.replace(BULLET, ''))) {
+      if (
+        current.totalUsd === null &&
+        BUDGET_LINE.test(line.text.replace(BULLET, ""))
+      ) {
         current.totalUsd = amount;
       }
       continue;
     }
-    if (BUDGET_LINE.test(line.text.replace(BULLET, ''))) {
+    if (BUDGET_LINE.test(line.text.replace(BULLET, ""))) {
       budgetTotal ??= amount;
       continue;
     }
     if (line.listItem && !numberedSeen) {
-      deliverables.push({ title: deliverableTitle(line.text), totalUsd: amount });
+      deliverables.push({
+        title: deliverableTitle(line.text),
+        totalUsd: amount,
+      });
       continue;
     }
     if (TRANCHE_HEADER_LINE.test(line.text)) headerTotal ??= amount;
@@ -308,12 +341,14 @@ function parseTranche(title: string, index: number, lines: readonly Line[]): Tra
   };
 }
 
-function leafDivTexts(container: Element): { element: Element; text: string }[] {
+function leafDivTexts(
+  container: Element,
+): { element: Element; text: string }[] {
   const out: { element: Element; text: string }[] = [];
   for (const div of container.querySelectorAll(SEL.leafDiv)) {
     if (div.firstElementChild !== null) continue;
     const text = clean(div.textContent);
-    if (text !== '') out.push({ element: div, text });
+    if (text !== "") out.push({ element: div, text });
   }
   return out;
 }
@@ -344,12 +379,13 @@ function readTitleBlock(root: ParentNode, debug: boolean): TitleBlock {
     links: emptyLinks(),
   };
   if (heading === null) {
-    logMiss(debug, 'title');
+    logMiss(debug, "title");
     return block;
   }
   block.title = clean(heading.textContent) || null;
   const by = clean(heading.previousElementSibling?.textContent);
-  if (TXT.byPrefix.test(by)) block.byLine = by.replace(TXT.byPrefix, '') || null;
+  if (TXT.byPrefix.test(by))
+    block.byLine = by.replace(TXT.byPrefix, "") || null;
 
   const container = heading.parentElement?.parentElement ?? null;
   if (container === null) return block;
@@ -372,13 +408,14 @@ function readTitleBlock(root: ParentNode, debug: boolean): TitleBlock {
 
   for (const anchor of container.querySelectorAll(SEL.link)) {
     const label = clean(anchor.textContent);
-    const url = unwrapHref(anchor.getAttribute('href'))?.href ?? null;
+    const url = unwrapHref(anchor.getAttribute("href"))?.href ?? null;
     if (url === null) continue;
     if (TXT.linkWebsite.test(label)) block.links.website ??= url;
     else if (TXT.linkArchitecture.test(label)) block.links.architecture ??= url;
     else if (TXT.linkGithub.test(label)) block.links.github ??= url;
     else if (TXT.linkVideo.test(label)) block.links.video ??= url;
-    else if (anchor.querySelector(SEL.githubIcon) !== null) block.links.github ??= url;
+    else if (anchor.querySelector(SEL.githubIcon) !== null)
+      block.links.github ??= url;
   }
   return block;
 }
@@ -386,17 +423,20 @@ function readTitleBlock(root: ParentNode, debug: boolean): TitleBlock {
 function videoUrl(src: string | null): string | null {
   const url = unwrapHref(src);
   if (url === null) return null;
-  if (onDomain(url, 'youtube.com') || onDomain(url, 'youtube-nocookie.com')) {
+  if (onDomain(url, "youtube.com") || onDomain(url, "youtube-nocookie.com")) {
     const id = /^\/embed\/([\w-]+)/.exec(url.pathname)?.[1];
     if (id !== undefined) return `https://www.youtube.com/watch?v=${id}`;
   }
   return `${url.origin}${url.pathname}`;
 }
 
-function findVideo(root: ParentNode, bodies: readonly Element[]): string | null {
+function findVideo(
+  root: ParentNode,
+  bodies: readonly Element[],
+): string | null {
   for (const frame of root.querySelectorAll(SEL.video)) {
     if (bodies.some((body) => body.contains(frame))) continue;
-    const url = videoUrl(frame.getAttribute('src'));
+    const url = videoUrl(frame.getAttribute("src"));
     if (url !== null) return url;
   }
   return null;
@@ -407,13 +447,13 @@ function normalizeName(text: string): string {
 }
 
 function roleFor(name: string, teamText: string): string | null {
-  if (teamText === '') return null;
+  if (teamText === "") return null;
   const haystack = normalizeName(teamText);
   const at = haystack.indexOf(normalizeName(name));
   if (at < 0) return null;
   const after = teamText.slice(at + name.length);
   const role = ROLE_AFTER_NAME.exec(after)?.[1]?.trim();
-  return role === undefined || role === '' ? null : role;
+  return role === undefined || role === "" ? null : role;
 }
 
 function readTeam(
@@ -425,9 +465,15 @@ function readTeam(
   const members: TeamMember[] = [];
   const seen = new Set<string>();
   for (const card of root.querySelectorAll(SEL.teamCard)) {
-    if (otherContainer?.contains(card) || card.querySelector(SEL.button) !== null) continue;
-    const name = unescapeTeamName(clean(card.querySelector(SEL.teamName)?.textContent));
-    if (name === '' || seen.has(name.toLowerCase())) continue;
+    if (
+      otherContainer?.contains(card) ||
+      card.querySelector(SEL.button) !== null
+    )
+      continue;
+    const name = unescapeTeamName(
+      clean(card.querySelector(SEL.teamName)?.textContent),
+    );
+    if (name === "" || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
     const member: TeamMember = {
       name,
@@ -437,16 +483,17 @@ function readTeam(
       linkedin: null,
     };
     for (const anchor of card.querySelectorAll(SEL.link)) {
-      const url = unwrapHref(anchor.getAttribute('href'));
+      const url = unwrapHref(anchor.getAttribute("href"));
       if (url === null) continue;
       const host = hostOf(url);
-      if (host === 'github.com') member.github ??= firstPathSegment(url);
-      else if (host === 'x.com' || host === 'twitter.com') member.x ??= firstPathSegment(url);
-      else if (onDomain(url, 'linkedin.com')) member.linkedin ??= url.href;
+      if (host === "github.com") member.github ??= firstPathSegment(url);
+      else if (host === "x.com" || host === "twitter.com")
+        member.x ??= firstPathSegment(url);
+      else if (onDomain(url, "linkedin.com")) member.linkedin ??= url.href;
     }
     members.push(member);
   }
-  if (members.length === 0) logMiss(debug, 'teamCard');
+  if (members.length === 0) logMiss(debug, "teamCard");
   return members;
 }
 
@@ -469,21 +516,24 @@ function readProjectStats(root: ParentNode, debug: boolean): ProjectStats {
   const heading = findHeading(root, TXT.projectStats);
   const container = heading?.parentElement?.parentElement ?? null;
   if (container === null) {
-    logMiss(debug, 'projectStats');
+    logMiss(debug, "projectStats");
     return stats;
   }
-  const href = container.querySelector(SEL.projectLink)?.getAttribute('href') ?? null;
+  const href =
+    container.querySelector(SEL.projectLink)?.getAttribute("href") ?? null;
   const projectPath = unwrapHref(href)
-    ?.pathname.split('/')
-    .filter((part) => part !== '');
+    ?.pathname.split("/")
+    .filter((part) => part !== "");
   stats.projectId = projectPath?.[2] ?? null;
   for (const { element, text } of leafDivTexts(container)) {
     const value = clean(element.nextElementSibling?.textContent);
-    if (value === '') continue;
+    if (value === "") continue;
     if (TXT.statTeamSize.test(text)) stats.teamSize = parseCount(value);
     else if (TXT.statCategory.test(text)) stats.category = value;
-    else if (TXT.statTotalAwarded.test(text)) stats.totalAwardedUsd = parseUsd(value);
-    else if (TXT.statAwardedSubmissions.test(text)) stats.awardedSubmissions = parseCount(value);
+    else if (TXT.statTotalAwarded.test(text))
+      stats.totalAwardedUsd = parseUsd(value);
+    else if (TXT.statAwardedSubmissions.test(text))
+      stats.awardedSubmissions = parseCount(value);
   }
   return stats;
 }
@@ -493,23 +543,28 @@ function findOtherSubmissionsContainer(root: ParentNode): Element | null {
   for (let depth = 0; node !== null && depth < MAX_OTHER_DEPTH; depth += 1) {
     if (node.querySelector(SEL.teamCard) !== null) return node;
     for (const paragraph of node.querySelectorAll(SEL.paragraph)) {
-      if (TXT.noOtherSubmissions.test(clean(paragraph.textContent))) return node;
+      if (TXT.noOtherSubmissions.test(clean(paragraph.textContent)))
+        return node;
     }
     node = node.parentElement;
   }
   return null;
 }
 
-function readOtherSubmissionCards(container: Element | null): OtherSubmission[] | null {
+function readOtherSubmissionCards(
+  container: Element | null,
+): OtherSubmission[] | null {
   if (container === null) return null;
   const cards: OtherSubmission[] = [];
   for (const card of container.querySelectorAll(SEL.teamCard)) {
     const paragraphs = [...card.querySelectorAll(SEL.paragraph)].filter(
       (p) => p.closest(SEL.button) === null,
     );
-    const byIndex = paragraphs.findIndex((p) => TXT.byPrefix.test(clean(p.textContent)));
+    const byIndex = paragraphs.findIndex((p) =>
+      TXT.byPrefix.test(clean(p.textContent)),
+    );
     const title = clean(paragraphs[byIndex + 1]?.textContent);
-    if (title === '') continue;
+    if (title === "") continue;
     const other: OtherSubmission = {
       id: null,
       title,
@@ -545,7 +600,7 @@ function toOtherSubmission(record: SummaryRecord): OtherSubmission | null {
   if (record.id === null) return null;
   return {
     id: record.id,
-    title: cleanRecordText(record.title) ?? '',
+    title: cleanRecordText(record.title) ?? "",
     status: record.status,
     roundName: record.roundName,
     budgetUsd: record.budget,
@@ -555,25 +610,31 @@ function toOtherSubmission(record: SummaryRecord): OtherSubmission | null {
 
 function readSections(root: ParentNode, debug: boolean) {
   const elements = findSubmissionSections(root);
-  if (elements.length === 0) logMiss(debug, 'sectionHeading');
+  if (elements.length === 0) logMiss(debug, "sectionHeading");
   return elements.map((element) => {
     const lines = readLines(element.body);
-    return { element, lines, text: lines.map((line) => line.text).join('\n') };
+    return { element, lines, text: lines.map((line) => line.text).join("\n") };
   });
 }
 
-async function parse(root: ParentNode, input: SubmissionPageInput): Promise<SubmissionPage | null> {
+async function parse(
+  root: ParentNode,
+  input: SubmissionPageInput,
+): Promise<SubmissionPage | null> {
   const debug = input.debug === true;
   const payload = payloadSchema.parse(input.payload ?? null);
   const rawSummary = payload?.summary ?? null;
   const rawProject = payload?.project ?? null;
-  const rawRecords = rawProject?.submissions.filter((r): r is SummaryRecord => r !== null) ?? [];
+  const rawRecords =
+    rawProject?.submissions.filter((r): r is SummaryRecord => r !== null) ?? [];
   const stale =
     (rawSummary?.id != null && rawSummary.id !== input.id) ||
     (rawRecords.length > 0 && !rawRecords.some((r) => r.id === input.id));
   const projectRecord = stale ? null : rawProject;
   const ownRecords = stale ? [] : rawRecords;
-  const summary = stale ? null : (rawSummary ?? ownRecords.find((r) => r.id === input.id) ?? null);
+  const summary = stale
+    ? null
+    : (rawSummary ?? ownRecords.find((r) => r.id === input.id) ?? null);
 
   const header = readTitleBlock(root, debug);
   const sections = readSections(root, debug);
@@ -589,11 +650,11 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
   let onchainMetric: string | null = null;
   let metricFound = false;
   let requestedBudget: number | null = null;
-  let teamText = '';
+  let teamText = "";
   for (const { element, lines, text } of sections) {
     if (TXT.onchainMetric.test(element.title)) {
       metricFound = true;
-      onchainMetric ??= text === '' ? null : text;
+      onchainMetric ??= text === "" ? null : text;
       continue;
     }
     const tranche = TXT.tranche.exec(element.title);
@@ -601,59 +662,71 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
       tranches.push(parseTranche(element.title, Number(tranche[1]), lines));
       continue;
     }
-    if (TXT.requestedBudget.test(element.title)) requestedBudget ??= parseUsd(text);
+    if (TXT.requestedBudget.test(element.title))
+      requestedBudget ??= parseUsd(text);
     else if (TXT.team.test(element.title)) teamText = text;
   }
-  if (!metricFound) logMiss(debug, 'onchainMetricSection');
+  if (!metricFound) logMiss(debug, "onchainMetricSection");
   const stats = readProjectStats(root, debug);
   const otherContainer = findOtherSubmissionsContainer(root);
   const team = readTeam(root, teamText, otherContainer, debug);
   const bodies = sections.map(({ element }) => element.body);
   const awardRound = Number(
-    /#\s*(\d+)/.exec(summary?.roundName ?? '')?.[1] ?? header.roundNumber ?? Number.NaN,
+    /#\s*(\d+)/.exec(summary?.roundName ?? "")?.[1] ??
+      header.roundNumber ??
+      Number.NaN,
   );
   const respondsToRfp =
     awardRound >= FIRST_TRACK_ROUND &&
-    (sections.some(({ text }) => RFP_PHRASES.some((phrase) => phrase.test(text))) ||
+    (sections.some(({ text }) =>
+      RFP_PHRASES.some((phrase) => phrase.test(text)),
+    ) ||
       bodies.some((body) =>
         Array.from(body.querySelectorAll(SEL.link)).some((anchor) =>
-          RFP_LINK.test(unwrapHref(anchor.getAttribute('href'))?.href ?? ''),
+          RFP_LINK.test(unwrapHref(anchor.getAttribute("href"))?.href ?? ""),
         ),
       ));
-  const links: Links = { ...header.links, video: header.links.video ?? findVideo(root, bodies) };
+  const links: Links = {
+    ...header.links,
+    video: header.links.video ?? findVideo(root, bodies),
+  };
 
   const addressSource: string[] = sectionTexts.map((section) => section.text);
   for (const body of bodies) {
     for (const anchor of body.querySelectorAll(SEL.link)) {
-      const url = unwrapHref(anchor.getAttribute('href'));
+      const url = unwrapHref(anchor.getAttribute("href"));
       if (url !== null) addressSource.push(url.href);
     }
   }
-  const addresses = detectStellarAddresses(addressSource.join('\n'));
+  const addresses = detectStellarAddresses(addressSource.join("\n"));
 
   const awardType = summary?.awardType ?? header.awardType;
-  const roundNumber = header.roundNumber ?? /#\s*(\d+)/.exec(summary?.roundName ?? '')?.[1] ?? null;
-  const projectId = summary?.project ?? projectRecord?.id ?? stats.projectId ?? '';
+  const roundNumber =
+    header.roundNumber ??
+    /#\s*(\d+)/.exec(summary?.roundName ?? "")?.[1] ??
+    null;
+  const projectId =
+    summary?.project ?? projectRecord?.id ?? stats.projectId ?? "";
   const now = input.now ?? Date.now();
 
-  const byLine = header.byLine ?? projectNameOf(summary) ?? '';
+  const byLine = header.byLine ?? projectNameOf(summary) ?? "";
   const submission: Submission = {
     id: input.id,
-    roundId: roundNumber ?? '',
+    roundId: roundNumber ?? "",
     projectId,
-    title: header.title ?? cleanRecordText(summary?.title ?? null) ?? '',
+    title: header.title ?? cleanRecordText(summary?.title ?? null) ?? "",
     byLine,
     budgetUsd: summary?.budget ?? header.budgetUsd ?? requestedBudget,
-    status: summary?.status ?? header.status ?? '',
-    kind: awardType !== null && /build/i.test(awardType) ? 'build' : 'other',
+    status: summary?.status ?? header.status ?? "",
+    kind: awardType !== null && /build/i.test(awardType) ? "build" : "other",
     track: respondsToRfp
-      ? 'rfp'
+      ? "rfp"
       : metricFound
         ? onchainMetric === null
-          ? 'open'
-          : 'integration'
-        : 'unknown',
-    trackSource: metricFound || respondsToRfp ? 'heuristic' : 'unknown',
+          ? "open"
+          : "integration"
+        : "unknown",
+    trackSource: metricFound || respondsToRfp ? "heuristic" : "unknown",
     parserVersion: PARSER_VERSION,
     category: projectRecord?.category ?? stats.category,
     tranches,
@@ -679,7 +752,7 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
       : readOtherSubmissionCards(otherContainer);
 
   const project: Project | null =
-    projectId === ''
+    projectId === ""
       ? null
       : {
           id: projectId,
@@ -687,7 +760,9 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
           submissionIds: [
             ...new Set([
               input.id,
-              ...ownRecords.map((r) => r.id).filter((id): id is string => id !== null),
+              ...ownRecords
+                .map((r) => r.id)
+                .filter((id): id is string => id !== null),
             ]),
           ],
           totalAwardedUsd: submission.totalAwardedUsd,
@@ -695,7 +770,9 @@ async function parse(root: ParentNode, input: SubmissionPageInput): Promise<Subm
           fetchedAt: now,
         };
 
-  const bodyText = sectionTexts.map((section) => `${section.title}\n${section.text}`).join('\n');
+  const bodyText = sectionTexts
+    .map((section) => `${section.title}\n${section.text}`)
+    .join("\n");
   return { submission, project, otherSubmissions, sectionTexts, bodyText };
 }
 

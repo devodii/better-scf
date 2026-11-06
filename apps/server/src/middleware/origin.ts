@@ -1,5 +1,5 @@
-import { createMiddleware } from 'hono/factory';
-import { chatError } from 'shared';
+import { createMiddleware } from "hono/factory";
+import { chatError } from "shared";
 
 export interface OriginOptions {
   allowedExtensionIds: readonly string[];
@@ -9,7 +9,10 @@ export interface OriginOptions {
 const EXTENSION_ORIGIN = /^chrome-extension:\/\/([a-p]{32})$/;
 const LOCALHOST_ORIGIN = /^http:\/\/localhost(:\d{1,5})?$/;
 
-function isAllowedOrigin(origin: string | undefined, options: OriginOptions): boolean {
+function isAllowedOrigin(
+  origin: string | undefined,
+  options: OriginOptions,
+): boolean {
   if (origin === undefined) {
     return false;
   }
@@ -23,21 +26,32 @@ function isAllowedOrigin(origin: string | undefined, options: OriginOptions): bo
 
 export function origin(options: OriginOptions) {
   return createMiddleware(async (c, next) => {
-    const requestOrigin = c.req.header('origin');
+    const requestOrigin = c.req.header("origin");
     const allowed = isAllowedOrigin(requestOrigin, options);
-    const looksLikeExtension = requestOrigin !== undefined && EXTENSION_ORIGIN.test(requestOrigin);
+    const looksLikeExtension =
+      requestOrigin !== undefined && EXTENSION_ORIGIN.test(requestOrigin);
     if (requestOrigin === undefined || (!allowed && !looksLikeExtension)) {
-      return c.json(chatError('forbidden_origin', 'This origin is not allowed.'), 403);
+      return c.json(
+        chatError("forbidden_origin", "This origin is not allowed."),
+        403,
+      );
     }
-    c.header('Access-Control-Allow-Origin', requestOrigin);
-    c.header('Vary', 'Origin');
-    if (c.req.method === 'OPTIONS') {
-      c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      c.header('Access-Control-Allow-Headers', 'content-type, x-bscf-client, x-bscf-version');
-      c.header('Access-Control-Max-Age', '600');
+    c.header("Access-Control-Allow-Origin", requestOrigin);
+    c.header("Vary", "Origin");
+    if (c.req.method === "OPTIONS") {
+      c.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      c.header(
+        "Access-Control-Allow-Headers",
+        "content-type, x-bscf-client, x-bscf-version",
+      );
+      c.header("Access-Control-Max-Age", "600");
       return c.body(null, 204);
     }
-    if (!allowed) return c.json(chatError('forbidden_origin', 'This origin is not allowed.'), 403);
+    if (!allowed)
+      return c.json(
+        chatError("forbidden_origin", "This origin is not allowed."),
+        403,
+      );
     await next();
     return undefined;
   });

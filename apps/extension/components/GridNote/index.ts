@@ -1,1 +1,1 @@
-export { GridNote, type GridNoteProps } from './GridNote';
+export { GridNote, type GridNoteProps } from "./GridNote";

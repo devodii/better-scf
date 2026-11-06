@@ -1,15 +1,18 @@
-import { z } from 'zod';
-import { SearchField } from '../../../components/SearchField';
-import type { SearchResultMatch } from '../../../components/SearchResultCard';
-import { SearchResults, type SearchResultsStatus } from '../../../components/SearchResults';
+import { z } from "zod";
+import { SearchField } from "../../../components/SearchField";
+import type { SearchResultMatch } from "../../../components/SearchResultCard";
+import {
+  SearchResults,
+  type SearchResultsStatus,
+} from "../../../components/SearchResults";
 import {
   loadProjectsIndex,
   reloadProjectsIndex,
   searchProjects,
-} from '../../../lib/site/projects-index';
-import type { Feature } from '../../../lib/ui/feature';
-import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
-import searchCss from '../styles/dashboard-search.scss?inline';
+} from "../../../lib/site/projects-index";
+import type { Feature } from "../../../lib/ui/feature";
+import { type MountedUi, OWN_ATTRIBUTE } from "../../../lib/ui/mount";
+import searchCss from "../styles/dashboard-search.scss?inline";
 import {
   centerInView,
   currentEntry,
@@ -22,20 +25,23 @@ import {
   until,
   untilInput,
   WAIT_MS,
-} from './nav-memory';
+} from "./nav-memory";
 
-const ROW = 'data-bscf-search-row';
-const HEADING = 'data-bscf-search-heading';
-const BAR = 'data-bscf-search-bar';
-const RESULTS = 'data-bscf-search-results';
-const SECTION = 'data-bscf-search-section';
-const HEADING_CANDIDATES = 'h1,h2,h3,h4,h5,h6,p,span,div';
+const ROW = "data-bscf-search-row";
+const HEADING = "data-bscf-search-heading";
+const BAR = "data-bscf-search-bar";
+const RESULTS = "data-bscf-search-results";
+const SECTION = "data-bscf-search-section";
+const HEADING_CANDIDATES = "h1,h2,h3,h4,h5,h6,p,span,div";
 const NOT_HEADING = 'a,button,nav,[role="button"],[role="link"]';
-const HEADING_TEXT = { roundList: 'award rounds', myProjects: 'my projects' } as const;
+const HEADING_TEXT = {
+  roundList: "award rounds",
+  myProjects: "my projects",
+} as const;
 const DEBOUNCE_MS = 120;
 const ANIMATION_MS = 200;
 const LIMIT = 60;
-const PROJECT_HREF = '/project/';
+const PROJECT_HREF = "/project/";
 
 const savedSchema = z.object({
   ts: z.number(),
@@ -45,8 +51,8 @@ const savedSchema = z.object({
 });
 
 type SavedSearch = z.infer<typeof savedSchema>;
-type ResultsState = 'closed' | 'open' | 'closing';
-type SectionState = 'out' | 'gone' | 'in';
+type ResultsState = "closed" | "open" | "closing";
+type SectionState = "out" | "gone" | "in";
 
 interface View {
   status: SearchResultsStatus;
@@ -66,12 +72,12 @@ interface Page {
   marked: Set<Element>;
 }
 
-const LOADING: View = { status: 'loading', matches: [], hasMore: false };
-const ERROR: View = { status: 'error', matches: [], hasMore: false };
-const QUIET: View = { status: 'ready', matches: [], hasMore: false };
+const LOADING: View = { status: "loading", matches: [], hasMore: false };
+const ERROR: View = { status: "error", matches: [], hasMore: false };
+const QUIET: View = { status: "ready", matches: [], hasMore: false };
 
 const norm = (text: string | null | undefined): string =>
-  (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+  (text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 
 function findHeading(region: Element, text: string): Element | null {
   for (const node of region.querySelectorAll(HEADING_CANDIDATES)) {
@@ -88,7 +94,11 @@ function findHeading(region: Element, text: string): Element | null {
 
 function laterSiblings(node: Element): Element[] {
   const out: Element[] = [];
-  for (let next = node.nextElementSibling; next; next = next.nextElementSibling) {
+  for (
+    let next = node.nextElementSibling;
+    next;
+    next = next.nextElementSibling
+  ) {
     if (!next.hasAttribute(OWN_ATTRIBUTE)) out.push(next);
   }
   return out;
@@ -110,7 +120,11 @@ function readSearch(entry: string): SavedSearch | null {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
     const parsed = savedSchema.safeParse(JSON.parse(raw));
-    if (parsed.success && Date.now() - parsed.data.ts <= TTL_MS && parsed.data.q.trim() !== '') {
+    if (
+      parsed.success &&
+      Date.now() - parsed.data.ts <= TTL_MS &&
+      parsed.data.q.trim() !== ""
+    ) {
       return parsed.data;
     }
     sessionStorage.removeItem(key);
@@ -131,32 +145,32 @@ function writeSearch(entry: string, saved: SavedSearch | null): void {
 }
 
 function ownBox(name: string, marker: string): HTMLElement {
-  const box = document.createElement('div');
+  const box = document.createElement("div");
   box.setAttribute(OWN_ATTRIBUTE, name);
-  box.setAttribute(marker, marker === RESULTS ? 'closed' : '');
+  box.setAttribute(marker, marker === RESULTS ? "closed" : "");
   return box;
 }
 
 export const feature: Feature = {
-  pages: ['roundList', 'myProjects'],
+  pages: ["roundList", "myProjects"],
   mount(context) {
     const { page: pageData, region, onMutation, warn, signal } = context;
-    if (pageData.kind !== 'roundList' && pageData.kind !== 'myProjects') return;
+    if (pageData.kind !== "roundList" && pageData.kind !== "myProjects") return;
     const headingText = HEADING_TEXT[pageData.kind];
     const entry = currentEntry();
     const note = (text: string): void => warn(`${text} [${entry}]`);
     const saved = isReturning(entry, warn) ? readSearch(entry) : null;
-    if (!saved) note('no saved search to restore');
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!saved) note("no saved search to restore");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const style = document.createElement('style');
-    style.setAttribute(OWN_ATTRIBUTE, 'dashboard-search');
+    const style = document.createElement("style");
+    style.setAttribute(OWN_ATTRIBUTE, "dashboard-search");
     style.textContent = searchCss;
     (document.head ?? document.documentElement).append(style);
 
     let page: Page | null = null;
-    let raw = '';
-    let term = '';
+    let raw = "";
+    let term = "";
     let view: View = saved ? QUIET : LOADING;
     let isDebouncing = false;
     let shown = false;
@@ -169,7 +183,7 @@ export const feature: Feature = {
     let touched = false;
     const input = saved ? untilInput() : null;
     input?.signal.addEventListener(
-      'abort',
+      "abort",
       () => {
         restoring = false;
       },
@@ -185,7 +199,7 @@ export const feature: Feature = {
         value={raw}
         onValueChange={handleChange}
         onMoveDown={focusResults}
-        isLoading={isDebouncing || (raw !== '' && view.status === 'loading')}
+        isLoading={isDebouncing || (raw !== "" && view.status === "loading")}
       />
     );
 
@@ -197,10 +211,10 @@ export const feature: Feature = {
         query={term}
         onRetry={retry}
         onEscape={() => {
-          handleChange('');
-          page?.barUi?.shadow.querySelector('input')?.focus();
+          handleChange("");
+          page?.barUi?.shadow.querySelector("input")?.focus();
         }}
-        onLeaveUp={() => page?.barUi?.shadow.querySelector('input')?.focus()}
+        onLeaveUp={() => page?.barUi?.shadow.querySelector("input")?.focus()}
       />
     );
 
@@ -213,7 +227,7 @@ export const feature: Feature = {
       if (!page) return;
       page.resultsState = state;
       page.results.setAttribute(RESULTS, state);
-      if (state === 'open' && focusWhenOpen) {
+      if (state === "open" && focusWhenOpen) {
         focusWhenOpen = false;
         focusResults();
       }
@@ -234,14 +248,14 @@ export const feature: Feature = {
 
     function focusResults(): void {
       if (!page || !shown) return;
-      if (page.resultsState !== 'open') {
+      if (page.resultsState !== "open") {
         focusWhenOpen = true;
         return;
       }
       const root = page.resultsUi?.shadow;
       const target =
         root?.querySelector<HTMLElement>('a[tabindex="0"]') ??
-        root?.querySelector<HTMLElement>('a');
+        root?.querySelector<HTMLElement>("a");
       target?.focus();
     }
 
@@ -251,19 +265,19 @@ export const feature: Feature = {
       clearTimeout(animationTimer);
       const wait = duration();
       if (next) {
-        if (page.resultsState !== 'closed') {
-          setResults('open');
+        if (page.resultsState !== "closed") {
+          setResults("open");
           return;
         }
         const reveal = (): void => {
-          setSections('gone');
-          setResults('open');
+          setSections("gone");
+          setResults("open");
         };
         if (wait === 0) {
           reveal();
           return;
         }
-        setSections('out');
+        setSections("out");
         animationTimer = setTimeout(reveal, wait);
         return;
       }
@@ -273,21 +287,21 @@ export const feature: Feature = {
           setSections(null);
           return;
         }
-        setSections('in');
+        setSections("in");
         animationTimer = setTimeout(() => setSections(null), wait);
       };
-      if (page.resultsState === 'closed') {
+      if (page.resultsState === "closed") {
         restore();
         return;
       }
       if (wait === 0) {
-        setResults('closed');
+        setResults("closed");
         restore();
         return;
       }
-      setResults('closing');
+      setResults("closing");
       animationTimer = setTimeout(() => {
-        setResults('closed');
+        setResults("closed");
         restore();
       }, wait);
     };
@@ -295,7 +309,11 @@ export const feature: Feature = {
     const apply = (): void => {
       const result = searchProjects(term, LIMIT);
       view = result.ready
-        ? { status: 'ready', matches: result.matches, hasMore: result.matches.length >= LIMIT }
+        ? {
+            status: "ready",
+            matches: result.matches,
+            hasMore: result.matches.length >= LIMIT,
+          }
         : ERROR;
       paint();
     };
@@ -336,7 +354,7 @@ export const feature: Feature = {
       raw = value;
       clearTimeout(debounceTimer);
       const trimmed = value.trim();
-      if (trimmed === '') {
+      if (trimmed === "") {
         isDebouncing = false;
         go(false);
         paint();
@@ -354,18 +372,27 @@ export const feature: Feature = {
     const onResultsClick = (event: Event): void => {
       const link = event
         .composedPath()
-        .find((node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement);
-      const href = link?.getAttribute('href');
-      if (href?.startsWith(PROJECT_HREF)) clicked = href.slice(PROJECT_HREF.length);
+        .find(
+          (node): node is HTMLAnchorElement =>
+            node instanceof HTMLAnchorElement,
+        );
+      const href = link?.getAttribute("href");
+      if (href?.startsWith(PROJECT_HREF))
+        clicked = href.slice(PROJECT_HREF.length);
     };
 
     const persist = (): void => {
       if (restoring) return;
       writeSearch(
         currentEntry(),
-        raw.trim() === ''
+        raw.trim() === ""
           ? null
-          : { ts: Date.now(), q: raw, id: clicked, y: Math.round(window.scrollY) },
+          : {
+              ts: Date.now(),
+              q: raw,
+              id: clicked,
+              y: Math.round(window.scrollY),
+            },
       );
     };
 
@@ -376,7 +403,8 @@ export const feature: Feature = {
         ...(page.resultsUi?.shadow.getAnimations() ?? []),
       ];
       for (const animation of running) {
-        if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish();
+        if (Number.isFinite(animation.effect?.getComputedTiming().endTime))
+          animation.finish();
       }
     };
 
@@ -388,8 +416,10 @@ export const feature: Feature = {
       const href = wanted.id === null ? null : PROJECT_HREF + wanted.id;
       const find = (): Element | null => {
         if (href === null) return null;
-        for (const link of (page?.resultsUi?.shadow ?? shadow).querySelectorAll('a')) {
-          if (link.getAttribute('href') === href) return link;
+        for (const link of (page?.resultsUi?.shadow ?? shadow).querySelectorAll(
+          "a",
+        )) {
+          if (link.getAttribute("href") === href) return link;
         }
         return null;
       };
@@ -402,7 +432,7 @@ export const feature: Feature = {
       if (href !== null) {
         const link = await landOn(
           () => {
-            setSections('gone');
+            setSections("gone");
             finishAnimations();
             const found = find();
             if (found) centerInView(found);
@@ -415,18 +445,18 @@ export const feature: Feature = {
         if (link) {
           note(`scrolled to ${wanted.id}`);
           showRing(link);
-          note('ring shown');
+          note("ring shown");
         } else {
-          warn('returned result not found');
+          warn("returned result not found");
         }
         return;
       }
       finishAnimations();
       if (tall()) {
-        window.scrollTo({ top: wanted.y, behavior: 'instant' });
+        window.scrollTo({ top: wanted.y, behavior: "instant" });
         note(`scrolled to y ${wanted.y}`);
       } else {
-        warn('returned result not found');
+        warn("returned result not found");
       }
     };
 
@@ -436,7 +466,7 @@ export const feature: Feature = {
       if (!wanted || !ui || !resumed || !input) return;
       reveal = null;
       settle(wanted, ui.shadow, AbortSignal.any([signal, input.signal]))
-        .catch((error: unknown) => warn('restore', error))
+        .catch((error: unknown) => warn("restore", error))
         .finally(() => {
           input.abort();
           if (!closed) markRestored(entry);
@@ -450,8 +480,8 @@ export const feature: Feature = {
         search(wanted.q.trim());
         note(`restored query "${wanted.q}"`);
         if (page) {
-          setSections('gone');
-          setResults('open');
+          setSections("gone");
+          setResults("open");
         }
         resumed = true;
         tryRestore();
@@ -475,14 +505,14 @@ export const feature: Feature = {
       const anchor = heading ? findAnchor(heading, region) : null;
       const row = heading?.parentElement;
       if (!heading || !anchor || !row) {
-        warn('heading not found');
+        warn("heading not found");
         return;
       }
-      const bar = ownBox('search-bar', BAR);
+      const bar = ownBox("search-bar", BAR);
       const gap = Number.parseFloat(getComputedStyle(row).rowGap);
-      if (gap > 0) bar.style.setProperty('--bscf-site-gap', `${gap}px`);
-      const results = ownBox('search-results', RESULTS);
-      results.addEventListener('click', onResultsClick);
+      if (gap > 0) bar.style.setProperty("--bscf-site-gap", `${gap}px`);
+      const results = ownBox("search-results", RESULTS);
+      results.addEventListener("click", onResultsClick);
       const mine: Page = {
         heading,
         anchor,
@@ -491,20 +521,25 @@ export const feature: Feature = {
         results,
         barUi: null,
         resultsUi: null,
-        resultsState: 'closed',
+        resultsState: "closed",
         marked: new Set(),
       };
-      row.setAttribute(ROW, '');
-      heading.setAttribute(HEADING, '');
+      row.setAttribute(ROW, "");
+      heading.setAttribute(HEADING, "");
       heading.after(bar);
       (anchor === heading ? bar : anchor).after(results);
       page = mine;
       if (shown) {
-        setSections('gone');
-        setResults('open');
+        setSections("gone");
+        setResults("open");
       }
       context
-        .mount({ name: 'bar', anchor: bar, append: 'last', children: barView() })
+        .mount({
+          name: "bar",
+          anchor: bar,
+          append: "last",
+          children: barView(),
+        })
         .then((handle) => {
           if (!handle) return;
           if (closed || page !== mine) {
@@ -514,9 +549,14 @@ export const feature: Feature = {
           mine.barUi = handle;
           handle.render(barView());
         })
-        .catch((error: unknown) => warn('mount', error));
+        .catch((error: unknown) => warn("mount", error));
       context
-        .mount({ name: 'results', anchor: results, append: 'last', children: resultsView() })
+        .mount({
+          name: "results",
+          anchor: results,
+          append: "last",
+          children: resultsView(),
+        })
         .then((handle) => {
           if (!handle) return;
           if (closed || page !== mine) {
@@ -527,12 +567,16 @@ export const feature: Feature = {
           handle.render(resultsView());
           tryRestore();
         })
-        .catch((error: unknown) => warn('mount', error));
+        .catch((error: unknown) => warn("mount", error));
     };
 
     const sync = (): void => {
-      if (page?.bar.isConnected && page.results.isConnected && page.heading.isConnected) {
-        if (shown && page.resultsState === 'open') setSections('gone');
+      if (
+        page?.bar.isConnected &&
+        page.results.isConnected &&
+        page.heading.isConnected
+      ) {
+        if (shown && page.resultsState === "open") setSections("gone");
         return;
       }
       detach();
@@ -544,8 +588,8 @@ export const feature: Feature = {
       resume(saved);
     }
 
-    window.addEventListener('pagehide', persist, { signal });
-    window.navigation?.addEventListener('navigate', persist, { signal });
+    window.addEventListener("pagehide", persist, { signal });
+    window.navigation?.addEventListener("navigate", persist, { signal });
     onMutation(sync);
     sync();
 

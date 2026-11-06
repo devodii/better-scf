@@ -1,1 +1,4 @@
-export { ReviewerTeamAvatar, type ReviewerTeamAvatarProps } from './ReviewerTeamAvatar';
+export {
+  ReviewerTeamAvatar,
+  type ReviewerTeamAvatarProps,
+} from "./ReviewerTeamAvatar";

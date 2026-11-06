@@ -1,5 +1,5 @@
-import { Spinner } from '../Spinner';
-import styles from './AddressSummary.module.scss';
+import { Spinner } from "../Spinner";
+import styles from "./AddressSummary.module.scss";
 
 export interface AddressSummaryRow {
   label: string;
@@ -7,9 +7,9 @@ export interface AddressSummaryRow {
 }
 
 export type AddressSummaryState =
-  | { status: 'loading' }
-  | { status: 'unavailable' }
-  | { status: 'success'; rows: readonly AddressSummaryRow[] };
+  | { status: "loading" }
+  | { status: "unavailable" }
+  | { status: "success"; rows: readonly AddressSummaryRow[] };
 
 export interface AddressSummaryProps {
   address: string;
@@ -18,16 +18,16 @@ export interface AddressSummaryProps {
 
 function Body({ state }: { state: AddressSummaryState }) {
   switch (state.status) {
-    case 'loading':
+    case "loading":
       return (
         <p className={styles.note}>
           <Spinner size="sm" label="Loading account" />
           Loading account
         </p>
       );
-    case 'unavailable':
+    case "unavailable":
       return <p className={styles.note}>No public account details available</p>;
-    case 'success':
+    case "success":
       return (
         <dl className={styles.rows}>
           {state.rows.map((row) => (

@@ -1,19 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Avatar } from '../Avatar';
-import { Chip } from '../Chip';
-import { IconButton } from '../IconButton';
-import { Tooltip } from './Tooltip';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Avatar } from "../Avatar";
+import { Chip } from "../Chip";
+import { IconButton } from "../IconButton";
+import { Tooltip } from "./Tooltip";
 
 const meta = {
-  title: 'UI/Tooltip',
+  title: "UI/Tooltip",
   component: Tooltip,
   args: {
-    content: 'From the on-chain metric section',
+    content: "From the on-chain metric section",
     children: <Chip variant="purple">Integration</Chip>,
   },
   decorators: [
     (Story) => (
-      <div style={{ padding: '3.5rem 8rem' }}>
+      <div style={{ padding: "3.5rem 8rem" }}>
         <Story />
       </div>
     ),
@@ -27,13 +27,13 @@ export const Closed: Story = {};
 
 export const Open: Story = { args: { isOpen: true } };
 
-export const Bottom: Story = { args: { isOpen: true, placement: 'bottom' } };
+export const Bottom: Story = { args: { isOpen: true, placement: "bottom" } };
 
 export const LongContent: Story = {
   args: {
     isOpen: true,
     content:
-      'Totals use only submissions with a parsed budget: 48 of 52 parsed, the rest state no amount.',
+      "Totals use only submissions with a parsed budget: 48 of 52 parsed, the rest state no amount.",
     children: <Chip variant="muted">48 of 52</Chip>,
   },
 };
@@ -42,12 +42,12 @@ export const Narrow390: Story = {
   args: {
     isOpen: true,
     content:
-      'Totals use only submissions with a parsed budget: 48 of 52 parsed, the rest state no amount.',
+      "Totals use only submissions with a parsed budget: 48 of 52 parsed, the rest state no amount.",
     children: <Chip variant="muted">48 of 52</Chip>,
   },
   decorators: [
     (Story) => (
-      <div style={{ maxWidth: '390px' }}>
+      <div style={{ maxWidth: "390px" }}>
         <Story />
       </div>
     ),
@@ -57,7 +57,7 @@ export const Narrow390: Story = {
 export const OnAvatar: Story = {
   args: {
     isOpen: true,
-    content: 'Ada Lovelace · Lead engineer',
+    content: "Ada Lovelace · Lead engineer",
     children: <Avatar name="Ada Lovelace" href="https://github.com/octocat" />,
   },
 };
@@ -65,8 +65,8 @@ export const OnAvatar: Story = {
 export const FocusedTrigger: Story = {
   args: {
     isOpen: true,
-    placement: 'bottom',
-    content: 'Shortlist',
+    placement: "bottom",
+    content: "Shortlist",
     children: (
       <IconButton label="Shortlist" variant="surface">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -87,8 +87,8 @@ export const FocusedTrigger: Story = {
 export const OnIconButton: Story = {
   args: {
     isOpen: true,
-    placement: 'bottom',
-    content: 'Shortlist',
+    placement: "bottom",
+    content: "Shortlist",
     children: (
       <IconButton label="Shortlist" variant="surface">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

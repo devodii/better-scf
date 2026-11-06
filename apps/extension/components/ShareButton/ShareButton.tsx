@@ -1,7 +1,7 @@
-import clsx from 'clsx';
-import styles from './ShareButton.module.scss';
+import clsx from "clsx";
+import styles from "./ShareButton.module.scss";
 
-export type ShareStatus = 'idle' | 'copied' | 'failed';
+export type ShareStatus = "idle" | "copied" | "failed";
 
 export interface ShareButtonProps {
   status?: ShareStatus;
@@ -9,16 +9,16 @@ export interface ShareButtonProps {
 }
 
 const LABEL: Record<ShareStatus, string> = {
-  idle: 'Share this proposal',
-  copied: 'Public link copied',
-  failed: 'Could not copy the link',
+  idle: "Share this proposal",
+  copied: "Public link copied",
+  failed: "Could not copy the link",
 };
 
-export function ShareButton({ status = 'idle', onShare }: ShareButtonProps) {
+export function ShareButton({ status = "idle", onShare }: ShareButtonProps) {
   return (
     <button
       type="button"
-      className={clsx(styles.root, status === 'copied' && styles.isCopied)}
+      className={clsx(styles.root, status === "copied" && styles.isCopied)}
       onClick={onShare}
     >
       <svg
@@ -30,7 +30,7 @@ export function ShareButton({ status = 'idle', onShare }: ShareButtonProps) {
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        {status === 'copied' ? (
+        {status === "copied" ? (
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         ) : (
           <>

@@ -1,10 +1,13 @@
-export type StrkeyKind = 'account' | 'contract';
+export type StrkeyKind = "account" | "contract";
 
 const CANDIDATE = /(?<![A-Za-z0-9])[GC][A-Z2-7]{55}(?![A-Za-z0-9])/g;
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const ENCODED_LENGTH = 56;
 const DECODED_LENGTH = 35;
-const VERSION_BYTE: Record<StrkeyKind, number> = { account: 6 << 3, contract: 2 << 3 };
+const VERSION_BYTE: Record<StrkeyKind, number> = {
+  account: 6 << 3,
+  contract: 2 << 3,
+};
 
 export interface DetectedAddresses {
   accounts: string[];
@@ -47,8 +50,10 @@ function isValidStrkey(value: string, kind: StrkeyKind): boolean {
   return checksum(bytes) === (((bytes[34] ?? 0) << 8) | (bytes[33] ?? 0));
 }
 
-export const isValidAccountId = (value: string): boolean => isValidStrkey(value, 'account');
-export const isValidContractId = (value: string): boolean => isValidStrkey(value, 'contract');
+export const isValidAccountId = (value: string): boolean =>
+  isValidStrkey(value, "account");
+export const isValidContractId = (value: string): boolean =>
+  isValidStrkey(value, "contract");
 
 export function detectStellarAddresses(text: string): DetectedAddresses {
   const accounts: string[] = [];
@@ -57,10 +62,10 @@ export function detectStellarAddresses(text: string): DetectedAddresses {
   for (const match of text.matchAll(CANDIDATE)) {
     const candidate = match[0];
     if (seen.has(candidate)) continue;
-    if (candidate.startsWith('G') && isValidAccountId(candidate)) {
+    if (candidate.startsWith("G") && isValidAccountId(candidate)) {
       seen.add(candidate);
       accounts.push(candidate);
-    } else if (candidate.startsWith('C') && isValidContractId(candidate)) {
+    } else if (candidate.startsWith("C") && isValidContractId(candidate)) {
       seen.add(candidate);
       contracts.push(candidate);
     }

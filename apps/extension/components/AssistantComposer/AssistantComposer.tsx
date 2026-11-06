@@ -1,7 +1,7 @@
-import clsx from 'clsx';
-import { type KeyboardEvent, type Ref, useId } from 'react';
-import { IconButton } from '../IconButton';
-import styles from './AssistantComposer.module.scss';
+import clsx from "clsx";
+import { type KeyboardEvent, type Ref, useId } from "react";
+import { IconButton } from "../IconButton";
+import styles from "./AssistantComposer.module.scss";
 
 export interface AssistantComposerProps {
   value: string;
@@ -29,10 +29,15 @@ export function AssistantComposer({
   ref,
 }: AssistantComposerProps) {
   const counterId = useId();
-  const canSend = !isDisabled && !isStreaming && value.trim() !== '';
+  const canSend = !isDisabled && !isStreaming && value.trim() !== "";
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent.isComposing
+    )
+      return;
     event.preventDefault();
     if (canSend) onSubmit();
   };
@@ -57,7 +62,12 @@ export function AssistantComposer({
         />
         <span className={styles.action}>
           {isStreaming ? (
-            <IconButton label="Stop" variant="surface" size="md" onClick={onStop}>
+            <IconButton
+              label="Stop"
+              variant="surface"
+              size="md"
+              onClick={onStop}
+            >
               <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <rect x="4" y="4" width="8" height="8" rx="1.5" />
               </svg>

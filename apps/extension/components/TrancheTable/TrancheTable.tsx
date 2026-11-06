@@ -1,4 +1,4 @@
-import styles from './TrancheTable.module.scss';
+import styles from "./TrancheTable.module.scss";
 
 export interface TrancheTableRow {
   id: string;
@@ -35,7 +35,9 @@ export function TrancheTable({ rows }: TrancheTableProps) {
                 {row.title}
               </th>
               <td className={styles.amount}>
-                {row.total ?? <span className={styles.missing}>Not stated</span>}
+                {row.total ?? (
+                  <span className={styles.missing}>Not stated</span>
+                )}
               </td>
             </tr>
           ))}

@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import clsx from "clsx";
 import {
   type KeyboardEvent,
   type ToggleEvent,
@@ -7,8 +7,8 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import styles from './Select.module.scss';
+} from "react";
+import styles from "./Select.module.scss";
 
 export interface SelectOption<T extends string> {
   value: T;
@@ -22,7 +22,9 @@ interface SelectBaseProps<T extends string> {
   className?: string | undefined;
 }
 
-export interface SingleSelectProps<T extends string> extends SelectBaseProps<T> {
+export interface SingleSelectProps<
+  T extends string,
+> extends SelectBaseProps<T> {
   multiple?: false;
   value: T;
   onChange: (next: T) => void;
@@ -34,7 +36,8 @@ export interface MultiSelectProps<T extends string> extends SelectBaseProps<T> {
   onValuesChange: (next: T[]) => void;
 }
 
-export type SelectProps<T extends string> = SingleSelectProps<T> | MultiSelectProps<T>;
+export type SelectProps<T extends string> =
+  SingleSelectProps<T> | MultiSelectProps<T>;
 
 interface Column<T extends string> {
   group: string | undefined;
@@ -59,7 +62,8 @@ export function Select<T extends string>(props: SelectProps<T>) {
     const out: Column<T>[] = [];
     options.forEach((option, index) => {
       const last = out[out.length - 1];
-      if (last && last.group === option.group) last.items.push({ option, index });
+      if (last && last.group === option.group)
+        last.items.push({ option, index });
       else out.push({ group: option.group, items: [{ option, index }] });
     });
     return out;
@@ -68,7 +72,7 @@ export function Select<T extends string>(props: SelectProps<T>) {
 
   useEffect(() => {
     const element = panel.current;
-    if (!element || element.matches(':popover-open') === open) return;
+    if (!element || element.matches(":popover-open") === open) return;
     if (open) {
       setActive(firstPicked);
       element.showPopover();
@@ -79,7 +83,7 @@ export function Select<T extends string>(props: SelectProps<T>) {
   }, [open, firstPicked]);
 
   const handleToggle = (event: ToggleEvent<HTMLDivElement>): void => {
-    const next = event.newState === 'open';
+    const next = event.newState === "open";
     setOpen(next);
     if (!next) trigger.current?.focus();
   };
@@ -100,7 +104,7 @@ export function Select<T extends string>(props: SelectProps<T>) {
   };
 
   const handleTriggerKey = (event: KeyboardEvent<HTMLButtonElement>): void => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       setOpen(true);
     }
@@ -114,15 +118,20 @@ export function Select<T extends string>(props: SelectProps<T>) {
       Home: 0,
       End: last,
     };
-    const sideways = isColumns && (event.key === 'ArrowRight' || event.key === 'ArrowLeft');
+    const sideways =
+      isColumns && (event.key === "ArrowRight" || event.key === "ArrowLeft");
     if (sideways) {
       const from = columns.findIndex((column) =>
         column.items.some((item) => item.index === active),
       );
-      const row = columns[from]?.items.findIndex((item) => item.index === active) ?? 0;
+      const row =
+        columns[from]?.items.findIndex((item) => item.index === active) ?? 0;
       const to =
         columns[
-          Math.min(Math.max(from + (event.key === 'ArrowRight' ? 1 : -1), 0), columns.length - 1)
+          Math.min(
+            Math.max(from + (event.key === "ArrowRight" ? 1 : -1), 0),
+            columns.length - 1,
+          )
         ];
       const target = to?.items[Math.min(row, to.items.length - 1)];
       event.preventDefault();
@@ -133,10 +142,10 @@ export function Select<T extends string>(props: SelectProps<T>) {
     if (move !== undefined) {
       event.preventDefault();
       setActive(move);
-    } else if (event.key === 'Enter' || event.key === ' ') {
+    } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       choose(active);
-    } else if (event.key === 'Tab') {
+    } else if (event.key === "Tab") {
       setOpen(false);
     }
   };
@@ -204,7 +213,7 @@ export function Select<T extends string>(props: SelectProps<T>) {
         >
           {columns.map((column) => (
             <fieldset
-              key={column.group ?? 'all'}
+              key={column.group ?? "all"}
               className={styles.column}
               aria-label={column.group ?? label}
             >
@@ -221,7 +230,10 @@ export function Select<T extends string>(props: SelectProps<T>) {
                   id={`${id}-option-${index}`}
                   role="option"
                   aria-selected={picked.includes(option.value)}
-                  className={clsx(styles.option, index === active && styles.isActive)}
+                  className={clsx(
+                    styles.option,
+                    index === active && styles.isActive,
+                  )}
                   onPointerMove={() => setActive(index)}
                   onClick={() => choose(index)}
                 >

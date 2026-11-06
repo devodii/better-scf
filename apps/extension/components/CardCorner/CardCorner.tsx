@@ -1,10 +1,10 @@
-import clsx from 'clsx';
-import type { Stance } from 'shared';
-import { IconButton } from '../IconButton';
-import { Tooltip } from '../Tooltip';
-import styles from './CardCorner.module.scss';
+import clsx from "clsx";
+import type { Stance } from "shared";
+import { IconButton } from "../IconButton";
+import { Tooltip } from "../Tooltip";
+import styles from "./CardCorner.module.scss";
 
-export type CardDot = 'unread' | 'opened';
+export type CardDot = "unread" | "opened";
 
 export interface CardCornerProps {
   dot?: CardDot | null | undefined;
@@ -16,46 +16,56 @@ export interface CardCornerProps {
   onFitChange?: ((next: boolean) => void) | undefined;
 }
 
-const STANCE_ORDER: readonly Stance[] = ['none', 'support', 'unsure', 'against'];
+const STANCE_ORDER: readonly Stance[] = [
+  "none",
+  "support",
+  "unsure",
+  "against",
+];
 
 const STANCE_LABEL: Record<Stance, string> = {
-  none: 'No stance',
-  support: 'Support',
-  unsure: 'Unsure',
-  against: 'Against',
+  none: "No stance",
+  support: "Support",
+  unsure: "Unsure",
+  against: "Against",
 };
 
 const STANCE_GLYPH: Record<Stance, string | null> = {
   none: null,
-  support: 'M4 8.5l3 3 5-6',
-  unsure: 'M4.5 8h7',
-  against: 'M4.5 4.5l7 7M11.5 4.5l-7 7',
+  support: "M4 8.5l3 3 5-6",
+  unsure: "M4.5 8h7",
+  against: "M4.5 4.5l7 7M11.5 4.5l-7 7",
 };
 
 function nextStance(stance: Stance): Stance {
   const index = STANCE_ORDER.indexOf(stance);
-  return STANCE_ORDER[(index + 1) % STANCE_ORDER.length] ?? 'none';
+  return STANCE_ORDER[(index + 1) % STANCE_ORDER.length] ?? "none";
 }
 
 export function CardCorner({
   dot,
   shortlisted = false,
   onShortlistChange,
-  stance = 'none',
+  stance = "none",
   onStanceChange,
   isFit = false,
   onFitChange,
 }: CardCornerProps) {
   const glyph = STANCE_GLYPH[stance];
-  const dotLabel = dot === 'opened' ? 'Opened' : 'Not opened yet';
+  const dotLabel = dot === "opened" ? "Opened" : "Not opened yet";
 
-  if (!dot && !onShortlistChange && !onStanceChange && !onFitChange) return null;
+  if (!dot && !onShortlistChange && !onStanceChange && !onFitChange)
+    return null;
 
   return (
     <div className={styles.root}>
       {dot && (
         <Tooltip content={dotLabel}>
-          <span className={clsx(styles.dot, styles[dot])} role="img" aria-label={dotLabel} />
+          <span
+            className={clsx(styles.dot, styles[dot])}
+            role="img"
+            aria-label={dotLabel}
+          />
         </Tooltip>
       )}
       {onFitChange && (
@@ -83,7 +93,11 @@ export function CardCorner({
         <Tooltip content={STANCE_LABEL[stance]}>
           <button
             type="button"
-            className={clsx(styles.pip, styles.action, stance === 'none' && styles.reveal)}
+            className={clsx(
+              styles.pip,
+              styles.action,
+              stance === "none" && styles.reveal,
+            )}
             aria-label={`Stance: ${STANCE_LABEL[stance]}. Change stance`}
             onClick={() => onStanceChange(nextStance(stance))}
           >
@@ -106,7 +120,9 @@ export function CardCorner({
         </Tooltip>
       )}
       {onShortlistChange && (
-        <Tooltip content={shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}>
+        <Tooltip
+          content={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
+        >
           <IconButton
             label="Shortlist"
             size="md"
@@ -116,7 +132,7 @@ export function CardCorner({
           >
             <svg
               viewBox="0 0 16 16"
-              fill={shortlisted ? 'currentColor' : 'none'}
+              fill={shortlisted ? "currentColor" : "none"}
               stroke="currentColor"
               strokeWidth="1.25"
               strokeLinejoin="round"

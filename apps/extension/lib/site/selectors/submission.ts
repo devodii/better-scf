@@ -1,16 +1,16 @@
 export const SUBMISSION_SELECTORS = {
-  title: 'h2',
-  sectionHeading: 'h4',
-  blocks: 'p, li, h1, h2, h3, h4, h5, h6, pre, blockquote',
-  link: 'a[href]',
+  title: "h2",
+  sectionHeading: "h4",
+  blocks: "p, li, h1, h2, h3, h4, h5, h6, pre, blockquote",
+  link: "a[href]",
   githubIcon: 'img[alt="github-icon"]',
-  teamCard: '.swiper-slide',
-  teamName: 'p',
-  paragraph: 'p',
-  button: 'button',
-  video: 'iframe[src]',
+  teamCard: ".swiper-slide",
+  teamName: "p",
+  paragraph: "p",
+  button: "button",
+  video: "iframe[src]",
   projectLink: 'a[href^="/dashboard/projects/"]',
-  leafDiv: 'div',
+  leafDiv: "div",
 } as const;
 
 export const SUBMISSION_TEXT = {

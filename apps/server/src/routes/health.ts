@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono } from "hono";
 
 export interface HealthInfo {
   version: string;
@@ -6,5 +6,7 @@ export interface HealthInfo {
 }
 
 export function createHealthRoute(info: HealthInfo) {
-  return new Hono().get('/', (c) => c.json({ ok: true, version: info.version, model: info.model }));
+  return new Hono().get("/", (c) =>
+    c.json({ ok: true, version: info.version, model: info.model }),
+  );
 }

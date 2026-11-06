@@ -1,4 +1,4 @@
-import type { StoreKey } from 'idb';
+import type { StoreKey } from "idb";
 import {
   type ChatMessage,
   chatMessageSchema,
@@ -15,8 +15,8 @@ import {
   roundSchema,
   type Submission,
   submissionSchema,
-} from 'shared';
-import type { z } from 'zod';
+} from "shared";
+import type { z } from "zod";
 import {
   type AvatarRecord,
   avatarRecordSchema,
@@ -32,7 +32,7 @@ import {
   STORE_NAMES,
   type StoreName,
   TTL_MS,
-} from './schema';
+} from "./schema";
 
 export interface Cached<T> {
   value: T;
@@ -81,9 +81,9 @@ export interface Repo {
 function defaultReview(submissionId: string): ReviewState {
   return {
     submissionId,
-    stance: 'none',
+    stance: "none",
     shortlisted: false,
-    note: '',
+    note: "",
     lastOpenedAt: null,
     openedCount: 0,
   };
@@ -117,41 +117,48 @@ function createRepo(db: Db): Repo {
   }
 
   const clearStores = async (stores: readonly StoreName[]): Promise<void> => {
-    const tx = db.transaction([...stores], 'readwrite');
-    await Promise.all([...stores.map((store) => tx.objectStore(store).clear()), tx.done]);
+    const tx = db.transaction([...stores], "readwrite");
+    await Promise.all([
+      ...stores.map((store) => tx.objectStore(store).clear()),
+      tx.done,
+    ]);
   };
 
   return {
     async getSubmission(id) {
-      const value = await readOne('submissions', id, submissionSchema);
+      const value = await readOne("submissions", id, submissionSchema);
       return value && toCached(value, value.fetchedAt, TTL_MS.submissions);
     },
     async putSubmissions(submissions) {
-      const tx = db.transaction('submissions', 'readwrite');
+      const tx = db.transaction("submissions", "readwrite");
       await Promise.all([...submissions.map((s) => tx.store.put(s)), tx.done]);
     },
     async listSubmissionsByRound(roundId) {
-      const rows = await db.getAllFromIndex('submissions', 'roundId', roundId);
+      const rows = await db.getAllFromIndex("submissions", "roundId", roundId);
       return parseAll(rows, submissionSchema).map((s) =>
         toCached(s, s.fetchedAt, TTL_MS.submissions),
       );
     },
     async listSubmissionsByProject(projectId) {
-      const rows = await db.getAllFromIndex('submissions', 'projectId', projectId);
+      const rows = await db.getAllFromIndex(
+        "submissions",
+        "projectId",
+        projectId,
+      );
       return parseAll(rows, submissionSchema).map((s) =>
         toCached(s, s.fetchedAt, TTL_MS.submissions),
       );
     },
 
     async getProject(id) {
-      const value = await readOne('projects', id, projectSchema);
+      const value = await readOne("projects", id, projectSchema);
       return value && toCached(value, value.fetchedAt, TTL_MS.projects);
     },
     async putProject(project) {
-      await db.put('projects', project);
+      await db.put("projects", project);
     },
     async mergeProject(project) {
-      const tx = db.transaction('projects', 'readwrite');
+      const tx = db.transaction("projects", "readwrite");
       const raw: unknown = await tx.store.get(project.id);
       const parsed = raw === undefined ? null : parseWith(projectSchema, raw);
       const known = parsed?.ok ? parsed.data.submissionIds : [];
@@ -164,24 +171,26 @@ function createRepo(db: Db): Repo {
     },
 
     async getRound(id) {
-      const value = await readOne('rounds', id, roundSchema);
+      const value = await readOne("rounds", id, roundSchema);
       return value && toCached(value, value.fetchedAt, TTL_MS.rounds);
     },
     async putRound(round) {
-      await db.put('rounds', round);
+      await db.put("rounds", round);
     },
 
-    getReview: (submissionId) => readOne('review', submissionId, reviewStateSchema),
+    getReview: (submissionId) =>
+      readOne("review", submissionId, reviewStateSchema),
     async putReview(review) {
-      await db.put('review', review);
+      await db.put("review", review);
     },
     async listReviews() {
-      return parseAll(await db.getAll('review'), reviewStateSchema);
+      return parseAll(await db.getAll("review"), reviewStateSchema);
     },
     async markOpened(submissionId) {
-      const tx = db.transaction('review', 'readwrite');
+      const tx = db.transaction("review", "readwrite");
       const raw: unknown = await tx.store.get(submissionId);
-      const parsed = raw === undefined ? null : parseWith(reviewStateSchema, raw);
+      const parsed =
+        raw === undefined ? null : parseWith(reviewStateSchema, raw);
       const current = parsed?.ok ? parsed.data : defaultReview(submissionId);
       const next: ReviewState = {
         ...current,
@@ -193,53 +202,65 @@ function createRepo(db: Db): Repo {
     },
 
     async getNavState(routeKey) {
-      const state = await readOne('navstate', routeKey, navStateSchema);
+      const state = await readOne("navstate", routeKey, navStateSchema);
       if (!state) return null;
       if (isStale(state.ts, TTL_MS.navstate, now())) {
-        await db.delete('navstate', routeKey);
+        await db.delete("navstate", routeKey);
         return null;
       }
       return state;
     },
     async putNavState(state) {
-      await db.put('navstate', state);
+      await db.put("navstate", state);
     },
 
     async listChat(submissionId) {
-      const rows = await db.getAllFromIndex('chat', 'submissionId', submissionId);
-      return parseAll(rows, chatMessageSchema).sort((a, b) => a.createdAt - b.createdAt);
+      const rows = await db.getAllFromIndex(
+        "chat",
+        "submissionId",
+        submissionId,
+      );
+      return parseAll(rows, chatMessageSchema).sort(
+        (a, b) => a.createdAt - b.createdAt,
+      );
     },
     async putChatMessage(message) {
-      await db.put('chat', message);
+      await db.put("chat", message);
     },
     async clearChat(submissionId) {
-      const tx = db.transaction('chat', 'readwrite');
-      const keys = await tx.store.index('submissionId').getAllKeys(submissionId);
+      const tx = db.transaction("chat", "readwrite");
+      const keys = await tx.store
+        .index("submissionId")
+        .getAllKeys(submissionId);
       await Promise.all([...keys.map((key) => tx.store.delete(key)), tx.done]);
     },
 
     async getHorizon(accountId) {
-      const value = await readOne('horizon', accountId, horizonSummarySchema);
+      const value = await readOne("horizon", accountId, horizonSummarySchema);
       return value && toCached(value, value.fetchedAt, TTL_MS.horizon);
     },
     async putHorizon(summary) {
-      await db.put('horizon', summary);
+      await db.put("horizon", summary);
     },
 
     async getAvatar(handleKey) {
-      const value = await readOne('avatars', handleKey, avatarRecordSchema);
+      const value = await readOne("avatars", handleKey, avatarRecordSchema);
       return value && toCached(value, value.fetchedAt, TTL_MS.avatars);
     },
     async putAvatar(avatar) {
-      await db.put('avatars', avatar);
+      await db.put("avatars", avatar);
     },
 
     async getProjectIndex() {
-      const value = await readOne('projectIndex', PROJECT_INDEX_KEY, projectIndexRecordSchema);
+      const value = await readOne(
+        "projectIndex",
+        PROJECT_INDEX_KEY,
+        projectIndexRecordSchema,
+      );
       return value && toCached(value, value.fetchedAt, TTL_MS.projectIndex);
     },
     async putProjectIndex(index) {
-      await db.put('projectIndex', index);
+      await db.put("projectIndex", index);
     },
 
     clearCache: () => clearStores(CACHE_STORE_NAMES),
@@ -279,12 +300,16 @@ export interface RevalidateResult<T> {
   refresh: Promise<T | null> | null;
 }
 
-export type Revalidate = <T>(options: RevalidateOptions<T>) => Promise<RevalidateResult<T>>;
+export type Revalidate = <T>(
+  options: RevalidateOptions<T>,
+) => Promise<RevalidateResult<T>>;
 
 export function createRevalidator(): Revalidate {
   const inFlight = new Map<string, Promise<unknown>>();
 
-  return async function revalidate<T>(options: RevalidateOptions<T>): Promise<RevalidateResult<T>> {
+  return async function revalidate<T>(
+    options: RevalidateOptions<T>,
+  ): Promise<RevalidateResult<T>> {
     const cached = await options.read();
     if (cached && !cached.stale) return { value: cached.value, refresh: null };
 
@@ -355,7 +380,8 @@ export function createMirror(ttl?: MirrorTtl): Mirror<unknown> {
     },
     readThrough(key, load) {
       const hit = values.get(key);
-      if (hit !== undefined && !isStaleHit(hit)) return Promise.resolve(view(hit));
+      if (hit !== undefined && !isStaleHit(hit))
+        return Promise.resolve(view(hit));
       const pending = loading.get(key);
       if (pending) return pending;
       const started = load()

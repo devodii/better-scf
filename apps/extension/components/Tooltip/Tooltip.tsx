@@ -1,17 +1,29 @@
-import clsx from 'clsx';
-import { cloneElement, type ReactElement, type ReactNode, useEffect, useId, useRef } from 'react';
-import styles from './Tooltip.module.scss';
+import clsx from "clsx";
+import {
+  cloneElement,
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
+import styles from "./Tooltip.module.scss";
 
-export type TooltipPlacement = 'top' | 'bottom';
+export type TooltipPlacement = "top" | "bottom";
 
 export interface TooltipProps {
   content: ReactNode;
-  children: ReactElement<{ 'aria-describedby'?: string | undefined }>;
+  children: ReactElement<{ "aria-describedby"?: string | undefined }>;
   placement?: TooltipPlacement;
   isOpen?: boolean;
 }
 
-export function Tooltip({ content, children, placement = 'top', isOpen = false }: TooltipProps) {
+export function Tooltip({
+  content,
+  children,
+  placement = "top",
+  isOpen = false,
+}: TooltipProps) {
   const id = useId();
   const anchor = `--bscf-tooltip${id}`;
   const bubble = useRef<HTMLSpanElement>(null);
@@ -38,13 +50,13 @@ export function Tooltip({ content, children, placement = 'top', isOpen = false }
         onFocus={handleShow}
         onBlur={handleHide}
       >
-        {cloneElement(children, { 'aria-describedby': id })}
+        {cloneElement(children, { "aria-describedby": id })}
       </span>
       <span
         ref={bubble}
         id={id}
         role="tooltip"
-        popover={isOpen ? 'manual' : 'hint'}
+        popover={isOpen ? "manual" : "hint"}
         className={clsx(styles.bubble, styles[placement])}
         style={{ positionAnchor: anchor }}
       >

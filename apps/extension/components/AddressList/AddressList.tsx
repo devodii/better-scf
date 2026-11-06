@@ -1,6 +1,6 @@
-import clsx from 'clsx';
-import type { AddressKind } from '../AddressPopover';
-import styles from './AddressList.module.scss';
+import clsx from "clsx";
+import type { AddressKind } from "../AddressPopover";
+import styles from "./AddressList.module.scss";
 
 export interface AddressListItem {
   address: string;
@@ -33,10 +33,13 @@ export function AddressList({
   return (
     <ul
       aria-label="Stellar addresses in this proposal"
-      className={clsx(styles.root, isRevealed ? styles.revealed : styles.hidden)}
+      className={clsx(
+        styles.root,
+        isRevealed ? styles.revealed : styles.hidden,
+      )}
     >
       {items.map((item) => {
-        const label = item.kind === 'account' ? 'Account' : 'Contract';
+        const label = item.kind === "account" ? "Account" : "Contract";
         return (
           <li key={item.address}>
             <a
@@ -45,7 +48,9 @@ export function AddressList({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${label} ${item.address}, opens stellar.expert in a new tab`}
-              aria-describedby={item.address === activeAddress ? describedBy : undefined}
+              aria-describedby={
+                item.address === activeAddress ? describedBy : undefined
+              }
               onFocus={() => onActivate?.(item.address)}
               onBlur={onDeactivate}
             >

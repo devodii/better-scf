@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { AvatarStack } from '../AvatarStack';
-import { Chip } from '../Chip';
-import { IconButton } from '../IconButton';
-import { Toggle } from '../Toggle';
-import { Tooltip } from '../Tooltip';
-import { Popover } from './Popover';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AvatarStack } from "../AvatarStack";
+import { Chip } from "../Chip";
+import { IconButton } from "../IconButton";
+import { Toggle } from "../Toggle";
+import { Tooltip } from "../Tooltip";
+import { Popover } from "./Popover";
 
 function ShadowFrame({ children }: { children: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -14,7 +14,7 @@ function ShadowFrame({ children }: { children: ReactNode }) {
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+    const root = host.shadowRoot ?? host.attachShadow({ mode: "open" });
     const css = Array.from(document.styleSheets)
       .flatMap((sheet) => {
         try {
@@ -23,10 +23,10 @@ function ShadowFrame({ children }: { children: ReactNode }) {
           return [];
         }
       })
-      .join('\n');
+      .join("\n");
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(
-      `:host{all:initial !important}:host{color-scheme:dark !important}${css.replaceAll(':root', ':host')}`,
+      `:host{all:initial !important}:host{color-scheme:dark !important}${css.replaceAll(":root", ":host")}`,
     );
     root.adoptedStyleSheets = [sheet];
     setShadow(root);
@@ -38,17 +38,24 @@ function ShadowFrame({ children }: { children: ReactNode }) {
   );
 }
 
-const meta = { title: 'UI/ShadowCheck' } satisfies Meta;
+const meta = { title: "UI/ShadowCheck" } satisfies Meta;
 export default meta;
 
 export const InShadowRoot: StoryObj = {
   render: () => (
     <ShadowFrame>
-      <div style={{ display: 'grid', gap: '1rem', padding: '4rem 10rem 9rem', width: '24rem' }}>
+      <div
+        style={{
+          display: "grid",
+          gap: "1rem",
+          padding: "4rem 10rem 9rem",
+          width: "24rem",
+        }}
+      >
         <Tooltip content="From the on-chain metric section" isOpen>
           <Chip variant="purple">Integration</Chip>
         </Tooltip>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
           <Chip variant="olive">Open</Chip>
           <Chip variant="yellow">RFP</Chip>
           <Chip variant="muted">12 comments</Chip>
@@ -56,14 +63,18 @@ export const InShadowRoot: StoryObj = {
         <AvatarStack
           size="md"
           people={[
-            { name: 'Ada Lovelace' },
-            { name: 'Grace Hopper' },
-            { name: 'Alan Turing' },
-            { name: 'Katherine Johnson' },
-            { name: 'Edsger Dijkstra' },
+            { name: "Ada Lovelace" },
+            { name: "Grace Hopper" },
+            { name: "Alan Turing" },
+            { name: "Katherine Johnson" },
+            { name: "Edsger Dijkstra" },
           ]}
         />
-        <Toggle label="Track chips on cards" checked onChange={() => undefined} />
+        <Toggle
+          label="Track chips on cards"
+          checked
+          onChange={() => undefined}
+        />
         <Popover
           label="Note"
           isOpen

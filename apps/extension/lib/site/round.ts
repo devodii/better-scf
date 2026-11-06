@@ -1,7 +1,7 @@
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { parseWith, type Round, submissionSchema } from 'shared';
-import { z } from 'zod';
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { parseWith, type Round, submissionSchema } from "shared";
+import { z } from "zod";
 import {
   AWARDED_HEADING_TEXT,
   CARD_BUDGET,
@@ -28,22 +28,25 @@ import {
   SECTION_MAX_DEPTH,
   SEE_ALL_TEXT,
   TOGGLE_BUTTON,
-} from './selectors/round';
+} from "./selectors/round";
 
 dayjs.extend(customParseFormat);
 
 const MAX_OBJECT_CHARS = 32768;
 
 function toNumber(value: unknown): number | null {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value !== 'string' || value.trim() === '') return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string" || value.trim() === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 const nullableString = z.string().nullable().catch(null);
 const nullableBoolean = z
-  .union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')])
+  .union([
+    z.boolean(),
+    z.enum(["true", "false"]).transform((v) => v === "true"),
+  ])
   .nullable()
   .catch(null);
 
@@ -73,9 +76,9 @@ export interface RoundPayload {
   submissions: SubmissionSummary[];
 }
 
-export type RoundPhase = Round['phases'][number] & { dates: string };
+export type RoundPhase = Round["phases"][number] & { dates: string };
 
-export type RoundView = 'carousel' | 'grid';
+export type RoundView = "carousel" | "grid";
 
 export interface RoundCardFacts {
   team: string | null;
@@ -106,10 +109,10 @@ function debug(selector: string): void {
 }
 
 const norm = (text: string | null | undefined): string =>
-  (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+  (text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function readInlineScripts(root: ParentNode): string[] {
@@ -129,16 +132,22 @@ export function decodeFlight(scripts: readonly string[]): string {
   const chunks: string[] = [];
   for (const text of scripts) {
     const start = text.indexOf(FLIGHT_PUSH_PREFIX);
-    const end = text.lastIndexOf(')');
+    const end = text.lastIndexOf(")");
     if (start < 0 || end <= start) continue;
     try {
-      const entry: unknown = JSON.parse(text.slice(start + FLIGHT_PUSH_PREFIX.length, end));
-      if (Array.isArray(entry) && entry[0] === 1 && typeof entry[1] === 'string') {
+      const entry: unknown = JSON.parse(
+        text.slice(start + FLIGHT_PUSH_PREFIX.length, end),
+      );
+      if (
+        Array.isArray(entry) &&
+        entry[0] === 1 &&
+        typeof entry[1] === "string"
+      ) {
         chunks.push(entry[1]);
       }
     } catch {}
   }
-  return chunks.join('');
+  return chunks.join("");
 }
 
 export function sliceObject(text: string, start: number): string | null {
@@ -174,7 +183,7 @@ function readRoundName(stream: string, roundId: string): string | null {
   if (start < 0) return null;
   const raw = sliceObject(stream, start);
   const round = raw ? parseObject(raw) : null;
-  return typeof round?.name === 'string' ? round.name : null;
+  return typeof round?.name === "string" ? round.name : null;
 }
 
 function toSummary(raw: string): SubmissionSummary | null {
@@ -206,14 +215,15 @@ export function parseRoundPayload(
     const submissions: SubmissionSummary[] = [];
     for (const match of stream.matchAll(FLIGHT_RECORD_START)) {
       const raw = sliceObject(stream, match.index);
-      if (!raw?.includes('"roundName":') || raw.includes('"accessToken"')) continue;
+      if (!raw?.includes('"roundName":') || raw.includes('"accessToken"'))
+        continue;
       const summary = toSummary(raw);
       if (!summary || seen.has(summary.id)) continue;
       if (roundName !== null && summary.roundName !== roundName) continue;
       seen.add(summary.id);
       submissions.push(summary);
     }
-    if (submissions.length === 0) debug('flightRecords');
+    if (submissions.length === 0) debug("flightRecords");
     return { roundName, submissions };
   } catch {
     return { roundName: null, submissions: [] };
@@ -226,14 +236,16 @@ function parseDay(text: string | undefined): dayjs.Dayjs | null {
   return day.isValid() ? day : null;
 }
 
-function parsePhaseDates(text: string): Pick<RoundPhase, 'startsAt' | 'endsAt'> {
+function parsePhaseDates(
+  text: string,
+): Pick<RoundPhase, "startsAt" | "endsAt"> {
   try {
     const parts = text.trim().split(PHASE_RANGE_SEPARATOR);
     const start = parseDay(parts[0]?.trim());
     const end = parts.length > 1 ? parseDay(parts[1]?.trim()) : start;
     return {
-      startsAt: start ? start.startOf('day').valueOf() : null,
-      endsAt: end ? end.endOf('day').valueOf() : null,
+      startsAt: start ? start.startOf("day").valueOf() : null,
+      endsAt: end ? end.endOf("day").valueOf() : null,
     };
   } catch {
     return { startsAt: null, endsAt: null };
@@ -242,10 +254,12 @@ function parsePhaseDates(text: string): Pick<RoundPhase, 'startsAt' | 'endsAt'> 
 
 export function findPhaseTable(root: ParentNode): Element | null {
   for (const table of root.querySelectorAll(PHASE_TABLE)) {
-    const headers = Array.from(table.querySelectorAll(PHASE_HEADER_CELL), (th) =>
-      norm(th.textContent),
+    const headers = Array.from(
+      table.querySelectorAll(PHASE_HEADER_CELL),
+      (th) => norm(th.textContent),
     );
-    if (PHASE_HEADER_TEXTS.every((text) => headers.includes(text))) return table;
+    if (PHASE_HEADER_TEXTS.every((text) => headers.includes(text)))
+      return table;
   }
   return null;
 }
@@ -254,7 +268,7 @@ export function readRoundPhases(root: ParentNode): RoundPhase[] {
   try {
     const table = findPhaseTable(root);
     if (!table) {
-      debug('phaseTable');
+      debug("phaseTable");
       return [];
     }
     const phases: RoundPhase[] = [];
@@ -262,7 +276,7 @@ export function readRoundPhases(root: ParentNode): RoundPhase[] {
       const cells = row.querySelectorAll(PHASE_CELL);
       const name = cells[0]?.textContent?.trim();
       if (!name) continue;
-      const dates = cells[1]?.textContent?.trim() ?? '';
+      const dates = cells[1]?.textContent?.trim() ?? "";
       phases.push({ name, dates, ...parsePhaseDates(dates) });
     }
     return phases;
@@ -284,19 +298,21 @@ function sectionOf(heading: Element): Element {
 export function findReceivedSection(root: ParentNode): Element | null {
   try {
     for (const heading of root.querySelectorAll(SECTION_HEADING)) {
-      if (norm(heading.textContent) === RECEIVED_HEADING_TEXT) return sectionOf(heading);
+      if (norm(heading.textContent) === RECEIVED_HEADING_TEXT)
+        return sectionOf(heading);
     }
   } catch {
     return null;
   }
-  debug('receivedSection');
+  debug("receivedSection");
   return null;
 }
 
 export function findAwardedSection(root: ParentNode): Element | null {
   try {
     for (const heading of root.querySelectorAll(SECTION_HEADING)) {
-      if (norm(heading.textContent) === AWARDED_HEADING_TEXT) return sectionOf(heading);
+      if (norm(heading.textContent) === AWARDED_HEADING_TEXT)
+        return sectionOf(heading);
     }
   } catch {
     return null;
@@ -321,13 +337,13 @@ export function readRoundView(section: Element): RoundView | null {
   try {
     for (const button of section.querySelectorAll(TOGGLE_BUTTON)) {
       const text = norm(button.textContent);
-      if (text === SEE_ALL_TEXT) return 'carousel';
-      if (text === HIDE_TEXT) return 'grid';
+      if (text === SEE_ALL_TEXT) return "carousel";
+      if (text === HIDE_TEXT) return "grid";
     }
   } catch {
     return null;
   }
-  debug('viewToggle');
+  debug("viewToggle");
   return null;
 }
 
@@ -362,48 +378,65 @@ export function findRoundCards(section: Element): Element[] {
   } catch {
     return [];
   }
-  if (cards.length === 0) debug('roundCards');
+  if (cards.length === 0) debug("roundCards");
   return cards;
 }
 
-function parseCardBudget(text: string): { value: number; tolerance: number } | null {
+function parseCardBudget(
+  text: string,
+): { value: number; tolerance: number } | null {
   const match = CARD_BUDGET.exec(text);
-  const amount = match?.[1] ? Number(match[1].replace(/,/g, '')) : Number.NaN;
+  const amount = match?.[1] ? Number(match[1].replace(/,/g, "")) : Number.NaN;
   if (!Number.isFinite(amount)) return null;
   const unit = match?.[2]?.toUpperCase();
-  const scale = unit === 'M' ? 1_000_000 : unit === 'K' ? 1000 : 1;
-  const decimals = match?.[1]?.split('.')[1]?.length ?? 0;
-  return { value: amount * scale, tolerance: (scale * 10 ** -decimals) / 2 + 1e-6 };
+  const scale = unit === "M" ? 1_000_000 : unit === "K" ? 1000 : 1;
+  const decimals = match?.[1]?.split(".")[1]?.length ?? 0;
+  return {
+    value: amount * scale,
+    tolerance: (scale * 10 ** -decimals) / 2 + 1e-6,
+  };
 }
 
 export function readRoundCard(card: Element): RoundCardFacts | null {
   try {
     const byline = findByline(card);
     if (!byline) return null;
-    const team = byline.textContent?.trim().slice(CARD_BYLINE_PREFIX.length).trim() || null;
+    const team =
+      byline.textContent?.trim().slice(CARD_BYLINE_PREFIX.length).trim() ||
+      null;
     const titleNode = byline.nextElementSibling;
-    const title = titleNode?.tagName === 'P' ? titleNode.textContent?.trim() || null : null;
+    const title =
+      titleNode?.tagName === "P" ? titleNode.textContent?.trim() || null : null;
     const chips: string[] = [];
-    for (const chip of byline.parentElement?.querySelectorAll(CARD_CHIP) ?? []) {
+    for (const chip of byline.parentElement?.querySelectorAll(CARD_CHIP) ??
+      []) {
       if (chip.childElementCount > 0) continue;
       const text = chip.textContent?.trim();
       if (text) chips.push(text);
     }
     const budgetText = chips.find((chip) => CARD_BUDGET.test(chip)) ?? null;
-    const budget = budgetText ? (parseCardBudget(budgetText)?.value ?? null) : null;
+    const budget = budgetText
+      ? (parseCardBudget(budgetText)?.value ?? null)
+      : null;
     return { team, title, budgetText, budget, chips };
   } catch {
     return null;
   }
 }
 
-function addTo(index: Map<string, SubmissionSummary[]>, key: string, record: SubmissionSummary) {
+function addTo(
+  index: Map<string, SubmissionSummary[]>,
+  key: string,
+  record: SubmissionSummary,
+) {
   const list = index.get(key);
   if (list) list.push(record);
   else index.set(key, [record]);
 }
 
-export function createCardMatcher(records: readonly SubmissionSummary[]): CardMatcher {
+export function createCardMatcher(
+  records: readonly SubmissionSummary[],
+): CardMatcher {
   const byTitle = new Map<string, SubmissionSummary[]>();
   const byTeam = new Map<string, SubmissionSummary[]>();
   for (const record of records) {
@@ -413,7 +446,7 @@ export function createCardMatcher(records: readonly SubmissionSummary[]): CardMa
   return (card) => {
     const facts = readRoundCard(card);
     if (!facts) {
-      debug('cardByline');
+      debug("cardByline");
       return null;
     }
     const team = facts.team ? norm(facts.team) : null;
@@ -421,12 +454,15 @@ export function createCardMatcher(records: readonly SubmissionSummary[]): CardMa
     const fits = (record: SubmissionSummary): boolean =>
       (team === null || norm(record.projectName) === team) &&
       (budget === null ||
-        (record.budget !== null && Math.abs(record.budget - budget.value) <= budget.tolerance));
-    const byTitleMatch = facts.title ? byTitle.get(norm(facts.title))?.find(fits) : undefined;
+        (record.budget !== null &&
+          Math.abs(record.budget - budget.value) <= budget.tolerance));
+    const byTitleMatch = facts.title
+      ? byTitle.get(norm(facts.title))?.find(fits)
+      : undefined;
     if (byTitleMatch) return byTitleMatch;
     const byTeamMatches = team ? (byTeam.get(team)?.filter(fits) ?? []) : [];
     if (byTeamMatches.length === 1 && byTeamMatches[0]) return byTeamMatches[0];
-    debug('cardRecord');
+    debug("cardRecord");
     return null;
   };
 }
@@ -444,17 +480,23 @@ export function mapRoundCards(
   return matches;
 }
 
-export function readSiteSubmissionCount(roundName: string | null): number | null {
+export function readSiteSubmissionCount(
+  roundName: string | null,
+): number | null {
   if (!roundName) return null;
   try {
-    const flight = Array.from(document.scripts, (script) => script.textContent ?? '')
-      .filter((text) => text.includes('__next_f'))
-      .join('\n')
+    const flight = Array.from(
+      document.scripts,
+      (script) => script.textContent ?? "",
+    )
+      .filter((text) => text.includes("__next_f"))
+      .join("\n")
       .replaceAll('\\"', '"');
-    const escaped = roundName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const found = new RegExp(`"name":"${escaped}".{0,8000}?"submissionsCount":(\\d+)`, 's').exec(
-      flight,
-    );
+    const escaped = roundName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const found = new RegExp(
+      `"name":"${escaped}".{0,8000}?"submissionsCount":(\\d+)`,
+      "s",
+    ).exec(flight);
     return found?.[1] ? Number(found[1]) : null;
   } catch {
     return null;
@@ -466,10 +508,14 @@ const OPEN_ROUND =
 
 export function readOpenRoundIds(): string[] {
   try {
-    const flight = readInlineScripts(document).join('\n').replaceAll('\\"', '"');
-    return [...new Set(Array.from(flight.matchAll(OPEN_ROUND), (found) => found[1] ?? ''))].filter(
-      (id) => id !== '',
-    );
+    const flight = readInlineScripts(document)
+      .join("\n")
+      .replaceAll('\\"', '"');
+    return [
+      ...new Set(
+        Array.from(flight.matchAll(OPEN_ROUND), (found) => found[1] ?? ""),
+      ),
+    ].filter((id) => id !== "");
   } catch {
     return [];
   }

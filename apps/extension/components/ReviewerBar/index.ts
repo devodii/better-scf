@@ -3,4 +3,4 @@ export {
   type ReviewerBarProps,
   type ReviewerCopyStatus,
   type ReviewerNoteStatus,
-} from './ReviewerBar';
+} from "./ReviewerBar";

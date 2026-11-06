@@ -1,13 +1,20 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SearchHighlight } from './SearchHighlight';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { SearchHighlight } from "./SearchHighlight";
 
 const meta = {
-  title: 'Search/SearchHighlight',
+  title: "Search/SearchHighlight",
   component: SearchHighlight,
-  args: { text: 'Soroban Developer Toolkit', ranges: [{ start: 0, end: 7 }] },
+  args: { text: "Soroban Developer Toolkit", ranges: [{ start: 0, end: 7 }] },
   decorators: [
     (Story) => (
-      <p style={{ margin: 0, padding: '0.5rem', color: 'var(--bscf-text)', fontSize: '1.125rem' }}>
+      <p
+        style={{
+          margin: 0,
+          padding: "0.5rem",
+          color: "var(--bscf-text)",
+          fontSize: "1.125rem",
+        }}
+      >
         <Story />
       </p>
     ),
@@ -31,12 +38,12 @@ export const MultipleRanges: Story = {
 };
 
 export const WholeText: Story = {
-  args: { text: 'Soroban', ranges: [{ start: 0, end: 7 }] },
+  args: { text: "Soroban", ranges: [{ start: 0, end: 7 }] },
 };
 
 export const OutOfRange: Story = {
   args: {
-    text: 'Soroban',
+    text: "Soroban",
     ranges: [
       { start: 4, end: 40 },
       { start: 2, end: 5 },
