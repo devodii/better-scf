@@ -6,7 +6,7 @@ export function Demo() {
       <div className={styles.frame}>
         <video
           className={styles.video}
-          src="/better-scf/media/demo.mp4"
+          src="/better-scf/media/demo-narrated.mp4"
           poster="/better-scf/media/demo-poster.jpg"
           controls
           playsInline
