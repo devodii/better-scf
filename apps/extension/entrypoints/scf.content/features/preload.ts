@@ -6,7 +6,13 @@ import type { Feature } from '../../../lib/ui/feature';
 
 const START_DELAY_MS = 1500;
 
-async function preload(signal: AbortSignal): Promise<void> {
+const lifetime = new AbortController();
+window.addEventListener('pagehide', () => lifetime.abort(), { once: true });
+
+let running: Promise<void> | null = null;
+
+async function preload(): Promise<void> {
+  const { signal } = lifetime;
   const queue: string[] = [];
   for (const roundId of readOpenRoundIds()) {
     const { records } = await fetchRoundRecords(roundId);
@@ -21,7 +27,6 @@ async function preload(signal: AbortSignal): Promise<void> {
       const id = pending[cursor++];
       if (id === undefined) return;
       const data = await enrichSubmission(id, signal);
-      if (signal.aborted) return;
       if (data) publishFacts(data);
     }
   };
@@ -33,9 +38,14 @@ async function preload(signal: AbortSignal): Promise<void> {
 export const feature: Feature = {
   pages: ['roundList'],
   toggles: ['loadProposalPages'],
-  mount({ signal, warn }) {
+  mount({ warn }) {
     const timer = window.setTimeout(() => {
-      preload(signal).catch((error: unknown) => warn('preload', error));
+      if (running) return;
+      running = preload()
+        .catch((error: unknown) => warn('preload', error))
+        .finally(() => {
+          running = null;
+        });
     }, START_DELAY_MS);
     return () => window.clearTimeout(timer);
   },
