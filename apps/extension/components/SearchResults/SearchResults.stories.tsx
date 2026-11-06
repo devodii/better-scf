@@ -4,9 +4,9 @@ import type { SearchResultMatch } from '../SearchResultCard';
 import { SearchResults } from './SearchResults';
 
 const IMAGE =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect width='8' height='8' fill='%23b8a2ff'/><circle cx='4' cy='4' r='2' fill='%23ffda00'/></svg>";
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 200'><rect width='500' height='200' fill='%23b8a2ff'/><circle cx='250' cy='100' r='60' fill='%23ffda00'/></svg>";
 
-const matches: SearchResultMatch[] = [
+const base: SearchResultMatch[] = [
   {
     project: {
       slug: 'soroban-toolkit',
@@ -51,7 +51,39 @@ const matches: SearchResultMatch[] = [
     titleRanges: [{ start: 0, end: 7 }],
     categoryRanges: [],
   },
+  {
+    project: {
+      slug: 'soroban-liquidity',
+      title:
+        'Decentralised Cross-Chain Liquidity Aggregation and Settlement Infrastructure for Stellar Anchors and Wallets',
+      category: 'Infrastructure and Services',
+      thumbnail: IMAGE,
+      lastAwardedRound: 40,
+    },
+    titleRanges: [],
+    categoryRanges: [],
+  },
+  {
+    project: {
+      slug: 'soroban-indexer',
+      title: 'Soroban Event Indexer',
+      category: 'Developer Tooling',
+      thumbnail: null,
+      lastAwardedRound: null,
+    },
+    titleRanges: [{ start: 0, end: 7 }],
+    categoryRanges: [],
+  },
 ];
+
+const unique = (list: SearchResultMatch[]): SearchResultMatch[] =>
+  list.map((match, index) => ({
+    ...match,
+    project: { ...match.project, slug: `${match.project.slug}-${index}` },
+  }));
+
+const matches = unique(base);
+const many = unique([...base, ...base, ...base].slice(0, 14));
 
 const meta = {
   title: 'Search/SearchResults',
@@ -66,7 +98,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '56rem', maxWidth: '100%', padding: '0.5rem' }}>
+      <div style={{ width: '58rem', maxWidth: '100%', padding: '0.5rem' }}>
         <Story />
       </div>
     ),
@@ -77,6 +109,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Results: Story = {};
+
+export const ManyResults: Story = { args: { matches: many, hasMore: true } };
 
 export const SingleResult: Story = { args: { matches: matches.slice(0, 1) } };
 
@@ -105,31 +139,58 @@ export const FocusedCard: Story = {
   ],
 };
 
-export const Medium: Story = {
+export const Grid1280: Story = {
+  parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div style={{ width: '44rem' }}>
+      <div style={{ boxSizing: 'border-box', display: 'flex', width: '1280px' }}>
+        <div style={{ flex: 'none', width: '18rem', background: 'var(--bscf-surface)' }} />
+        <div style={{ flex: 1, minWidth: 0, padding: '2rem' }}>
+          <Story />
+        </div>
+      </div>
+    ),
+  ],
+};
+
+export const Grid768: Story = {
+  parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <div style={{ boxSizing: 'border-box', width: '768px', padding: '2rem' }}>
         <Story />
       </div>
     ),
   ],
 };
 
-export const Narrow: Story = {
+export const Grid390: Story = {
+  parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div style={{ width: '22.5rem' }}>
+      <div style={{ boxSizing: 'border-box', width: '390px', padding: '1rem' }}>
         <Story />
       </div>
     ),
   ],
 };
 
-export const NarrowError: Story = {
+export const EmptyNarrow: Story = {
+  args: { matches: [], query: 'zzzz' },
+  decorators: [
+    (Story) => (
+      <div style={{ boxSizing: 'border-box', width: '390px', padding: '1rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const ErrorNarrow: Story = {
   args: { status: 'error', matches: [] },
   decorators: [
     (Story) => (
-      <div style={{ width: '22.5rem' }}>
+      <div style={{ boxSizing: 'border-box', width: '390px', padding: '1rem' }}>
         <Story />
       </div>
     ),
