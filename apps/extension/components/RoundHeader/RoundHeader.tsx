@@ -40,7 +40,7 @@ export function RoundHeader({
           value={String(submissions)}
           hint={
             siteTotal !== null && siteTotal > submissions
-              ? `The site counts ${siteTotal} applications for this round but lists ${submissions}`
+              ? `${siteTotal} applications were counted. The site only lists the ${submissions} that passed pre-screen.`
               : undefined
           }
           icon={<StatIcon kind="submissions" />}
