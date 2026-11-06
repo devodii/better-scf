@@ -1,8 +1,7 @@
 import clsx from 'clsx';
 import { useId } from 'react';
 import type { Stance } from 'shared';
-import { IconButton } from '../IconButton';
-import { Tooltip } from '../Tooltip';
+import { CardCorner } from '../CardCorner';
 import styles from './ReviewerBar.module.scss';
 
 export type ReviewerNoteStatus = 'idle' | 'saving' | 'saved';
@@ -21,12 +20,6 @@ export interface ReviewerBarProps {
   isExpanded: boolean;
   onExpandedChange: (next: boolean) => void;
 }
-
-const CHOICES: readonly { stance: Exclude<Stance, 'none'>; label: string }[] = [
-  { stance: 'support', label: 'Support' },
-  { stance: 'unsure', label: 'Unsure' },
-  { stance: 'against', label: 'Against' },
-];
 
 const STANCE_LABEL: Record<Stance, string> = {
   none: 'No stance',
@@ -88,41 +81,16 @@ export function ReviewerBar({
       </button>
       <div id={panelId} className={styles.panel} hidden={!isExpanded}>
         <div className={styles.row}>
-          <fieldset className={styles.stances} aria-label="Stance">
-            {CHOICES.map((choice) => (
-              <button
-                key={choice.stance}
-                type="button"
-                className={clsx(styles.choice, styles[choice.stance])}
-                aria-pressed={stance === choice.stance}
-                onClick={() => onStanceChange(stance === choice.stance ? 'none' : choice.stance)}
-              >
-                <span className={styles.choicePip} aria-hidden="true" />
-                {choice.label}
-              </button>
-            ))}
-          </fieldset>
-          <Tooltip content={shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}>
-            <IconButton
-              label="Shortlist"
-              size="md"
-              variant="surface"
-              className={styles.star}
-              isPressed={shortlisted}
-              onClick={() => onShortlistChange(!shortlisted)}
-            >
-              <svg
-                viewBox="0 0 16 16"
-                fill={shortlisted ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth="1.25"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M8 1.75l1.9 3.85 4.25.62-3.08 3 .73 4.23L8 11.45l-3.8 2 .73-4.23-3.08-3 4.25-.62z" />
-              </svg>
-            </IconButton>
-          </Tooltip>
+          <CardCorner
+            stance={stance}
+            onStanceChange={onStanceChange}
+            shortlisted={shortlisted}
+            onShortlistChange={onShortlistChange}
+          />
+          <span className={styles.stanceLabel}>
+            {STANCE_LABEL[stance]}
+            {shortlisted ? ', shortlisted' : ''}
+          </span>
         </div>
         <label className={styles.noteLabel}>
           <span className={styles.noteTitle}>Private note</span>
