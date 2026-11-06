@@ -62,7 +62,7 @@ jobs:
         # Must run from the repository root: the server Dockerfile needs the root as its build context.
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service better-scf-server --detach
+        run: railway up --service better-scf-server --ci
       - name: Wait for /health
         if: env.RAILWAY_CONFIGURED == 'true'
         run: |
@@ -70,12 +70,12 @@ jobs:
             echo "Repository variable WXT_SERVER_URL is not set; cannot poll /health." >&2
             exit 1
           fi
-          for _ in $(seq 1 12); do
+          for _ in $(seq 1 24); do
             if curl --fail --silent --show-error "${SERVER_URL%/}/health"; then
               echo
               exit 0
             fi
             sleep 5
           done
-          echo "No healthy /health response within 60 seconds." >&2
+          echo "No healthy /health response within 2 minutes." >&2
           exit 1
