@@ -5,7 +5,7 @@ import { EntryChoice } from './EntryChoice';
 const meta = {
   title: 'Landing/EntryChoice',
   component: EntryChoice,
-  args: { onLogin: fn(), onApply: fn() },
+  args: { signedIn: false, onLogin: fn(), onApply: fn() },
   decorators: [
     (Story) => (
       <div style={{ padding: '1.5rem', background: 'var(--bscf-bg)' }}>
@@ -18,7 +18,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const SignedOut: Story = {};
+
+export const SignedIn: Story = { args: { signedIn: true } };
 
 export const Narrow: Story = {
   decorators: [

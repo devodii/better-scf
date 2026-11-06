@@ -1,4 +1,5 @@
 import { EntryChoice } from '../../../components/EntryChoice';
+import { readSignedInState } from '../../../lib/site/signed-in';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 
@@ -45,7 +46,11 @@ export const feature: Feature = {
       restore();
     };
 
+    let session: 'signed-in' | 'signed-out' | 'unknown' | null = null;
+    let closed = false;
+
     const sync = (): void => {
+      if (session === null) return;
       const login = findButton(region, LOGIN);
       const apply = findButton(region, APPLY);
       if (!login || !apply) {
@@ -68,7 +73,13 @@ export const feature: Feature = {
         name: 'landing-choice',
         anchor: own,
         append: 'last',
-        children: <EntryChoice onLogin={() => login.click()} onApply={() => apply.click()} />,
+        children: (
+          <EntryChoice
+            signedIn={session === 'signed-in'}
+            onLogin={() => login.click()}
+            onApply={() => apply.click()}
+          />
+        ),
       })
         .then((handle) => {
           if (!handle) return;
@@ -87,9 +98,14 @@ export const feature: Feature = {
     };
 
     onMutation(sync);
-    sync();
+    readSignedInState().then((state) => {
+      if (closed) return;
+      session = state;
+      sync();
+    });
 
     return () => {
+      closed = true;
       teardown();
       style.remove();
     };
