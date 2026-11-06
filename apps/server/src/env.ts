@@ -5,11 +5,9 @@ const DEFAULT_MODEL = "claude-sonnet-5-5";
 const requiredInt = () =>
   z
     .string({ error: "is required (set it in the environment)" })
+    .transform((raw) => Number(raw))
     .pipe(
-      z.coerce
-        .number({ error: "must be a positive whole number" })
-        .int()
-        .positive(),
+      z.number({ error: "must be a positive whole number" }).int().positive(),
     );
 
 const intWithDefault = (fallback: number) =>
