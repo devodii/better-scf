@@ -27,6 +27,7 @@ export default defineConfig({
     name: 'better-scf',
     version: rootPackage.version,
     description: 'A reviewer-grade UX layer on communityfund.stellar.org.',
+    minimum_chrome_version: '111',
     permissions: ['storage'],
     host_permissions: [
       'https://communityfund.stellar.org/*',
