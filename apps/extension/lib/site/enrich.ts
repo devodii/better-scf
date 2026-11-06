@@ -1,17 +1,14 @@
 import type { Submission } from 'shared';
 import { browser } from 'wxt/browser';
 import { z } from 'zod';
+import { createRpcClient } from '../db';
 import { settingsItem } from '../settings';
 import { SITE_ORIGIN } from './routes';
 import { parseSubmissionPage } from './submission';
 
-export const ENRICH_MIN_GAP_MS = 1200;
-export const ENRICH_MAX_PER_MINUTE = 24;
-const WINDOW_MS = 60_000;
+export const ENRICH_CONCURRENCY = 20;
 const BLOCK_MS = 15 * 60_000;
-const MAX_QUEUED = 3;
 const MAX_FAILURES = 3;
-const LOCK_NAME = 'bscf-enrich';
 const STATE_KEY = 'enrichState';
 const PATH_PREFIX = '/dashboard/submissions/';
 const CAPTCHA = /captcha|cf-challenge|challenge-platform|just a moment/i;
@@ -28,11 +25,10 @@ export type EnrichBlock = z.infer<typeof blockReasonSchema>;
 
 const stateSchema = z
   .object({
-    starts: z.array(z.number()).catch([]),
     failures: z.number().int().min(0).catch(0),
     block: z.object({ reason: blockReasonSchema, until: z.number() }).nullable().catch(null),
   })
-  .catch({ starts: [], failures: 0, block: null });
+  .catch({ failures: 0, block: null });
 type State = z.infer<typeof stateSchema>;
 
 export interface EnrichedBuilder {
@@ -73,9 +69,9 @@ export function enrichBlockMessage(reason: EnrichBlock): string {
   return BLOCK_MESSAGES[reason];
 }
 
+const rpc = createRpcClient();
 const inflight = new Map<string, Promise<Enrichment | null>>();
 const blockListeners = new Set<(reason: EnrichBlock) => void>();
-let queued = 0;
 
 export function toEnrichment(submission: Submission): Enrichment {
   return {
@@ -100,7 +96,6 @@ async function readState(): Promise<State> {
   const now = Date.now();
   const state = stateSchema.parse((await browser.storage.local.get(STATE_KEY))[STATE_KEY] ?? {});
   return {
-    starts: state.starts.filter((at) => at <= now && now - at < WINDOW_MS).sort((a, b) => a - b),
     failures: state.failures,
     block: state.block && state.block.until > now ? state.block : null,
   };
@@ -135,42 +130,16 @@ async function recordOutcome(failed: boolean): Promise<void> {
   if (failures !== state.failures) await writeState({ ...state, failures });
 }
 
-function sleep(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) {
-      resolve();
-      return;
-    }
-    const done = (): void => {
-      clearTimeout(timer);
-      signal.removeEventListener('abort', done);
-      resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener('abort', done, { once: true });
-  });
+async function allowed(signal: AbortSignal): Promise<boolean> {
+  if (signal.aborted || !(await settingsItem.get()).loadProposalPages) return false;
+  return (await readState()).block === null;
 }
 
-async function takeSlot(signal: AbortSignal): Promise<boolean> {
-  for (;;) {
-    if (signal.aborted || !(await settingsItem.get()).loadProposalPages) return false;
-    const state = await readState();
-    if (state.block) return false;
-    const now = Date.now();
-    const last = state.starts[state.starts.length - 1] ?? 0;
-    const oldest = state.starts[0] ?? now;
-    const gapWait = last + ENRICH_MIN_GAP_MS - now;
-    const capWait = state.starts.length >= ENRICH_MAX_PER_MINUTE ? oldest + WINDOW_MS - now : 0;
-    const wait = Math.max(gapWait, capWait);
-    if (wait <= 0) {
-      await writeState({ ...state, starts: [...state.starts, now] });
-      return true;
-    }
-    await sleep(wait, signal);
-  }
-}
-
-async function readResponse(response: Response, id: string): Promise<Enrichment | null> {
+async function readResponse(
+  response: Response,
+  id: string,
+  frozen: boolean,
+): Promise<Enrichment | null> {
   const url = new URL(response.url);
   if (response.redirected && url.origin !== SITE_ORIGIN) {
     await stopFor('redirected');
@@ -197,46 +166,45 @@ async function readResponse(response: Response, id: string): Promise<Enrichment 
     return null;
   }
   await recordOutcome(false);
+  if (frozen) await rpc.putSubmissions([page.submission]).catch(() => {});
   return toEnrichment(page.submission);
 }
 
-async function fetchLocked(id: string, signal: AbortSignal): Promise<Enrichment | null> {
-  if (!(await takeSlot(signal))) return null;
+async function fetchOne(
+  id: string,
+  signal: AbortSignal,
+  frozen: boolean,
+): Promise<Enrichment | null> {
+  if (!(await allowed(signal))) return null;
   try {
     const response = await fetch(`${SITE_ORIGIN}${PATH_PREFIX}${encodeURIComponent(id)}`, {
       credentials: 'include',
       headers: { Accept: 'text/html' },
       signal,
     });
-    return await readResponse(response, id);
+    return await readResponse(response, id, frozen);
   } catch {
     if (!signal.aborted) await recordOutcome(true).catch(() => {});
     return null;
   }
 }
 
-async function fetchOne(id: string, signal: AbortSignal): Promise<Enrichment | null> {
-  try {
-    return await navigator.locks.request(LOCK_NAME, { signal }, () => fetchLocked(id, signal));
-  } catch {
-    return null;
+async function run(id: string, signal: AbortSignal, frozen: boolean): Promise<Enrichment | null> {
+  if (frozen) {
+    const saved = await rpc.getSubmission(id).catch(() => null);
+    if (saved) return toEnrichment(saved.value);
   }
+  return fetchOne(id, signal, frozen);
 }
 
-async function run(id: string, signal: AbortSignal): Promise<Enrichment | null> {
-  if (signal.aborted || queued >= MAX_QUEUED) return null;
-  queued += 1;
-  try {
-    return await fetchOne(id, signal);
-  } finally {
-    queued -= 1;
-  }
-}
-
-export function enrichSubmission(id: string, signal: AbortSignal): Promise<Enrichment | null> {
+export function enrichSubmission(
+  id: string,
+  signal: AbortSignal,
+  frozen = false,
+): Promise<Enrichment | null> {
   const pending = inflight.get(id);
   if (pending) return pending;
-  const next = run(id, signal).finally(() => inflight.delete(id));
+  const next = run(id, signal, frozen).finally(() => inflight.delete(id));
   inflight.set(id, next);
   return next;
 }

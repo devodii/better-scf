@@ -7,6 +7,7 @@ import { CardMeta, type CardMetaProps } from '../../../components/CardMeta';
 import { formatBudget, trackLabel } from '../../../lib/export/format';
 import type { Settings } from '../../../lib/settings';
 import {
+  ENRICH_CONCURRENCY,
   type EnrichBlock,
   type EnrichedBuilder,
   type Enrichment,
@@ -15,7 +16,7 @@ import {
   onEnrichBlock,
   readEnrichBlock,
 } from '../../../lib/site/enrich';
-import { findReceivedSection, mapRoundCards } from '../../../lib/site/round';
+import { findReceivedSection, mapRoundCards, readRoundPhases } from '../../../lib/site/round';
 import { SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
@@ -300,6 +301,16 @@ export const feature: Feature = {
       void place(entry, frame, 'meta', <CardMeta {...meta} />);
     };
 
+    let frozenRound = false;
+    const isFrozen = (): boolean => {
+      if (frozenRound) return true;
+      const close = readRoundPhases(document).find((phase) =>
+        /submission/i.test(phase.name),
+      )?.endsAt;
+      frozenRound = close != null && close < Date.now();
+      return frozenRound;
+    };
+
     const setFacts = (data: Enrichment): void => {
       facts.set(data.id, data);
       for (const entry of byId.get(data.id) ?? []) placeMeta(entry);
@@ -317,7 +328,7 @@ export const feature: Feature = {
         entry.hoverTimer = undefined;
         if (entry.gone || signal.aborted) return;
         tried.add(entry.id);
-        enrichSubmission(entry.id, signal).then((data) => {
+        enrichSubmission(entry.id, signal, isFrozen()).then((data) => {
           if (data && !signal.aborted) setFacts(data);
         });
       }, HOVER_DELAY_MS);
@@ -345,7 +356,7 @@ export const feature: Feature = {
           }
           if (!next) break;
           tried.add(next.id);
-          const data = await enrichSubmission(next.id, signal);
+          const data = await enrichSubmission(next.id, signal, isFrozen());
           if (signal.aborted) break;
           if (data) setFacts(data);
           else if (await readEnrichBlock()) break;
@@ -491,13 +502,22 @@ export const feature: Feature = {
       batch = control;
       loader = { status: 'running', done: 0, total: ids.length, message: null };
       renderLoader();
-      for (const id of ids) {
-        const data = await enrichSubmission(id, stop);
-        if (stop.aborted) break;
-        if (data) setFacts(data);
-        loader = { ...loader, done: loader.done + 1 };
-        renderLoader();
-      }
+      const frozen = isFrozen();
+      let cursor = 0;
+      const worker = async (): Promise<void> => {
+        while (!stop.aborted) {
+          const id = ids[cursor++];
+          if (id === undefined) return;
+          const data = await enrichSubmission(id, stop, frozen);
+          if (stop.aborted) return;
+          if (data) setFacts(data);
+          loader = { ...loader, done: loader.done + 1 };
+          renderLoader();
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(ENRICH_CONCURRENCY, ids.length) }, () => worker()),
+      );
       batch = null;
       if (signal.aborted || loader.status === 'stopped') return;
       loader = {
