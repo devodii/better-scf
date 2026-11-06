@@ -372,6 +372,7 @@ function openTools(
     ) {
       return;
     }
+    if (origin instanceof Element && origin.closest(INTERACTIVE)) return;
     const key = event.key.toLowerCase();
     if (key === 'j' || key === 'k') {
       event.preventDefault();
@@ -426,6 +427,14 @@ function openTools(
     })
     .catch((error: unknown) => warn('mount', error));
   if (settings.keyboardShortcuts) document.addEventListener('keydown', onKeydown, { signal });
+  const releaseCard = (event: Event): void => {
+    const path = event.composedPath();
+    if (noteOpen && path.includes(bar)) return;
+    const origin = path[0];
+    if (focused && origin instanceof Node && !grid.contains(origin)) setFocus(null);
+  };
+  document.addEventListener('pointerdown', releaseCard, { capture: true, signal });
+  document.addEventListener('focusin', releaseCard, { capture: true, signal });
   window.addEventListener('focus', () => void refreshData(), { signal });
   void refreshData();
 
