@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 import { fn } from 'storybook/test';
-import { createPagePush, measureTopBar } from '../../entrypoints/scf.content/features/dock/push';
+import { createPagePush } from '../../entrypoints/scf.content/features/dock/push';
 import dockCss from '../../entrypoints/scf.content/styles/dock.scss?inline';
 import type { AssistantMessageItem } from '../AssistantMessage';
 import { Assistant, type AssistantProps } from './Assistant';
+import { PANEL_SIDE, type PanelSide } from './side';
 
 const PHONE = {
   globals: { viewport: { value: 'phone', isRotated: false } },
@@ -87,6 +88,18 @@ export const Closed: Story = { args: { isOpen: false } };
 export const ClosedUnread: Story = { args: { isOpen: false, hasUnread: true } };
 
 export const Empty: Story = {};
+
+export const LeftOpen: Story = { args: { side: 'left', messages: [QUESTION, ANSWER] } };
+
+export const RightOpen: Story = { args: { side: 'right', messages: [QUESTION, ANSWER] } };
+
+export const RightClosedUnread: Story = {
+  args: { side: 'right', isOpen: false, hasUnread: true },
+};
+
+export const RightHistory: Story = {
+  args: { side: 'right', isHistoryOpen: true, messages: [QUESTION, ANSWER] },
+};
 
 export const Typing: Story = {
   args: {
@@ -320,11 +333,48 @@ export const Playground: Story = {
 
 const FILLER = Array.from({ length: 6 }, (_, index) => `Section ${index + 1}`);
 
-function FakeSite({ isOpen }: { isOpen: boolean }) {
+const NAV_LINKS = [
+  'Award Rounds',
+  'My Projects',
+  'Tasks',
+  'Verify Tier',
+  'Delegate & Trust',
+  'Community Vote',
+  'Voting History',
+  'Analytics',
+  'odii.xlm',
+];
+
+const FAKE_SITE_CSS = `
+.fake-nav {
+  position: fixed;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 6rem;
+  padding: 0 5.25rem;
+  background: #0f0f0f;
+  border-bottom: 1px solid #282630;
+}
+.fake-sidebar {
+  position: fixed;
+  top: 6rem;
+  left: 0;
+  z-index: 40;
+  width: 16rem;
+  height: calc(100% - 110px);
+  margin: 1rem;
+}
+`;
+
+function FakeSite({ isOpen, side }: { isOpen: boolean; side: PanelSide }) {
   useEffect(() => {
-    const push = createPagePush();
+    const push = createPagePush(side);
     push.set(isOpen, true);
-  }, [isOpen]);
+  }, [isOpen, side]);
   useEffect(() => {
     const push = createPagePush();
     return () => push.release();
@@ -339,38 +389,42 @@ function FakeSite({ isOpen }: { isOpen: boolean }) {
       }}
     >
       <main>
-        <nav
-          data-testid="site-nav"
-          style={{
-            position: 'fixed',
-            top: 0,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            height: '6rem',
-            width: '100%',
-            padding: '0 1.5rem',
-            boxSizing: 'border-box',
-            background: '#0f0f0f',
-            borderBottom: '1px solid #282630',
-          }}
-        >
-          SCF top bar
+        <style>{FAKE_SITE_CSS}</style>
+        <nav data-testid="site-nav" className="fake-nav">
+          <a href="/" data-testid="site-logo" style={{ width: '3rem', color: '#fff' }}>
+            SCF
+          </a>
         </nav>
-        <aside
-          data-testid="site-sidebar"
-          style={{
-            position: 'fixed',
-            left: 0,
-            top: '6rem',
-            zIndex: 40,
-            margin: '1rem',
-            width: '16rem',
-            height: 'calc(100% - 110px)',
-            background: '#282630',
-          }}
-        >
-          Sidebar
+        <aside data-testid="site-sidebar" className="fake-sidebar">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              height: '100%',
+              overflowY: 'auto',
+            }}
+          >
+            {NAV_LINKS.map((label, index) => (
+              <a
+                key={label}
+                href="/"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  color: 'rgb(255 255 255 / 60%)',
+                  marginTop: index === NAV_LINKS.length - 1 ? 'auto' : undefined,
+                }}
+              >
+                <span style={{ width: '2rem', height: '2rem', background: '#282630' }} />
+                {label}
+              </a>
+            ))}
+          </div>
         </aside>
       </main>
       <aside data-testid="site-content" style={{ marginTop: '8rem', marginLeft: '16rem' }}>
@@ -391,23 +445,12 @@ function FakeSite({ isOpen }: { isOpen: boolean }) {
 
 function PushedPage(args: AssistantProps) {
   const [isOpen, setIsOpen] = useState(args.isOpen);
-  const [topOffset, setTopOffset] = useState(0);
-  useEffect(() => {
-    if (args.isOpen) setTopOffset(measureTopBar());
-  }, [args.isOpen]);
+  const side = args.side ?? PANEL_SIDE;
   return (
     <>
       <style>{dockCss}</style>
-      <FakeSite isOpen={isOpen} />
-      <Assistant
-        {...args}
-        isOpen={isOpen}
-        topOffset={topOffset}
-        onOpenChange={(next) => {
-          if (next) setTopOffset(measureTopBar());
-          setIsOpen(next);
-        }}
-      />
+      <FakeSite isOpen={isOpen} side={side} />
+      <Assistant {...args} isOpen={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }
@@ -419,6 +462,16 @@ export const PushedPageClosed: Story = {
 
 export const PushedPageOpen: Story = {
   args: { isOpen: true, messages: [QUESTION, ANSWER] },
+  render: (args) => <PushedPage {...args} />,
+};
+
+export const PushedPageRightClosed: Story = {
+  args: { side: 'right', isOpen: false, messages: [QUESTION, ANSWER] },
+  render: (args) => <PushedPage {...args} />,
+};
+
+export const PushedPageRightOpen: Story = {
+  args: { side: 'right', isOpen: true, messages: [QUESTION, ANSWER] },
   render: (args) => <PushedPage {...args} />,
 };
 
