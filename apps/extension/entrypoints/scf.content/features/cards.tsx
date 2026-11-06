@@ -30,6 +30,7 @@ import cardsCss from '../styles/cards.scss?inline';
 
 const COVER_IMAGE = 'img:not([data-bscf])';
 const COVER_ATTRIBUTE = 'data-bscf-cover';
+const CARD_ATTRIBUTE = 'data-bscf-card';
 const META_SLOT = 'cards-meta-slot';
 const CORNER_SLOT = 'cards-corner-slot';
 const BACKDROP = 'cards-backdrop';
@@ -417,6 +418,7 @@ export const feature: Feature = {
     }
 
     const attach = (card: Element, id: string): void => {
+      card.setAttribute(CARD_ATTRIBUTE, '');
       const entry: Entry = {
         id,
         card,
@@ -477,6 +479,7 @@ export const feature: Feature = {
       entry.backdrop?.remove();
       if (entry.image) entry.image.style.objectFit = entry.objectFit;
       entry.cover?.removeAttribute(COVER_ATTRIBUTE);
+      entry.card.removeAttribute(CARD_ATTRIBUTE);
       watcher?.unobserve(entry.card);
       nearby.delete(entry);
       byId.get(entry.id)?.delete(entry);

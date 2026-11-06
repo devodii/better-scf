@@ -1,3 +1,8 @@
+.swiper-slide :has(> [data-bscf-card]),
+.swiper-slide [data-bscf-card] {
+  height: 100%;
+}
+
 div[data-bscf-cover] {
   height: auto;
   aspect-ratio: 16 / 9;
