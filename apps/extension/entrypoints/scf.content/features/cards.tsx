@@ -1,12 +1,21 @@
 import type { ReactNode } from 'react';
 import type { ReviewState, Submission } from 'shared';
-import type { AvatarStackPerson } from '../../../components/AvatarStack';
+import { BuildersLoader, type BuildersLoaderStatus } from '../../../components/BuildersLoader';
 import { CardCorner, type CardCornerProps } from '../../../components/CardCorner';
 import { CardMeta, type CardMetaProps } from '../../../components/CardMeta';
 import { formatBudget, trackLabel } from '../../../lib/export/format';
 import type { Settings } from '../../../lib/settings';
+import {
+  type EnrichBlock,
+  type Enrichment,
+  enrichBlockMessage,
+  enrichSubmission,
+  onEnrichBlock,
+  readEnrichBlock,
+  toEnrichment,
+} from '../../../lib/site/enrich';
 import { findReceivedSection, mapRoundCards } from '../../../lib/site/round';
-import { CARD_BYLINE_PREFIX, CARD_TEXT } from '../../../lib/site/selectors/round';
+import { CARD_BYLINE_PREFIX, CARD_TEXT, SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import cardsCss from '../styles/cards.scss?inline';
@@ -16,7 +25,8 @@ const COVER_ATTRIBUTE = 'data-bscf-cover';
 const META_SLOT = 'cards-meta-slot';
 const CORNER_SLOT = 'cards-corner-slot';
 const BACKDROP = 'cards-backdrop';
-const HANDLE = /^[A-Za-z0-9_-]{1,39}$/;
+const LOADER_SLOT = 'cards-loader-bar';
+const HOVER_DELAY_MS = 350;
 const TRACK_VARIANT = { open: 'olive', integration: 'purple', rfp: 'yellow' } as const;
 
 interface Entry {
@@ -29,7 +39,10 @@ interface Entry {
   image: HTMLImageElement | null;
   objectFit: string;
   backdrop: HTMLImageElement | null;
+  meta: MountedUi | null;
   hasMeta: boolean;
+  hoverTimer: number | undefined;
+  listeners: AbortController | null;
   gone: boolean;
 }
 
@@ -50,52 +63,28 @@ function blankReview(submissionId: string): ReviewState {
 
 function trackHint(source: Submission['trackSource']): string | null {
   if (source === 'api') return "From the site's track field";
-  if (source === 'heuristic') {
-    return 'Derived from the on-chain metric section of a submission you opened';
-  }
+  if (source === 'heuristic') return "Derived from the proposal's on-chain metric section";
   return null;
 }
 
-function peopleOf(submission: Submission): AvatarStackPerson[] {
-  const people: AvatarStackPerson[] = [];
-  for (const member of submission.team) {
-    const github = member.github && HANDLE.test(member.github) ? member.github : null;
-    const x = member.x && HANDLE.test(member.x) ? member.x : null;
-    if (github) {
-      people.push({
-        name: member.name,
-        role: member.role,
-        src: `https://github.com/${github}.png?size=64`,
-        href: `https://github.com/${github}`,
-      });
-    } else if (x) {
-      people.push({
-        name: member.name,
-        role: member.role,
-        src: `https://unavatar.io/x/${x}`,
-        href: `https://x.com/${x}`,
-      });
-    }
-  }
-  return people;
-}
-
-function metaProps(submission: Submission | undefined, settings: Settings): CardMetaProps | null {
-  if (!submission) return null;
+function metaProps(facts: Enrichment | undefined, settings: Settings): CardMetaProps | null {
+  if (!facts) return null;
   const props: CardMetaProps = {};
-  const hint = trackHint(submission.trackSource);
-  if (settings.trackChips && submission.track !== 'unknown' && hint) {
+  const hint = trackHint(facts.trackSource);
+  if (settings.trackChips && facts.track && hint) {
     props.track = {
-      label: trackLabel(submission.track),
-      variant: TRACK_VARIANT[submission.track],
+      label: trackLabel(facts.track),
+      variant: TRACK_VARIANT[facts.track],
       hint,
     };
   }
-  const awarded = submission.totalAwardedUsd;
+  const awarded = facts.awardedUsd;
   if (settings.awardedChip && awarded !== null && awarded > 0) {
-    const count = submission.awardedSubmissions;
+    const count = facts.awardedCount;
+    const amount = formatBudget(awarded).replace(/\.0(?=[KM])/, '');
     props.awarded = {
-      label: `Awarded before · ${formatBudget(awarded)}`,
+      label: `Awarded before ${amount}`,
+      shortLabel: `Awarded ${amount}`,
       variant: 'yellow',
       hint:
         count === null
@@ -103,9 +92,12 @@ function metaProps(submission: Submission | undefined, settings: Settings): Card
           : `${count} awarded ${count === 1 ? 'submission' : 'submissions'}`,
     };
   }
-  if (settings.avatarStack) {
-    const people = peopleOf(submission);
-    if (people.length > 0) props.people = people;
+  if (settings.avatarStack && facts.builders.length > 0) {
+    props.people = facts.builders.map(({ name, role, linkedin }) => ({
+      name,
+      role,
+      href: linkedin,
+    }));
   }
   return props.track || props.awarded || props.people ? props : null;
 }
@@ -135,7 +127,10 @@ export const feature: Feature = {
     const wantsCorner = wantsReviews || settings.coverNormalization;
     const round = /#\s*(\d+)/.exec(page.roundName ?? '')?.[1];
 
-    const submissions = new Map<string, Submission>();
+    const enrichable = wantsMeta && settings.loadProposalPages;
+
+    const facts = new Map<string, Enrichment>();
+    const tried = new Set<string>();
     const reviews = new Map<string, ReviewState>();
     let reviewsLoaded = !wantsReviews;
 
@@ -248,13 +243,20 @@ export const feature: Feature = {
       if (part === 'corner') {
         entry.corner = ui;
         if (reviewsLoaded && wantsReviews) renderCorner(entry);
+      } else {
+        entry.meta = ui;
+        ui.render(<CardMeta {...(metaProps(facts.get(entry.id), settings) ?? {})} />);
       }
     };
 
     const placeMeta = (entry: Entry): void => {
-      if (entry.hasMeta) return;
-      const meta = metaProps(submissions.get(entry.id), settings);
+      const meta = metaProps(facts.get(entry.id), settings);
       if (!meta) return;
+      if (entry.meta) {
+        entry.meta.render(<CardMeta {...meta} />);
+        return;
+      }
+      if (entry.hasMeta) return;
       const footer = findFooter(entry.card);
       if (!footer) {
         warn('card footer not found');
@@ -262,6 +264,29 @@ export const feature: Feature = {
       }
       entry.hasMeta = true;
       void place(entry, footer, 'meta', <CardMeta {...meta} />);
+    };
+
+    const setFacts = (data: Enrichment): void => {
+      facts.set(data.id, data);
+      for (const entry of byId.get(data.id) ?? []) placeMeta(entry);
+    };
+
+    const stopHover = (entry: Entry): void => {
+      window.clearTimeout(entry.hoverTimer);
+      entry.hoverTimer = undefined;
+    };
+
+    const startHover = (entry: Entry): void => {
+      if (!enrichable || facts.has(entry.id) || tried.has(entry.id)) return;
+      if (entry.hoverTimer !== undefined) return;
+      entry.hoverTimer = window.setTimeout(() => {
+        entry.hoverTimer = undefined;
+        if (entry.gone || signal.aborted) return;
+        tried.add(entry.id);
+        enrichSubmission(entry.id, signal).then((data) => {
+          if (data && !signal.aborted) setFacts(data);
+        });
+      }, HOVER_DELAY_MS);
     };
 
     const attach = (card: Element, id: string): void => {
@@ -275,7 +300,10 @@ export const feature: Feature = {
         image: null,
         objectFit: '',
         backdrop: null,
+        meta: null,
         hasMeta: false,
+        hoverTimer: undefined,
+        listeners: null,
         gone: false,
       };
       entries.set(card, entry);
@@ -301,9 +329,20 @@ export const feature: Feature = {
       placeMeta(entry);
       if (wantsCorner && frame)
         void place(entry, frame, 'corner', <CardCorner {...cornerProps(entry)} />);
+      if (enrichable) {
+        const listeners = new AbortController();
+        const options = { signal: AbortSignal.any([signal, listeners.signal]) };
+        card.addEventListener('pointerenter', () => startHover(entry), options);
+        card.addEventListener('focusin', () => startHover(entry), options);
+        card.addEventListener('pointerleave', () => stopHover(entry), options);
+        card.addEventListener('focusout', () => stopHover(entry), options);
+        entry.listeners = listeners;
+      }
     };
 
     const detach = (entry: Entry): void => {
+      stopHover(entry);
+      entry.listeners?.abort();
       entry.gone = true;
       for (const ui of entry.uis) ui.remove();
       for (const slot of entry.slots) slot.remove();
@@ -312,6 +351,87 @@ export const feature: Feature = {
       entry.cover?.removeAttribute(COVER_ATTRIBUTE);
       byId.get(entry.id)?.delete(entry);
       entries.delete(entry.card);
+    };
+
+    let loader: {
+      status: BuildersLoaderStatus;
+      done: number;
+      total: number;
+      message: string | null;
+    } = { status: 'idle', done: 0, total: 0, message: null };
+    let loaderBar: HTMLElement | null = null;
+    let loaderUi: MountedUi | null = null;
+    let batch: AbortController | null = null;
+
+    const loaderView = () => (
+      <BuildersLoader
+        status={loader.status}
+        done={loader.done}
+        total={loader.total || entries.size}
+        message={loader.message}
+        onStart={() => void runBatch()}
+        onCancel={() => batch?.abort()}
+      />
+    );
+
+    const renderLoader = (): void => loaderUi?.render(loaderView());
+
+    const stopLoader = (reason: EnrichBlock): void => {
+      loader = { ...loader, status: 'stopped', message: enrichBlockMessage(reason) };
+      batch?.abort();
+      renderLoader();
+    };
+
+    async function runBatch(): Promise<void> {
+      if (batch) return;
+      const ids = [...new Set([...entries.values()].map((entry) => entry.id))];
+      const control = new AbortController();
+      const stop = AbortSignal.any([signal, control.signal]);
+      batch = control;
+      loader = { status: 'running', done: 0, total: ids.length, message: null };
+      renderLoader();
+      for (const id of ids) {
+        const data = await enrichSubmission(id, stop);
+        if (stop.aborted) break;
+        if (data) setFacts(data);
+        loader = { ...loader, done: loader.done + 1 };
+        renderLoader();
+      }
+      batch = null;
+      if (signal.aborted || loader.status === 'stopped') return;
+      loader = {
+        ...loader,
+        status: control.signal.aborted ? 'cancelled' : 'done',
+      };
+      renderLoader();
+    }
+
+    const syncLoader = (section: Element): void => {
+      if (!enrichable || loaderBar?.isConnected) return;
+      const row = section.querySelector(SECTION_HEADING)?.parentElement?.parentElement;
+      if (!row) {
+        warn('round header row not found');
+        return;
+      }
+      loaderUi?.remove();
+      loaderBar?.remove();
+      const bar = document.createElement('div');
+      bar.setAttribute(OWN_ATTRIBUTE, LOADER_SLOT);
+      row.after(bar);
+      loaderBar = bar;
+      loaderUi = null;
+      mount({ name: 'cards-loader', anchor: bar, children: loaderView() }).then(
+        (ui) => {
+          if (!ui) return;
+          if (signal.aborted || loaderBar !== bar) {
+            ui.remove();
+            return;
+          }
+          loaderUi = ui;
+          ui.render(loaderView());
+        },
+        (error: unknown) => warn('mount loader', error),
+      );
     };
 
     const sync = (): void => {
@@ -323,16 +443,31 @@ export const feature: Feature = {
         if (!entries.has(card)) attach(card, record.id);
       }
       for (const entry of [...entries.values()]) if (!live.has(entry.card)) detach(entry);
+      syncLoader(section);
     };
 
     sync();
     onMutation(sync);
 
+    if (enrichable) {
+      const offBlock = onEnrichBlock(stopLoader);
+      signal.addEventListener('abort', offBlock, { once: true });
+      readEnrichBlock().then(
+        (reason) => {
+          if (reason && !signal.aborted) stopLoader(reason);
+        },
+        (error: unknown) => warn('read enrichment state', error),
+      );
+    }
+
     if (wantsMeta && round) {
       store.send('listSubmissionsByRound', round).then(
         (list) => {
           if (signal.aborted) return;
-          for (const { value } of list) submissions.set(value.id, value);
+          for (const { value } of list) {
+            const data = toEnrichment(value);
+            if (data.track || data.builderCount > 0 || data.awardedUsd) facts.set(data.id, data);
+          }
           for (const entry of entries.values()) placeMeta(entry);
         },
         (error: unknown) => warn('read submissions', error),
@@ -357,6 +492,9 @@ export const feature: Feature = {
     }
 
     return () => {
+      batch?.abort();
+      loaderUi?.remove();
+      loaderBar?.remove();
       for (const entry of [...entries.values()]) detach(entry);
       style.remove();
     };
