@@ -40,7 +40,7 @@ export default defineConfig({
     version: rootPackage.version,
     description: 'A reviewer-grade UX layer on communityfund.stellar.org.',
     minimum_chrome_version: '111',
-    permissions: ['storage'],
+    permissions: ['storage', 'scripting'],
     host_permissions: ['https://communityfund.stellar.org/*', ...serverHostPermission(mode)],
   }),
 });

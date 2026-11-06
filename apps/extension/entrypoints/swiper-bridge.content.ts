@@ -4,6 +4,7 @@ const REQUEST = 'bscf-swiper-request';
 const RESPONSE = 'bscf-swiper-response';
 const HYDRATION_REQUEST = 'bscf-hydration-request';
 const HYDRATED = 'bscf-hydrated';
+const BRIDGE_FLAG = '__bscfBridge';
 const QUIET_MS = 150;
 const IDLE_CEILING_MS = 2000;
 
@@ -106,6 +107,8 @@ export default defineContentScript({
   world: 'MAIN',
   runAt: 'document_start',
   main() {
+    if (Reflect.get(window, BRIDGE_FLAG)) return;
+    Reflect.set(window, BRIDGE_FLAG, true);
     document.addEventListener(HYDRATION_REQUEST, () => void signalHydrated());
     void signalHydrated();
     document.addEventListener(REQUEST, (event) => {
