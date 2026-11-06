@@ -27,3 +27,9 @@
     --color-danger: rgb(239 122 122);
   }
 }
+
+html,
+body {
+  margin: 0;
+  background: var(--bscf-bg, rgb(14 14 14));
+}
