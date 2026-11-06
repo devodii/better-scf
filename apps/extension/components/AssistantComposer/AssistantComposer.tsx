@@ -47,7 +47,7 @@ export function AssistantComposer({
           aria-describedby={counterId}
           placeholder={placeholder}
           value={value}
-          rows={1}
+          rows={3}
           maxLength={maxLength}
           disabled={isDisabled}
           enterKeyHint="send"
@@ -55,33 +55,35 @@ export function AssistantComposer({
           onChange={(event) => onValueChange(event.target.value)}
           onKeyDown={handleKeyDown}
         />
-        {isStreaming ? (
-          <IconButton label="Stop" variant="surface" size="lg" onClick={onStop}>
-            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <rect x="4" y="4" width="8" height="8" rx="1.5" />
-            </svg>
-          </IconButton>
-        ) : (
-          <IconButton
-            label="Send"
-            variant="accent"
-            size="lg"
-            disabled={!canSend}
-            onClick={onSubmit}
-          >
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+        <span className={styles.action}>
+          {isStreaming ? (
+            <IconButton label="Stop" variant="surface" size="md" onClick={onStop}>
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <rect x="4" y="4" width="8" height="8" rx="1.5" />
+              </svg>
+            </IconButton>
+          ) : (
+            <IconButton
+              label="Send"
+              variant="accent"
+              size="md"
+              disabled={!canSend}
+              onClick={onSubmit}
             >
-              <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" />
-            </svg>
-          </IconButton>
-        )}
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" />
+              </svg>
+            </IconButton>
+          )}
+        </span>
       </div>
       <p
         id={counterId}
@@ -92,7 +94,6 @@ export function AssistantComposer({
             : value.length >= maxLength * WARN_RATIO && styles.isNear,
         )}
       >
-        <span>Enter to send, Shift+Enter for a new line</span>
         <span>
           {value.length}/{maxLength}
         </span>
