@@ -54,8 +54,31 @@ interface Ring {
 }
 
 const clean = (text: string | null | undefined): string => (text ?? '').replace(/\s+/g, ' ').trim();
-const routeKey = (): string => KEY_PREFIX + location.pathname + location.search;
+const entryKey = (): string =>
+  KEY_PREFIX + (window.navigation?.currentEntry?.key ?? location.pathname + location.search);
 const slideText = (slide: Element): string => clean(slide.textContent).slice(0, CARD_TEXT_CHARS);
+
+let pending: string | null = null;
+
+function trackTraversal(): void {
+  for (const entry of performance.getEntriesByType('navigation')) {
+    if (entry instanceof PerformanceNavigationTiming && entry.type === 'back_forward') {
+      pending = entryKey();
+    }
+  }
+  const navigation = window.navigation;
+  if (navigation) {
+    navigation.addEventListener('currententrychange', (event) => {
+      pending = event.navigationType === 'traverse' ? entryKey() : null;
+    });
+  } else {
+    window.addEventListener('popstate', () => {
+      pending = entryKey();
+    });
+  }
+}
+
+trackTraversal();
 
 function readSaved(key: string): Saved | null {
   try {
@@ -226,7 +249,7 @@ export const feature: Feature = {
   pages: ['roundList', 'round', 'submission', 'myProjects', 'other'],
   toggles: ['navigationMemory'],
   mount({ region, signal, warn, page, store }) {
-    let key = routeKey();
+    let key = entryKey();
     let card: Card = null;
     let restoring: AbortController | null = null;
     let ring: Ring | null = null;
@@ -313,8 +336,12 @@ export const feature: Feature = {
 
     const begin = async (fresh: boolean): Promise<void> => {
       restoring?.abort();
-      const saved = readSaved(key);
-      if (!saved) return;
+      const entry = key;
+      const saved = pending === entry ? readSaved(entry) : null;
+      if (!saved) {
+        pending = null;
+        return;
+      }
       const own = new AbortController();
       restoring = own;
       const stop = (): void => own.abort();
@@ -329,6 +356,7 @@ export const feature: Feature = {
         own.abort();
         if (restoring === own) restoring = null;
       }
+      if (!signal.aborted && pending === entry) pending = null;
     };
 
     const persist = (): void => {
@@ -347,7 +375,7 @@ export const feature: Feature = {
     };
 
     const onEntry = (): void => {
-      const next = routeKey();
+      const next = entryKey();
       if (next === key || signal.aborted) return;
       key = next;
       card = null;
@@ -356,8 +384,13 @@ export const feature: Feature = {
 
     document.addEventListener('click', onClick, { capture: true, signal });
     window.addEventListener('pagehide', persist, { signal });
-    window.navigation?.addEventListener('navigate', persist, { signal });
-    window.navigation?.addEventListener('currententrychange', onEntry, { signal });
+    const navigation = window.navigation;
+    if (navigation) {
+      navigation.addEventListener('navigate', persist, { signal });
+      navigation.addEventListener('currententrychange', onEntry, { signal });
+    } else {
+      window.addEventListener('popstate', onEntry, { signal });
+    }
     void begin(false);
 
     return () => {
