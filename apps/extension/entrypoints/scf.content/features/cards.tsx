@@ -302,12 +302,21 @@ export const feature: Feature = {
     };
 
     let frozenRound = false;
+    const roundEnded = (): boolean => {
+      const name = page.roundName;
+      if (!name) return false;
+      const text = document.body.innerText.replace(/\s+/g, ' ');
+      const at = text.indexOf(name);
+      return (
+        at >= 0 && /^[^.]{0,40}\bEnded\b/.test(text.slice(at + name.length, at + name.length + 40))
+      );
+    };
     const isFrozen = (): boolean => {
       if (frozenRound) return true;
       const close = readRoundPhases(document).find((phase) =>
         /submission/i.test(phase.name),
       )?.endsAt;
-      frozenRound = close != null && close < Date.now();
+      frozenRound = (close != null && close < Date.now()) || roundEnded();
       return frozenRound;
     };
 
