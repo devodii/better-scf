@@ -60,11 +60,11 @@
   @include focus-ring;
   @include quick-transition(background-color, border-color);
 
-  min-height: 2.75rem;
-  padding: 0 1rem;
+  min-height: 2rem;
+  padding: 0 0.75rem;
   border: 0.0625rem solid var(--bscf-muted-chip);
   border-radius: var(--bscf-radius-chip);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
 
   @include on-hover {
