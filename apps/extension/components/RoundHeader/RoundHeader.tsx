@@ -7,6 +7,7 @@ import styles from './RoundHeader.module.scss';
 export interface RoundHeaderProps {
   countdown: string | null;
   submissions: number;
+  siteTotal?: number | null;
   parsed: number;
   totalRequested: number | null;
   medianRequested: number | null;
@@ -16,6 +17,7 @@ export interface RoundHeaderProps {
 export function RoundHeader({
   countdown,
   submissions,
+  siteTotal = null,
   parsed,
   totalRequested,
   medianRequested,
@@ -36,6 +38,11 @@ export function RoundHeader({
         <RoundHeaderStat
           label="Submissions"
           value={String(submissions)}
+          hint={
+            siteTotal !== null && siteTotal > submissions
+              ? `The site counts ${siteTotal} applications for this round but lists ${submissions}`
+              : undefined
+          }
           icon={<StatIcon kind="submissions" />}
         />
         <RoundHeaderStat

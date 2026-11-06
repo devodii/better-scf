@@ -415,3 +415,20 @@ export function mapRoundCards(
   }
   return matches;
 }
+
+export function readSiteSubmissionCount(roundName: string | null): number | null {
+  if (!roundName) return null;
+  try {
+    const flight = Array.from(document.scripts, (script) => script.textContent ?? '')
+      .filter((text) => text.includes('__next_f'))
+      .join('\n')
+      .replaceAll('\\"', '"');
+    const escaped = roundName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const found = new RegExp(`"name":"${escaped}".{0,8000}?"submissionsCount":(\\d+)`, 's').exec(
+      flight,
+    );
+    return found?.[1] ? Number(found[1]) : null;
+  } catch {
+    return null;
+  }
+}

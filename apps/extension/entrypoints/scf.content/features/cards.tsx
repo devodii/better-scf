@@ -17,6 +17,7 @@ import {
   readEnrichBlock,
 } from '../../../lib/site/enrich';
 import { findReceivedSection, mapRoundCards, readRoundPhases } from '../../../lib/site/round';
+import { publishFacts } from '../../../lib/site/round-facts';
 import { SECTION_HEADING } from '../../../lib/site/selectors/round';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
@@ -322,6 +323,7 @@ export const feature: Feature = {
 
     const setFacts = (data: Enrichment): void => {
       facts.set(data.id, data);
+      publishFacts(data);
       for (const entry of byId.get(data.id) ?? []) placeMeta(entry);
     };
 

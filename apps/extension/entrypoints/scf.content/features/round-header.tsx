@@ -1,7 +1,13 @@
 import dayjs from 'dayjs';
 import { RoundHeader } from '../../../components/RoundHeader';
 import type { RoundHeaderTrackCounts } from '../../../components/RoundHeaderTracks';
-import { findPhaseTable, type RoundPhase, readRoundPhases } from '../../../lib/site/round';
+import {
+  findPhaseTable,
+  type RoundPhase,
+  readRoundPhases,
+  readSiteSubmissionCount,
+} from '../../../lib/site/round';
+import { onFacts, readFacts } from '../../../lib/site/round-facts';
 import type { Feature } from '../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 import headerCss from '../styles/round-header.scss?inline';
@@ -39,7 +45,7 @@ export const feature: Feature = {
   pages: ['round'],
   toggles: ['roundHeader'],
   mount(context) {
-    const { page, region, store, signal, onMutation, warn } = context;
+    const { page, region, onMutation, warn } = context;
     if (page.kind !== 'round' || !page.records) {
       warn('round records not found');
       return;
@@ -52,6 +58,7 @@ export const feature: Feature = {
       .flatMap((record) => (record.budget === null ? [] : [record.budget]))
       .toSorted((a, b) => a - b);
 
+    const siteTotal = readSiteSubmissionCount(page.roundName ?? records[0]?.roundName ?? null);
     let tracks: RoundHeaderTrackCounts | null = null;
     let countdown: string | null = null;
     let table: Element | null = null;
@@ -63,6 +70,7 @@ export const feature: Feature = {
       <RoundHeader
         countdown={countdown}
         submissions={records.length}
+        siteTotal={siteTotal}
         parsed={budgets.length}
         totalRequested={budgets.length > 0 ? budgets.reduce((sum, value) => sum + value, 0) : null}
         medianRequested={median(budgets)}
@@ -112,30 +120,24 @@ export const feature: Feature = {
         .catch((error: unknown) => warn('mount', error));
     };
 
-    const loadTracks = async (): Promise<void> => {
-      if (!roundNumber) return;
-      try {
-        const cached = await store.send('listSubmissionsByRound', roundNumber);
-        if (closed) return;
-        const counts: RoundHeaderTrackCounts = { integration: 0, open: 0, rfp: 0 };
-        for (const { value } of cached) {
-          const { track } = value;
-          if (track !== 'unknown' && ids.has(value.id)) counts[track] += 1;
-        }
-        tracks = counts;
-        ui?.render(view());
-      } catch (error) {
-        warn('load tracks', error);
+    const loadTracks = (): void => {
+      if (closed) return;
+      const counts: RoundHeaderTrackCounts = { integration: 0, open: 0, rfp: 0 };
+      for (const [id, data] of readFacts()) {
+        if (data.track && ids.has(id)) counts[data.track] += 1;
       }
+      tracks = counts;
+      ui?.render(view());
     };
 
     onMutation(sync);
-    window.addEventListener('focus', () => void loadTracks(), { signal });
+    const offFacts = onFacts(loadTracks);
     sync();
-    void loadTracks();
+    loadTracks();
 
     return () => {
       closed = true;
+      offFacts();
       teardown();
       style.remove();
     };
