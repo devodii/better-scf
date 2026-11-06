@@ -10,25 +10,22 @@ import {
   tool,
 } from 'ai';
 import dayjs from 'dayjs';
-import { type Context, Hono, type MiddlewareHandler } from 'hono';
+import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import {
   CHAT_LIMITS,
-  type ChatErrorCode,
   type ChatRequest,
   type ChatRequestMessage,
   chatError,
   chatRequestSchema,
   messageText,
 } from 'shared';
-import { z } from 'zod';
 import { buildContextBlock, promptMatches, SYSTEM_PROMPT } from '../ai/prompts.js';
 import type { Env } from '../env.js';
 import type { ClientVariables } from '../middleware/client.js';
 
 const MAX_OUTPUT_TOKENS = 3500;
 const TEMPERATURE = 0.2;
-const BURST_WINDOW_SECONDS = 60;
 
 export interface ChatLogEntry {
   ts: string;
@@ -196,50 +193,3 @@ export function createChatRoute(deps: ChatRouteDeps) {
 
   return route;
 }
-
-const legacyErrorSchema = z.object({
-  error: z.string(),
-  retryAfterSeconds: z.number().int().nonnegative().optional(),
-});
-
-function mapLegacyError(
-  legacy: z.infer<typeof legacyErrorSchema>,
-): { code: ChatErrorCode; message: string } | undefined {
-  switch (legacy.error) {
-    case 'forbidden_origin':
-      return { code: 'forbidden_origin', message: 'This origin is not allowed.' };
-    case 'invalid_client':
-      return { code: 'missing_client', message: 'A valid client id is required.' };
-    case 'internal_error':
-      return { code: 'internal', message: 'Something went wrong. Please try again.' };
-    case 'service_busy':
-      return {
-        code: 'global_cap',
-        message: 'The assistant has reached its daily capacity. Please try again later.',
-      };
-    case 'rate_limited':
-      return (legacy.retryAfterSeconds ?? 0) > BURST_WINDOW_SECONDS
-        ? { code: 'daily_limit', message: 'You have reached the daily question limit.' }
-        : {
-            code: 'rate_limited',
-            message: 'You are asking too quickly. Please wait a moment and try again.',
-          };
-    default:
-      return undefined;
-  }
-}
-
-export const chatErrorShape: MiddlewareHandler = async (c, next) => {
-  await next();
-  if (c.res.status < 400) return undefined;
-  const body = await c.res
-    .clone()
-    .json()
-    .catch(() => undefined);
-  const legacy = legacyErrorSchema.safeParse(body);
-  if (!legacy.success) return undefined;
-  const mapped = mapLegacyError(legacy.data);
-  if (mapped === undefined) return undefined;
-  c.res = c.json(chatError(mapped.code, mapped.message, legacy.data.retryAfterSeconds), c.res);
-  return undefined;
-};

@@ -1,4 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono';
+import { chatError } from 'shared';
 
 export interface RateLimits {
   clientPerMinute: number;
@@ -36,7 +37,12 @@ function clientIpFromRequest(c: Context): string {
 
 type Decision =
   | { allowed: true }
-  | { allowed: false; reason: 'global' | 'client' | 'ip'; retryAfterSeconds: number };
+  | {
+      allowed: false;
+      reason: 'global' | 'client' | 'ip';
+      daily: boolean;
+      retryAfterSeconds: number;
+    };
 
 export interface RateLimiter {
   check(clientId: string, ip: string): Decision;
@@ -84,6 +90,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
         return {
           allowed: false,
           reason: 'global',
+          daily: true,
           retryAfterSeconds: retryAfter(global, DAY_MS, limits.globalPerDay, t),
         };
       }
@@ -94,6 +101,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
         return {
           allowed: false,
           reason: 'client',
+          daily: false,
           retryAfterSeconds: retryAfter(minute, MINUTE_MS, limits.clientPerMinute, t),
         };
       }
@@ -101,6 +109,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
         return {
           allowed: false,
           reason: 'client',
+          daily: true,
           retryAfterSeconds: retryAfter(day, DAY_MS, limits.clientPerDay, t),
         };
       }
@@ -110,6 +119,7 @@ function createRateLimiter(limits: RateLimits, now: () => number = Date.now): Ra
         return {
           allowed: false,
           reason: 'ip',
+          daily: true,
           retryAfterSeconds: retryAfter(ipDay, DAY_MS, limits.ipPerDay, t),
         };
       }
@@ -137,22 +147,25 @@ export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
       return;
     }
     c.header('Retry-After', String(decision.retryAfterSeconds));
+    const { retryAfterSeconds } = decision;
     if (decision.reason === 'global') {
       return c.json(
-        {
-          error: 'service_busy',
-          message: 'The assistant has reached its daily capacity. Please try again later.',
-          retryAfterSeconds: decision.retryAfterSeconds,
-        },
+        chatError(
+          'global_cap',
+          'The assistant has reached its daily capacity. Please try again later.',
+          retryAfterSeconds,
+        ),
         503,
       );
     }
     return c.json(
-      {
-        error: 'rate_limited',
-        message: 'You are asking too quickly. Please wait a moment and try again.',
-        retryAfterSeconds: decision.retryAfterSeconds,
-      },
+      decision.daily
+        ? chatError('daily_limit', 'You have reached the daily question limit.', retryAfterSeconds)
+        : chatError(
+            'rate_limited',
+            'You are asking too quickly. Please wait a moment and try again.',
+            retryAfterSeconds,
+          ),
       429,
     );
   };

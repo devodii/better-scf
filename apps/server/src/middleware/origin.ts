@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory';
+import { chatError } from 'shared';
 
 export interface OriginOptions {
   allowedExtensionIds: readonly string[];
@@ -26,7 +27,7 @@ export function origin(options: OriginOptions) {
     const allowed = isAllowedOrigin(requestOrigin, options);
     const looksLikeExtension = requestOrigin !== undefined && EXTENSION_ORIGIN.test(requestOrigin);
     if (requestOrigin === undefined || (!allowed && !looksLikeExtension)) {
-      return c.json({ error: 'forbidden_origin' }, 403);
+      return c.json(chatError('forbidden_origin', 'This origin is not allowed.'), 403);
     }
     c.header('Access-Control-Allow-Origin', requestOrigin);
     c.header('Vary', 'Origin');
@@ -36,7 +37,7 @@ export function origin(options: OriginOptions) {
       c.header('Access-Control-Max-Age', '600');
       return c.body(null, 204);
     }
-    if (!allowed) return c.json({ error: 'forbidden_origin' }, 403);
+    if (!allowed) return c.json(chatError('forbidden_origin', 'This origin is not allowed.'), 403);
     await next();
     return undefined;
   });

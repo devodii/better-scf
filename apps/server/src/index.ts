@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { chatError } from 'shared';
 import { type Env, loadEnv } from './env.js';
 import { PINNED_EXTENSION_ID } from './extension-id.js';
 import { client } from './middleware/client.js';
@@ -7,7 +8,6 @@ import { origin } from './middleware/origin.js';
 import { createRateLimit } from './middleware/ratelimit.js';
 import {
   type ChatRouteDeps,
-  chatErrorShape,
   createChatRoute,
   createModelFactory,
   logChatEntry,
@@ -28,7 +28,6 @@ function createApp(env: Env, deps: AppDeps = {}) {
   app.route('/health', createHealthRoute({ version: SERVER_VERSION, model: env.MODEL }));
 
   const v1 = new Hono();
-  v1.use('/chat', chatErrorShape);
   v1.use(
     origin({
       allowedExtensionIds: [...new Set([PINNED_EXTENSION_ID, ...env.ALLOWED_EXTENSION_IDS])],
@@ -57,14 +56,14 @@ function createApp(env: Env, deps: AppDeps = {}) {
   );
   app.route('/v1', v1);
 
-  app.notFound((c) => c.json({ error: 'not_found' }, 404));
+  app.notFound((c) => c.json(chatError('bad_request', 'Not found.'), 404));
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
-      return c.json({ error: 'http_error' }, err.status);
+      return c.json(chatError('bad_request', 'The request could not be handled.'), err.status);
     }
     console.error(`unhandled error: ${err.name}`);
-    return c.json({ error: 'internal_error' }, 500);
+    return c.json(chatError('internal', 'Something went wrong. Please try again.'), 500);
   });
 
   return app;
