@@ -8,7 +8,11 @@
   gap: 0.125rem;
   padding: 0.25rem;
   border-radius: 62.5rem;
-  background: color-mix(in srgb, var(--bscf-bg) 72%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--bscf-bg) calc(var(--bscf-card-reveal, 1) * 72%),
+    transparent
+  );
 }
 
 .dot {
@@ -28,11 +32,15 @@
 }
 
 .reveal {
-  @include quick-transition(opacity);
+  @include quick-transition(opacity, max-width);
 
+  max-width: calc(var(--bscf-card-reveal, 1) * 2.5rem);
+  overflow: hidden;
   opacity: var(--bscf-card-reveal, 1);
 
   &:focus-visible {
+    max-width: 2.5rem;
+    overflow: visible;
     opacity: 1;
   }
 }
