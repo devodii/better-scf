@@ -18,7 +18,7 @@ export type PageData =
       records: readonly SubmissionSummary[] | null;
     }
   | { kind: 'submission'; submissionId: string; page: SubmissionPage | null }
-  | { kind: 'roundList' | 'myProjects' | 'other' };
+  | { kind: 'landing' | 'roundList' | 'myProjects' | 'other' };
 
 export interface SiteStore {
   readonly rpc: RpcClient;
