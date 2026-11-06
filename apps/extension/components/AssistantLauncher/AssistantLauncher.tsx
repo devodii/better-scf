@@ -1,24 +1,30 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, Ref } from 'react';
+import { PANEL_SIDE, type PanelSide } from '../Assistant/side';
 import styles from './AssistantLauncher.module.scss';
 
 export interface AssistantLauncherProps
   extends Omit<ComponentPropsWithoutRef<'button'>, 'aria-label' | 'children'> {
   isHidden?: boolean;
   hasUnread?: boolean;
+  side?: PanelSide;
   ref?: Ref<HTMLButtonElement>;
 }
 
 export function AssistantLauncher({
   isHidden = false,
   hasUnread = false,
+  side = PANEL_SIDE,
   className,
   type = 'button',
   ref,
   ...rest
 }: AssistantLauncherProps) {
   return (
-    <div className={clsx(styles.root, isHidden && styles.isHidden, className)} inert={isHidden}>
+    <div
+      className={clsx(styles.root, styles[side], isHidden && styles.isHidden, className)}
+      inert={isHidden}
+    >
       <button
         ref={ref}
         type={type}
@@ -36,8 +42,7 @@ export function AssistantLauncher({
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" />
-          <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+          <path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.4-4.2A7.5 7.5 0 1 1 20 12z" />
         </svg>
         {hasUnread && <span className={styles.dot} aria-hidden="true" />}
       </button>

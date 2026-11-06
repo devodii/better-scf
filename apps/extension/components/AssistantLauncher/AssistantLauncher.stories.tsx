@@ -44,3 +44,17 @@ export const Focus: Story = {
 export const UnreadDot: Story = { args: { hasUnread: true } };
 
 export const Hidden: Story = { args: { isHidden: true } };
+
+export const Left: Story = { args: { side: 'left' } };
+
+export const LeftHover: Story = { ...Hover, args: { side: 'left' } };
+
+export const LeftUnread: Story = { args: { side: 'left', hasUnread: true } };
+
+export const Right: Story = { args: { side: 'right' } };
+
+export const RightHover: Story = { ...Hover, args: { side: 'right' } };
+
+export const RightFocus: Story = { ...Focus, args: { side: 'right' } };
+
+export const RightUnread: Story = { args: { side: 'right', hasUnread: true } };
