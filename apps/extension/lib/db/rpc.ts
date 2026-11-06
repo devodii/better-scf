@@ -23,7 +23,13 @@ import {
 } from "shared";
 import { z } from "zod";
 import { DbError } from "./errors";
-import { type Cached, createMirror, type Mirror, type Repo } from "./repo";
+import {
+  type Cached,
+  type ChatConversation,
+  createMirror,
+  type Mirror,
+  type Repo,
+} from "./repo";
 import {
   type AvatarRecord,
   avatarRecordSchema,
@@ -54,6 +60,7 @@ export interface RpcProtocol {
   putNavState(state: NavState): void;
 
   listChat(submissionId: string): ChatMessage[];
+  listConversations(): ChatConversation[];
   putChatMessage(message: ChatMessage): void;
   clearChat(submissionId: string): void;
 
@@ -93,6 +100,7 @@ const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
   getNavState: idSchema,
   putNavState: navStateSchema,
   listChat: idSchema,
+  listConversations: z.undefined(),
   putChatMessage: chatMessageSchema,
   clearChat: idSchema,
   getHorizon: idSchema,
@@ -141,6 +149,7 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
     getNavState: async (routeKey) => (await repo()).getNavState(routeKey),
     putNavState: async (state) => (await repo()).putNavState(state),
     listChat: async (id) => (await repo()).listChat(id),
+    listConversations: async () => (await repo()).listConversations(),
     putChatMessage: async (message) => (await repo()).putChatMessage(message),
     clearChat: async (id) => (await repo()).clearChat(id),
     getHorizon: async (id) => (await repo()).getHorizon(id),

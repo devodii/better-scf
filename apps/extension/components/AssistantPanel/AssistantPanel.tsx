@@ -15,6 +15,7 @@ export interface AssistantPanelProps {
   contextLabel: string;
   isHistoryOpen: boolean;
   onHistoryOpenChange: (next: boolean) => void;
+  onNewChat: () => void;
   history: ReactNode;
   children: ReactNode;
   side?: PanelSide;
@@ -34,6 +35,7 @@ export function AssistantPanel({
   contextLabel,
   isHistoryOpen,
   onHistoryOpenChange,
+  onNewChat,
   history,
   children,
   side = PANEL_SIDE,
@@ -100,7 +102,24 @@ export function AssistantPanel({
           {contextLabel}
         </span>
         <IconButton
-          label="Past questions"
+          label="New chat"
+          variant="surface"
+          size="md"
+          onClick={onNewChat}
+        >
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M8 3v10M3 8h10" />
+          </svg>
+        </IconButton>
+        <IconButton
+          label="Recent chats"
           variant="surface"
           size="md"
           isPressed={isHistoryOpen}

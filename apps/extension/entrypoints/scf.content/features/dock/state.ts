@@ -1,4 +1,5 @@
 const OPEN_KEY = "bscf:assistant-open";
+const CONVERSATION_KEY = "bscf:conversation";
 
 export function readOpen(): boolean {
   try {
@@ -12,6 +13,22 @@ export function writeOpen(isOpen: boolean): void {
   try {
     if (isOpen) sessionStorage.setItem(OPEN_KEY, "1");
     else sessionStorage.removeItem(OPEN_KEY);
+  } catch {
+    return;
+  }
+}
+
+export function readConversation(): string | null {
+  try {
+    return sessionStorage.getItem(CONVERSATION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeConversation(id: string): void {
+  try {
+    sessionStorage.setItem(CONVERSATION_KEY, id);
   } catch {
     return;
   }

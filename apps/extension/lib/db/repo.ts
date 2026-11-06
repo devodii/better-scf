@@ -62,6 +62,7 @@ export interface Repo {
   putNavState(state: NavState): Promise<void>;
 
   listChat(submissionId: string): Promise<ChatMessage[]>;
+  listConversations(): Promise<ChatConversation[]>;
   putChatMessage(message: ChatMessage): Promise<void>;
   clearChat(submissionId: string): Promise<void>;
 
@@ -224,6 +225,27 @@ function createRepo(db: Db): Repo {
         (a, b) => a.createdAt - b.createdAt,
       );
     },
+    async listConversations() {
+      const rows = parseAll(await db.getAll("chat"), chatMessageSchema);
+      const byId = new Map<string, ChatConversation>();
+      for (const row of rows.sort((a, b) => a.createdAt - b.createdAt)) {
+        const found = byId.get(row.submissionId);
+        if (found) {
+          found.updatedAt = row.createdAt;
+          found.count += 1;
+        } else {
+          byId.set(row.submissionId, {
+            id: row.submissionId,
+            title: row.content,
+            updatedAt: row.createdAt,
+            count: 1,
+          });
+        }
+      }
+      return [...byId.values()]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, CONVERSATION_LIMIT);
+    },
     async putChatMessage(message) {
       await db.put("chat", message);
     },
@@ -299,6 +321,15 @@ export interface RevalidateResult<T> {
   value: T | null;
   refresh: Promise<T | null> | null;
 }
+
+export interface ChatConversation {
+  id: string;
+  title: string;
+  updatedAt: number;
+  count: number;
+}
+
+const CONVERSATION_LIMIT = 30;
 
 export type Revalidate = <T>(
   options: RevalidateOptions<T>,

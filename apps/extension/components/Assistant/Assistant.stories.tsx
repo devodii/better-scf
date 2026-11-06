@@ -100,7 +100,9 @@ const meta = {
     onDecision: fn(),
     onHistoryOpenChange: fn(),
     onHistorySelect: fn(),
-    onHistoryClear: fn(),
+    onHistoryBranch: fn(),
+    onHistoryDelete: fn(),
+    onNewChat: fn(),
   },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof Assistant>;

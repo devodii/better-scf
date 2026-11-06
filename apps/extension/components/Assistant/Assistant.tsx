@@ -39,7 +39,9 @@ export interface AssistantProps {
   onHistoryOpenChange: (next: boolean) => void;
   historyItems: readonly AssistantHistoryItem[];
   onHistorySelect: (item: AssistantHistoryItem) => void;
-  onHistoryClear: () => void;
+  onHistoryBranch: (item: AssistantHistoryItem) => void;
+  onHistoryDelete: (item: AssistantHistoryItem) => void;
+  onNewChat: () => void;
 }
 
 const ANNOUNCE_CHARS = 160;
@@ -81,7 +83,9 @@ export function Assistant({
   onHistoryOpenChange,
   historyItems,
   onHistorySelect,
-  onHistoryClear,
+  onHistoryBranch,
+  onHistoryDelete,
+  onNewChat,
 }: AssistantProps) {
   const launcher = useRef<HTMLButtonElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
@@ -117,6 +121,7 @@ export function Assistant({
         side={side}
         isHistoryOpen={isHistoryOpen}
         onHistoryOpenChange={onHistoryOpenChange}
+        onNewChat={onNewChat}
         history={
           <AssistantHistory
             items={historyItems}
@@ -125,8 +130,13 @@ export function Assistant({
               onHistorySelect(item);
               composer.current?.focus({ preventScroll: true });
             }}
-            onClear={() => {
-              onHistoryClear();
+            onBranch={(item) => {
+              onHistoryBranch(item);
+              composer.current?.focus({ preventScroll: true });
+            }}
+            onDelete={onHistoryDelete}
+            onNew={() => {
+              onNewChat();
               composer.current?.focus({ preventScroll: true });
             }}
           />

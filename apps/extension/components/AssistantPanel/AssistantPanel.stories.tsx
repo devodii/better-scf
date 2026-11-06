@@ -159,7 +159,9 @@ const history = (
     items={HISTORY}
     onBack={fn()}
     onSelect={fn()}
-    onClear={fn()}
+    onBranch={fn()}
+    onDelete={fn()}
+    onNew={fn()}
   />
 );
 
@@ -172,6 +174,7 @@ const meta = {
     contextLabel: "Stellar Payments SDK",
     isHistoryOpen: false,
     onHistoryOpenChange: fn(),
+    onNewChat: fn(),
     history,
     children: <Content messages={[]} />,
   },

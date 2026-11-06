@@ -18,12 +18,17 @@ import { type MountedUi, OWN_ATTRIBUTE } from "../../../../lib/ui/mount";
 import dockCss from "../../styles/dock.scss?inline";
 import { createPagePush } from "./push";
 import { createRequestSource } from "./request";
-import { isToggleShortcut, readOpen, writeOpen } from "./state";
+import {
+  isToggleShortcut,
+  readConversation,
+  readOpen,
+  writeConversation,
+  writeOpen,
+} from "./state";
 import {
   contextLabelFor,
   describeError,
   placeholderFor,
-  SITE_THREAD,
   storedText,
   subjectOf,
   toItems,
@@ -34,7 +39,6 @@ import {
 const RENDER_THROTTLE_MS = 50;
 const NOT_CONFIGURED = describeError(ChatTransportError.notConfigured());
 const NO_DECISIONS: ReadonlyMap<string, ToolDecision> = new Map();
-const HISTORY_LIMIT = 30;
 
 const NO_PAGE: ChatPageRequest = {
   submissionId: "page:/",
@@ -49,8 +53,8 @@ export function mountPanel(
   openAfterMount: boolean,
 ): () => void {
   const { page, settings, store, signal, warn } = context;
-  const threadKey =
-    page.kind === "submission" ? page.submissionId : SITE_THREAD;
+  let conversationId = readConversation() ?? crypto.randomUUID();
+  writeConversation(conversationId);
   const subject = subjectOf(page);
   const nextRequest = createRequestSource(page);
   const serverUrl =
@@ -72,7 +76,6 @@ export function mountPanel(
   let detach: (() => void)[] = [];
   let starting = false;
   let closed = false;
-  let isCleared = false;
   const ui: MountedUi = handle;
   const push = createPagePush();
 
@@ -89,7 +92,7 @@ export function mountPanel(
     lastStamp = Math.max(Date.now(), lastStamp + 1);
     const row: ChatMessage = {
       id: message.id,
-      submissionId: threadKey,
+      submissionId: conversationId,
       role: message.role,
       content,
       createdAt: before?.createdAt ?? lastStamp,
@@ -151,12 +154,10 @@ export function mountPanel(
           if (next) void loadHistory();
         }}
         historyItems={historyItems}
-        onHistorySelect={(item) => {
-          value = item.text;
-          isHistoryOpen = false;
-          render();
-        }}
-        onHistoryClear={clear}
+        onHistorySelect={(item) => void openChat(item.id)}
+        onHistoryBranch={(item) => void branchChat(item.id)}
+        onHistoryDelete={(item) => void deleteChat(item.id)}
+        onNewChat={newChat}
       />
     );
   };
@@ -176,33 +177,18 @@ export function mountPanel(
   }
 
   async function loadHistory(): Promise<void> {
-    const keys =
-      threadKey === SITE_THREAD ? [SITE_THREAD] : [threadKey, SITE_THREAD];
-    const lists = await Promise.all(
-      keys.map((key) =>
-        store.send("listChat", key).catch((error: unknown) => {
-          warn("read history", error);
-          return [];
-        }),
-      ),
-    );
+    const list = await store
+      .send("listConversations", undefined)
+      .catch((error: unknown) => {
+        warn("read history", error);
+        return [];
+      });
     if (closed) return;
-    historyItems = lists
-      .flatMap((list, index) =>
-        list
-          .filter((row) => row.role === "user")
-          .map((row) => ({
-            at: row.createdAt,
-            item: {
-              id: row.id,
-              text: row.content,
-              meta: `${index === 0 && keys.length > 1 ? "This submission" : "Site"} · ${dayjs(row.createdAt).format("D MMM HH:mm")}`,
-            },
-          })),
-      )
-      .sort((a, b) => b.at - a.at)
-      .slice(0, HISTORY_LIMIT)
-      .map(({ item }) => item);
+    historyItems = list.map((chat) => ({
+      id: chat.id,
+      text: chat.title,
+      meta: `${chat.count} ${chat.count === 1 ? "message" : "messages"} · ${dayjs(chat.updatedAt).format("D MMM HH:mm")}`,
+    }));
     render();
   }
 
@@ -213,17 +199,57 @@ export function mountPanel(
     session = null;
   }
 
-  function clear(): void {
+  function switchTo(id: string, rows: ChatMessage[]): void {
     dropSession();
-    isCleared = true;
-    restored = [];
+    conversationId = id;
+    writeConversation(id);
+    restored = rows.map(toUiMessage);
     stored.clear();
-    historyItems = [];
+    for (const row of rows) stored.set(row.id, row);
+    lastStamp = rows.at(-1)?.createdAt ?? 0;
+    value = "";
+    hasUnread = false;
     isHistoryOpen = false;
-    store
-      .send("clearChat", threadKey)
-      .catch((error: unknown) => warn("clear thread", error));
     render();
+  }
+
+  function newChat(): void {
+    switchTo(crypto.randomUUID(), []);
+  }
+
+  async function openChat(id: string): Promise<void> {
+    const rows = await store.send("listChat", id).catch((error: unknown) => {
+      warn("open chat", error);
+      return null;
+    });
+    if (rows && !closed) switchTo(id, rows);
+  }
+
+  async function branchChat(id: string): Promise<void> {
+    const rows = await store.send("listChat", id).catch((error: unknown) => {
+      warn("branch chat", error);
+      return null;
+    });
+    if (!rows || closed) return;
+    const branchId = crypto.randomUUID();
+    const copies = rows.map((row) => ({
+      ...row,
+      id: crypto.randomUUID(),
+      submissionId: branchId,
+    }));
+    await Promise.all(
+      copies.map((row) => store.send("putChatMessage", row)),
+    ).catch((error: unknown) => warn("branch chat", error));
+    if (!closed) switchTo(branchId, copies);
+  }
+
+  async function deleteChat(id: string): Promise<void> {
+    await store
+      .send("clearChat", id)
+      .catch((error: unknown) => warn("delete chat", error));
+    if (closed) return;
+    if (id === conversationId) newChat();
+    else void loadHistory();
   }
 
   function onMessages(): void {
@@ -260,9 +286,10 @@ export function mountPanel(
     return created;
   }
 
-  const thread = store.send("listChat", threadKey).then(
+  const initialId = conversationId;
+  const thread = store.send("listChat", initialId).then(
     (rows) => {
-      if (closed || isCleared) return;
+      if (closed || conversationId !== initialId) return;
       restored = rows.map(toUiMessage);
       for (const row of rows) stored.set(row.id, row);
       lastStamp = rows.at(-1)?.createdAt ?? 0;

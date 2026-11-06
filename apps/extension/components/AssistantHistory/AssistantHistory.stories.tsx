@@ -19,7 +19,14 @@ const ITEMS = [
 const meta = {
   title: "Assistant/AssistantHistory",
   component: AssistantHistory,
-  args: { items: ITEMS, onSelect: fn(), onClear: fn(), onBack: fn() },
+  args: {
+    items: ITEMS,
+    onSelect: fn(),
+    onBranch: fn(),
+    onDelete: fn(),
+    onNew: fn(),
+    onBack: fn(),
+  },
   decorators: [
     (Story) => (
       <div

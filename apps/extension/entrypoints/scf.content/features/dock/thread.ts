@@ -13,8 +13,6 @@ import {
 import { assertNever, isAppError } from "../../../../lib/errors";
 import type { PageData } from "../../../../lib/site/store";
 
-export const SITE_THREAD = "site";
-
 const CLIP_CHARS = 60;
 const DETAIL_CHARS = 120;
 const GENERIC_ERROR = "Something went wrong while asking. Please try again.";
