@@ -12,7 +12,7 @@ const settingsSchema = z.object({
   showOpenedInsteadOfUnread: z.boolean().default(false),
   shortlistAndStance: z.boolean().default(true),
   coverNormalization: z.boolean().default(true),
-  hoverZoom: z.boolean().default(false),
+  hoverZoom: z.boolean().default(true),
   gridTools: z.boolean().default(true),
   keyboardShortcuts: z.boolean().default(true),
   roundHeader: z.boolean().default(true),
