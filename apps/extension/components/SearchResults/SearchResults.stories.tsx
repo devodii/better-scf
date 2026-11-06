@@ -14,6 +14,7 @@ const base: SearchResultMatch[] = [
       category: 'Developer Tooling',
       thumbnail: IMAGE,
       lastAwardedRound: 41,
+      team: 'Token Terminal',
     },
     titleRanges: [{ start: 0, end: 7 }],
     categoryRanges: [],
@@ -25,6 +26,7 @@ const base: SearchResultMatch[] = [
       category: 'Infrastructure and Services',
       thumbnail: null,
       lastAwardedRound: 38,
+      team: 'Block Explorer Labs',
     },
     titleRanges: [{ start: 0, end: 7 }],
     categoryRanges: [],
@@ -59,6 +61,7 @@ const base: SearchResultMatch[] = [
       category: 'Infrastructure and Services',
       thumbnail: IMAGE,
       lastAwardedRound: 40,
+      team: 'Anchor Collective',
     },
     titleRanges: [],
     categoryRanges: [],
@@ -153,11 +156,11 @@ export const Grid1280: Story = {
   ],
 };
 
-export const Grid768: Story = {
+export const Grid960: Story = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div style={{ boxSizing: 'border-box', width: '768px', padding: '2rem' }}>
+      <div style={{ boxSizing: 'border-box', width: '960px', padding: '2rem' }}>
         <Story />
       </div>
     ),

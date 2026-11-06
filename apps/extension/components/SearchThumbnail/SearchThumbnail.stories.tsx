@@ -10,7 +10,7 @@ const meta = {
   args: { src: IMAGE, fallback: 'Soroban Toolkit' },
   decorators: [
     (Story) => (
-      <div style={{ width: '18.5rem', padding: '0.5rem' }}>
+      <div style={{ width: '27.5rem', padding: '0.5rem' }}>
         <Story />
       </div>
     ),

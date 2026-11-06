@@ -11,6 +11,7 @@ const match: SearchResultMatch = {
     category: 'Developer Tooling',
     thumbnail: IMAGE,
     lastAwardedRound: 41,
+    team: 'Token Terminal',
   },
   titleRanges: [{ start: 0, end: 7 }],
   categoryRanges: [{ start: 0, end: 9 }],
@@ -22,7 +23,7 @@ const meta = {
   args: { match },
   decorators: [
     (Story) => (
-      <div style={{ width: '18.5rem', padding: '0.5rem' }}>
+      <div style={{ width: '27.5rem', maxWidth: '100%', padding: '0.5rem' }}>
         <Story />
       </div>
     ),
@@ -71,11 +72,15 @@ export const TwoChipsWrapping: Story = {
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '17.5rem' }}>
+      <div style={{ width: '20rem' }}>
         <Story />
       </div>
     ),
   ],
+};
+
+export const WithoutTeam: Story = {
+  args: { match: { ...match, project: { ...match.project, team: null } } },
 };
 
 export const NeverAwarded: Story = {
