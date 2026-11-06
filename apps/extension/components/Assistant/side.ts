@@ -1,3 +1,3 @@
 export type PanelSide = 'left' | 'right';
 
-export const PANEL_SIDE: PanelSide = 'left';
+export const PANEL_SIDE: PanelSide = 'right';
