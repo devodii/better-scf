@@ -43,9 +43,9 @@ export function SearchResultCard({
       className={clsx(styles.root, className)}
       {...rest}
     >
-      <SearchThumbnail src={project.thumbnail} fallback={project.title} />
+      <SearchThumbnail className={styles.cover} src={project.thumbnail} fallback={project.title} />
       <span className={styles.body}>
-        <span className={styles.title}>
+        <span className={styles.title} title={project.title}>
           <SearchHighlight text={project.title} ranges={titleRanges} />
         </span>
         <span className={styles.chips}>

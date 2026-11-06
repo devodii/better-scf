@@ -3,37 +3,47 @@
 .root {
   @include base;
   @include focus-ring;
-  @include quick-transition(background-color);
 
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
   min-width: 0;
-  min-height: 4.5rem;
-  padding: 0.75rem;
+  overflow: hidden;
   border-radius: var(--bscf-radius-chip);
   background: var(--bscf-surface);
   color: var(--bscf-text);
   text-decoration: none;
 
-  &:hover {
-    background: var(--bscf-muted-chip);
+  @include on-hover {
+    @media (prefers-reduced-motion: no-preference) {
+      .cover > img {
+        transform: scale(1.03);
+      }
+    }
   }
+}
+
+.cover > img {
+  transition: transform 300ms ease-out;
 }
 
 .body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
   min-width: 0;
+  padding: 1.5rem;
 }
 
 .title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.25;
+  @include type-title;
+
+  display: -webkit-box;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .chips {

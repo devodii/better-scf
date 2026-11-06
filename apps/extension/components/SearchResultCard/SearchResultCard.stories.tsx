@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SearchResultCard, type SearchResultMatch } from './SearchResultCard';
 
 const IMAGE =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect width='8' height='8' fill='%23b8a2ff'/><circle cx='4' cy='4' r='2' fill='%23ffda00'/></svg>";
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 200'><rect width='500' height='200' fill='%23b8a2ff'/><circle cx='250' cy='100' r='60' fill='%23ffda00'/></svg>";
 
 const match: SearchResultMatch = {
   project: {
@@ -22,7 +22,7 @@ const meta = {
   args: { match },
   decorators: [
     (Story) => (
-      <div style={{ width: '26rem', padding: '0.5rem' }}>
+      <div style={{ width: '18.5rem', padding: '0.5rem' }}>
         <Story />
       </div>
     ),
@@ -32,23 +32,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const WithCover: Story = {};
 
-export const NeverAwarded: Story = {
-  args: { match: { ...match, project: { ...match.project, lastAwardedRound: null } } },
-};
-
-export const NoCategory: Story = {
-  args: {
-    match: { ...match, project: { ...match.project, category: '' }, categoryRanges: [] },
-  },
-};
-
-export const NoThumbnail: Story = {
+export const WithoutCover: Story = {
   args: { match: { ...match, project: { ...match.project, thumbnail: null } } },
 };
 
-export const ThumbnailFailed: Story = {
+export const CoverFailed: Story = {
   args: {
     match: {
       ...match,
@@ -71,7 +61,42 @@ export const LongTitle: Story = {
   },
 };
 
-export const Inactive: Story = { args: { isActive: false } };
+export const TwoChipsWrapping: Story = {
+  args: {
+    match: {
+      ...match,
+      project: { ...match.project, category: 'Infrastructure and Services' },
+      categoryRanges: [],
+    },
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: '17.5rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const NeverAwarded: Story = {
+  args: { match: { ...match, project: { ...match.project, lastAwardedRound: null } } },
+};
+
+export const NoCategory: Story = {
+  args: {
+    match: { ...match, project: { ...match.project, category: '' }, categoryRanges: [] },
+  },
+};
+
+export const Hovered: Story = {
+  decorators: [
+    (Story) => (
+      <div data-force-hover>
+        <Story />
+      </div>
+    ),
+  ],
+};
 
 export const Focused: Story = {
   decorators: [
@@ -83,21 +108,4 @@ export const Focused: Story = {
   ],
 };
 
-export const Narrow: Story = {
-  args: {
-    match: {
-      ...match,
-      project: {
-        ...match.project,
-        title: 'Soroban Developer Toolkit for Wallet and Anchor Integrations',
-      },
-    },
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ width: '22.5rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
+export const Inactive: Story = { args: { isActive: false } };
