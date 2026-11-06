@@ -4,7 +4,7 @@ import { parseSubmissionPage } from '../../site/submission';
 import { buildSubmissionContext } from '../context';
 import { defineTool } from './registry';
 
-const MAX_CHARS = 9000;
+const MAX_CHARS = 11000;
 
 export const tool = defineTool({
   name: 'submission_details',
