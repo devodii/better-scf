@@ -28,6 +28,7 @@ export interface MountedUi {
 let sheet: CSSStyleSheet | undefined;
 let loading: Promise<CSSStyleSheet> | undefined;
 let documentStyle: HTMLStyleElement | undefined;
+let documentCss = '';
 
 async function readStylesheet(): Promise<string> {
   const response = await fetch(browser.runtime.getURL(STYLESHEET as PublicPath));
@@ -40,13 +41,7 @@ async function readStylesheet(): Promise<string> {
 function loadSheet(): Promise<CSSStyleSheet> {
   if (loading) return loading;
   const pending = readStylesheet().then((css) => {
-    const documentCss = Array.from(css.matchAll(DOCUMENT_RULES), (match) => match[0]).join('');
-    if (documentCss.trim()) {
-      documentStyle = document.createElement('style');
-      documentStyle.setAttribute(OWN_ATTRIBUTE, 'styles');
-      documentStyle.textContent = documentCss;
-      (document.head ?? document.documentElement).append(documentStyle);
-    }
+    documentCss = Array.from(css.matchAll(DOCUMENT_RULES), (match) => match[0]).join('');
     const next = new CSSStyleSheet();
     next.replaceSync(
       HOST_CSS + tokens + css.replace(DOCUMENT_RULES, '').replaceAll(':root', ':host'),
@@ -59,6 +54,14 @@ function loadSheet(): Promise<CSSStyleSheet> {
   });
   loading = pending;
   return pending;
+}
+
+function installDocumentStyle(): void {
+  if (documentStyle || !documentCss.trim()) return;
+  documentStyle = document.createElement('style');
+  documentStyle.setAttribute(OWN_ATTRIBUTE, 'styles');
+  documentStyle.textContent = documentCss;
+  (document.head ?? document.documentElement).append(documentStyle);
 }
 
 export function preloadStyles(): void {
@@ -93,6 +96,7 @@ export async function mountShadowUi({
   children,
 }: MountOptions): Promise<MountedUi> {
   const styles = sheet ?? (await loadSheet());
+  installDocumentStyle();
   const host = document.createElement(`bscf-${name}`);
   host.setAttribute(OWN_ATTRIBUTE, name);
   const shadow = host.attachShadow({ mode: 'open' });

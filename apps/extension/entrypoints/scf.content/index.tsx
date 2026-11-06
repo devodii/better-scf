@@ -6,6 +6,7 @@ import { pageKey, watchRoutes } from '../../lib/site/route-watcher';
 import { parseRoute, type Route } from '../../lib/site/routes';
 import { createSiteStore, type SiteStore } from '../../lib/site/store';
 import type { FeatureCleanup, FeatureContext } from '../../lib/ui/feature';
+import { watchHydration } from '../../lib/ui/hydration';
 import {
   type MountedUi,
   mountShadowUi,
@@ -153,8 +154,20 @@ function start(ctx: ContentScriptContext): void {
   let stale = false;
   let waitTimer: ReturnType<typeof setTimeout> | undefined;
 
+  const gate = watchHydration({
+    onHydrated() {
+      if (!document.documentElement.hasAttribute(OWN_ATTRIBUTE)) {
+        document.documentElement.setAttribute(OWN_ATTRIBUTE, 'ready');
+      }
+      attempt();
+    },
+    onTimeout() {
+      warn('hydration: no signal within 6s, continuing');
+    },
+  });
+
   const attempt = (): void => {
-    if (session || !waiting || stale) return;
+    if (session || !waiting || stale || !gate.isHydrated()) return;
     const region = watcher.region();
     if (!region || !store.isReady(route, region)) return;
     waiting = false;
@@ -181,6 +194,7 @@ function start(ctx: ContentScriptContext): void {
       if (pageKey(next) === pageKey(route)) return;
       route = next;
       stale = true;
+      gate.recheck();
       restart();
     },
     onMutation(replaced) {
@@ -211,8 +225,8 @@ function start(ctx: ContentScriptContext): void {
   });
 
   document.addEventListener('readystatechange', attempt);
-  document.documentElement.setAttribute(OWN_ATTRIBUTE, 'ready');
   ctx.onInvalidated(() => {
+    gate.stop();
     session?.stop();
     session = null;
     waiting = false;
