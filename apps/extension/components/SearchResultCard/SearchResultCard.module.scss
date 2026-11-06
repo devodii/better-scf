@@ -8,7 +8,7 @@
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border-radius: var(--bscf-radius-chip);
+  border-radius: var(--bscf-radius-card);
   background: var(--bscf-surface);
   color: var(--bscf-text);
   text-decoration: none;
@@ -32,7 +32,19 @@
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
+  min-height: 12rem;
   padding: 1.5rem;
+}
+
+.team {
+  @include type-meta;
+
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--bscf-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .title {
@@ -50,5 +62,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-top: auto;
   min-width: 0;
 }

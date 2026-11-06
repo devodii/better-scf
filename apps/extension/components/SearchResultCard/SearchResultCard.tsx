@@ -11,6 +11,7 @@ export interface SearchResultProject {
   category: string;
   thumbnail: string | null;
   lastAwardedRound: number | null;
+  team?: string | null | undefined;
 }
 
 export interface SearchResultMatch {
@@ -45,6 +46,7 @@ export function SearchResultCard({
     >
       <SearchThumbnail className={styles.cover} src={project.thumbnail} fallback={project.title} />
       <span className={styles.body}>
+        {project.team && <span className={styles.team}>By {project.team}</span>}
         <span className={styles.title} title={project.title}>
           <SearchHighlight text={project.title} ranges={titleRanges} />
         </span>
