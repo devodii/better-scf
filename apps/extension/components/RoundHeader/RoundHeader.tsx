@@ -64,7 +64,7 @@ export function RoundHeader({
           value={String(submissions)}
           note={
             siteTotal !== null && siteTotal > submissions
-              ? `The site's counter says ${siteTotal}, but only ${submissions} are listed.`
+              ? `${siteTotal - submissions} more applications have not passed pre-screen.`
               : undefined
           }
           icon={<StatIcon kind="submissions" />}
