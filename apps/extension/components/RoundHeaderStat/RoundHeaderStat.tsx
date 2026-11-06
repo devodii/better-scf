@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Tooltip } from '../Tooltip';
 import styles from './RoundHeaderStat.module.scss';
 
@@ -5,12 +6,20 @@ export interface RoundHeaderStatProps {
   label: string;
   value: string;
   hint?: string | undefined;
+  icon?: ReactNode;
 }
 
-export function RoundHeaderStat({ label, value, hint }: RoundHeaderStatProps) {
+export function RoundHeaderStat({ label, value, hint, icon }: RoundHeaderStatProps) {
   return (
     <div className={styles.root}>
-      <dt className={styles.label}>{label}</dt>
+      <dt className={styles.label}>
+        {icon ? (
+          <span className={styles.icon} aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
+        {label}
+      </dt>
       <dd className={styles.value}>
         {hint ? (
           <Tooltip content={hint}>

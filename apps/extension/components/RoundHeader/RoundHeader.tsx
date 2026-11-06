@@ -1,6 +1,7 @@
 import { formatBudget } from '../../lib/format/money';
 import { RoundHeaderStat } from '../RoundHeaderStat';
 import { type RoundHeaderTrackCounts, RoundHeaderTracks } from '../RoundHeaderTracks';
+import { StatIcon } from '../StatIcon';
 import styles from './RoundHeader.module.scss';
 
 export interface RoundHeaderProps {
@@ -23,14 +24,31 @@ export function RoundHeader({
   const hint = `${parsed} of ${submissions} parsed`;
   return (
     <section aria-label="Round summary" className={styles.root}>
-      {countdown && <p className={styles.countdown}>{countdown}</p>}
+      {countdown && (
+        <div className={styles.countdownRow}>
+          <span className={styles.clock} aria-hidden="true">
+            <StatIcon kind="clock" />
+          </span>
+          <p className={styles.countdown}>{countdown}</p>
+        </div>
+      )}
       <dl className={styles.stats}>
-        <RoundHeaderStat label="Submissions" value={String(submissions)} />
-        <RoundHeaderStat label="Total requested" value={formatBudget(totalRequested)} hint={hint} />
+        <RoundHeaderStat
+          label="Submissions"
+          value={String(submissions)}
+          icon={<StatIcon kind="submissions" />}
+        />
+        <RoundHeaderStat
+          label="Total requested"
+          value={formatBudget(totalRequested)}
+          hint={hint}
+          icon={<StatIcon kind="total" />}
+        />
         <RoundHeaderStat
           label="Median requested"
           value={formatBudget(medianRequested)}
           hint={hint}
+          icon={<StatIcon kind="median" />}
         />
       </dl>
       {tracks && <RoundHeaderTracks counts={tracks} total={submissions} />}
