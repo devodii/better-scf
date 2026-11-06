@@ -107,13 +107,10 @@ async function mountReviewerBar(
   summary: SummaryParts,
 ): Promise<() => void> {
   const { store, signal, warn } = context;
-  const stored = await store.rpc.getReview(id).catch((error: unknown) => {
-    warn('read review', error);
-    return null;
-  });
   if (signal.aborted) return () => {};
-  let review = stored ?? blankReview(id);
+  let review = blankReview(id);
   let note = review.note;
+  let isEdited = false;
   let noteStatus: ReviewerNoteStatus = 'idle';
   let copyStatus: ReviewerCopyStatus = 'idle';
   let expanded = window.matchMedia(WIDE_QUERY).matches;
@@ -153,12 +150,14 @@ async function mountReviewerBar(
     <ReviewerBar
       stance={review.stance}
       onStanceChange={(stance) => {
+        isEdited = true;
         review = { ...review, stance };
         void persist({ stance });
         render();
       }}
       shortlisted={review.shortlisted}
       onShortlistChange={(shortlisted) => {
+        isEdited = true;
         review = { ...review, shortlisted };
         void persist({ shortlisted });
         render();
@@ -166,6 +165,7 @@ async function mountReviewerBar(
       note={note}
       noteStatus={noteStatus}
       onNoteChange={(value) => {
+        isEdited = true;
         note = value;
         noteStatus = 'saving';
         clearTimeout(noteTimer);
@@ -228,6 +228,16 @@ async function mountReviewerBar(
   }
   if (closed) handle.remove();
   else ui = handle;
+
+  store.rpc.getReview(id).then(
+    (stored) => {
+      if (closed || isEdited || !stored) return;
+      review = stored;
+      note = stored.note;
+      render();
+    },
+    (error: unknown) => warn('read review', error),
+  );
 
   return () => {
     closed = true;

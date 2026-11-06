@@ -29,6 +29,7 @@ interface Entry {
   image: HTMLImageElement | null;
   objectFit: string;
   backdrop: HTMLImageElement | null;
+  hasMeta: boolean;
   gone: boolean;
 }
 
@@ -116,25 +117,6 @@ function findFooter(card: Element): Element | null {
   return null;
 }
 
-function afterLoad(signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    let frame = 0;
-    const finish = (): void => {
-      frame = requestAnimationFrame(() => resolve());
-    };
-    signal.addEventListener(
-      'abort',
-      () => {
-        cancelAnimationFrame(frame);
-        resolve();
-      },
-      { once: true },
-    );
-    if (document.readyState === 'complete') finish();
-    else window.addEventListener('load', finish, { once: true, signal });
-  });
-}
-
 export const feature: Feature = {
   pages: ['round'],
   toggles: [
@@ -145,7 +127,7 @@ export const feature: Feature = {
     'shortlistAndStance',
     'coverNormalization',
   ],
-  async mount({ page, region, settings, store, signal, mount, onMutation, warn }) {
+  mount({ page, region, settings, store, signal, mount, onMutation, warn }) {
     if (page.kind !== 'round' || !page.records) return;
     const records = page.records;
     const wantsMeta = settings.trackChips || settings.awardedChip || settings.avatarStack;
@@ -155,26 +137,7 @@ export const feature: Feature = {
 
     const submissions = new Map<string, Submission>();
     const reviews = new Map<string, ReviewState>();
-    await Promise.all([
-      wantsMeta && round
-        ? store.send('listSubmissionsByRound', round).then(
-            (list) => {
-              for (const { value } of list) submissions.set(value.id, value);
-            },
-            (error: unknown) => warn('read submissions', error),
-          )
-        : undefined,
-      wantsReviews
-        ? store.send('listReviews', undefined).then(
-            (list) => {
-              for (const review of list) reviews.set(review.submissionId, review);
-            },
-            (error: unknown) => warn('read reviews', error),
-          )
-        : undefined,
-    ]);
-    await afterLoad(signal);
-    if (signal.aborted) return;
+    let reviewsLoaded = !wantsReviews;
 
     const entries = new Map<Element, Entry>();
     const byId = new Map<string, Set<Entry>>();
@@ -212,7 +175,7 @@ export const feature: Feature = {
     const cornerProps = (entry: Entry): CardCornerProps => {
       const review = reviews.get(entry.id) ?? blankReview(entry.id);
       const props: CardCornerProps = {};
-      if (settings.readState) {
+      if (settings.readState && reviewsLoaded) {
         const opened = review.openedCount > 0;
         if (settings.showOpenedInsteadOfUnread) props.dot = opened ? 'opened' : null;
         else props.dot = opened ? null : 'unread';
@@ -282,7 +245,23 @@ export const feature: Feature = {
         return;
       }
       entry.uis.push(ui);
-      if (part === 'corner') entry.corner = ui;
+      if (part === 'corner') {
+        entry.corner = ui;
+        if (reviewsLoaded && wantsReviews) renderCorner(entry);
+      }
+    };
+
+    const placeMeta = (entry: Entry): void => {
+      if (entry.hasMeta) return;
+      const meta = metaProps(submissions.get(entry.id), settings);
+      if (!meta) return;
+      const footer = findFooter(entry.card);
+      if (!footer) {
+        warn('card footer not found');
+        return;
+      }
+      entry.hasMeta = true;
+      void place(entry, footer, 'meta', <CardMeta {...meta} />);
     };
 
     const attach = (card: Element, id: string): void => {
@@ -296,6 +275,7 @@ export const feature: Feature = {
         image: null,
         objectFit: '',
         backdrop: null,
+        hasMeta: false,
         gone: false,
       };
       entries.set(card, entry);
@@ -318,12 +298,7 @@ export const feature: Feature = {
         warn('cover not found');
       }
 
-      const meta = metaProps(submissions.get(id), settings);
-      if (meta) {
-        const footer = findFooter(card);
-        if (footer) void place(entry, footer, 'meta', <CardMeta {...meta} />);
-        else warn('card footer not found');
-      }
+      placeMeta(entry);
       if (wantsCorner && frame)
         void place(entry, frame, 'corner', <CardCorner {...cornerProps(entry)} />);
     };
@@ -352,6 +327,34 @@ export const feature: Feature = {
 
     sync();
     onMutation(sync);
+
+    if (wantsMeta && round) {
+      store.send('listSubmissionsByRound', round).then(
+        (list) => {
+          if (signal.aborted) return;
+          for (const { value } of list) submissions.set(value.id, value);
+          for (const entry of entries.values()) placeMeta(entry);
+        },
+        (error: unknown) => warn('read submissions', error),
+      );
+    }
+    if (wantsReviews) {
+      const settle = (): void => {
+        if (signal.aborted) return;
+        reviewsLoaded = true;
+        for (const entry of entries.values()) renderCorner(entry);
+      };
+      store.send('listReviews', undefined).then(
+        (list) => {
+          for (const review of list) reviews.set(review.submissionId, review);
+          settle();
+        },
+        (error: unknown) => {
+          warn('read reviews', error);
+          settle();
+        },
+      );
+    }
 
     return () => {
       for (const entry of [...entries.values()]) detach(entry);
