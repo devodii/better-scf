@@ -7,17 +7,20 @@ import { type MountedUi, OWN_ATTRIBUTE } from '../../../lib/ui/mount';
 const SLOT = 'share-slot';
 const FEEDBACK_MS = 2500;
 
-function findHost(region: Element): Element | null {
+function findHost(region: Element, isPublic: boolean): Element | null {
+  if (isPublic)
+    return region.querySelector('h2')?.parentElement?.parentElement?.lastElementChild ?? null;
   const title = region.querySelector(SEL.title);
   const block = title?.parentElement?.parentElement;
   return block?.nextElementSibling ?? block ?? null;
 }
 
 export const feature: Feature = {
-  pages: ['submission'],
+  pages: ['submission', 'publicSubmission'],
   toggles: ['shareButton'],
   mount({ page, region, mount, onMutation, warn }) {
-    if (page.kind !== 'submission') return;
+    if (page.kind !== 'submission' && page.kind !== 'publicSubmission') return;
+    const isPublic = page.kind === 'publicSubmission';
     const url = `${SITE_ORIGIN}/submissions/${page.submissionId}`;
     let status: ShareStatus = 'idle';
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -50,7 +53,7 @@ export const feature: Feature = {
     };
 
     const sync = (): void => {
-      const host = findHost(region);
+      const host = findHost(region, isPublic);
       if (!host) {
         teardown();
         warn('share host not found');

@@ -5,7 +5,7 @@ import { isToggleShortcut, readOpen } from './state';
 const IDLE_TIMEOUT_MS = 3000;
 
 export const feature: Feature = {
-  pages: ['roundList', 'round', 'submission', 'myProjects', 'other'],
+  pages: ['roundList', 'round', 'submission', 'publicSubmission', 'myProjects', 'other'],
   toggles: ['aiDock'],
   async mount(context) {
     const { warn } = context;

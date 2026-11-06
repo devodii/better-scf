@@ -18,6 +18,7 @@ export type PageData =
       records: readonly SubmissionSummary[] | null;
     }
   | { kind: 'submission'; submissionId: string; page: SubmissionPage | null }
+  | { kind: 'publicSubmission'; submissionId: string }
   | { kind: 'roundList' | 'myProjects' | 'other' };
 
 export interface SiteStore {
@@ -131,6 +132,9 @@ export function createSiteStore(initial: Route): SiteStore {
         });
         if (title) lastSubmission = { id, ...title };
         return { kind: 'submission', submissionId: id, page };
+      }
+      if (route.kind === 'publicSubmission') {
+        return { kind: 'publicSubmission', submissionId: route.submissionId };
       }
       return { kind: route.kind };
     },

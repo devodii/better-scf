@@ -21,6 +21,8 @@ export function pageKey(route: Route): string {
       return `round:${route.roundId}`;
     case 'submission':
       return `submission:${route.submissionId}`;
+    case 'publicSubmission':
+      return `public-submission:${route.submissionId}`;
     default:
       return route.kind;
   }
