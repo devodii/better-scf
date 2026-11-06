@@ -193,6 +193,7 @@ export function describeError(error: Error): AssistantNotice {
       case 'server':
       case 'network':
       case 'not-configured':
+      case 'not-allowed':
         return { tone: 'error', text: error.userMessage() };
       default:
         return assertNever(error.kind);

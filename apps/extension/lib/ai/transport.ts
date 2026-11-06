@@ -41,7 +41,8 @@ export type ChatTransportErrorKind =
   | 'global-cap'
   | 'server'
   | 'network'
-  | 'not-configured';
+  | 'not-configured'
+  | 'not-allowed';
 
 interface ChatTransportErrorDetail {
   status: number;
@@ -107,6 +108,10 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
     return new ChatTransportError('network', { status: 0, retryAfterSeconds: null, cause });
   }
 
+  static notAllowed(): ChatTransportError {
+    return new ChatTransportError('not-allowed', { status: 403, retryAfterSeconds: null });
+  }
+
   static notConfigured(): ChatTransportError {
     return new ChatTransportError('not-configured', { status: 0, retryAfterSeconds: null });
   }
@@ -115,6 +120,8 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
     switch (this.kind) {
       case 'not-configured':
         return 'The assistant server is not configured, so the assistant is unavailable in this build.';
+      case 'not-allowed':
+        return 'The assistant server does not recognise this copy of the extension yet.';
       case 'rate-limited': {
         const wait =
           this.retryAfterSeconds === null ? 'a moment' : `${this.retryAfterSeconds} seconds`;
@@ -155,6 +162,7 @@ async function mapChatErrorResponse(
       ? ChatTransportError.rateLimited(retryAfter)
       : ChatTransportError.dailyLimit(retryAfter, now());
   }
+  if (detail?.code === 'forbidden_origin') return ChatTransportError.notAllowed();
   if (response.status === 503) return ChatTransportError.globalCap(detail?.message, retryAfter);
   return ChatTransportError.server(response.status, detail?.message, retryAfter);
 }
