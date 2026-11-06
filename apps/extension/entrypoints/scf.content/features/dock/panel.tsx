@@ -16,6 +16,7 @@ import {
 import type { FeatureContext } from '../../../../lib/ui/feature';
 import { type MountedUi, OWN_ATTRIBUTE } from '../../../../lib/ui/mount';
 import dockCss from '../../styles/dock.scss?inline';
+import { createPagePush } from './push';
 import { createRequestSource } from './request';
 import { isToggleShortcut, readOpen, writeOpen } from './state';
 import {
@@ -71,6 +72,7 @@ export function mountPanel(
   let closed = false;
   let isCleared = false;
   const ui: MountedUi = handle;
+  const push = createPagePush();
 
   const isBusy = (): boolean =>
     session?.chat.status === 'submitted' || session?.chat.status === 'streaming';
@@ -158,6 +160,7 @@ export function mountPanel(
     writeOpen(next);
     if (next) hasUnread = false;
     else isHistoryOpen = false;
+    push.set(next, true);
     render();
   }
 
@@ -299,6 +302,8 @@ export function mountPanel(
   style.textContent = dockCss;
   (document.head ?? document.documentElement).append(style);
 
+  if (isOpen) push.set(true, false);
+
   ui.render(view());
   if (openAfterMount) setOpen(true);
 
@@ -314,6 +319,7 @@ export function mountPanel(
     window.removeEventListener('keydown', onKeyDown);
     persistLast();
     dropSession();
+    push.release();
     ui.remove();
     style.remove();
   };

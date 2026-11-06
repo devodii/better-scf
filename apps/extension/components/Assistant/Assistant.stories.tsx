@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fn } from 'storybook/test';
+import { createPagePush } from '../../entrypoints/scf.content/features/dock/push';
 import dockCss from '../../entrypoints/scf.content/styles/dock.scss?inline';
 import type { AssistantMessageItem } from '../AssistantMessage';
 import { Assistant, type AssistantProps } from './Assistant';
+import { PANEL_SIDE, type PanelSide } from './side';
 
 const PHONE = {
   globals: { viewport: { value: 'phone', isRotated: false } },
@@ -450,7 +452,15 @@ const FAKE_SITE_CSS = `
 }
 `;
 
-function FakeSite() {
+function FakeSite({ isOpen, side }: { isOpen: boolean; side: PanelSide }) {
+  useEffect(() => {
+    const push = createPagePush(side);
+    push.set(isOpen, true);
+  }, [isOpen, side]);
+  useEffect(() => {
+    const push = createPagePush();
+    return () => push.release();
+  }, []);
   return (
     <main
       style={{
@@ -515,39 +525,40 @@ function FakeSite() {
   );
 }
 
-function OverlayPage(args: AssistantProps) {
+function PushedPage(args: AssistantProps) {
   const [isOpen, setIsOpen] = useState(args.isOpen);
+  const side = args.side ?? PANEL_SIDE;
   return (
     <>
       <style>{dockCss}</style>
-      <FakeSite />
+      <FakeSite isOpen={isOpen} side={side} />
       <Assistant {...args} isOpen={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }
 
-export const OverlayPageClosed: Story = {
+export const PushedPageClosed: Story = {
   args: { isOpen: false, messages: [QUESTION, ANSWER] },
-  render: (args) => <OverlayPage {...args} />,
+  render: (args) => <PushedPage {...args} />,
 };
 
-export const OverlayPageOpen: Story = {
+export const PushedPageOpen: Story = {
   args: { isOpen: true, messages: [QUESTION, ANSWER] },
-  render: (args) => <OverlayPage {...args} />,
+  render: (args) => <PushedPage {...args} />,
 };
 
-export const OverlayPageLeftClosed: Story = {
+export const PushedPageLeftClosed: Story = {
   args: { side: 'left', isOpen: false, messages: [QUESTION, ANSWER] },
-  render: (args) => <OverlayPage {...args} />,
+  render: (args) => <PushedPage {...args} />,
 };
 
-export const OverlayPageLeftOpen: Story = {
+export const PushedPageLeftOpen: Story = {
   args: { side: 'left', isOpen: true, messages: [QUESTION, ANSWER] },
-  render: (args) => <OverlayPage {...args} />,
+  render: (args) => <PushedPage {...args} />,
 };
 
-export const OverlayPagePhone: Story = {
+export const PushedPagePhone: Story = {
   ...PHONE,
   args: { isOpen: true, messages: [QUESTION, ANSWER] },
-  render: (args) => <OverlayPage {...args} />,
+  render: (args) => <PushedPage {...args} />,
 };
