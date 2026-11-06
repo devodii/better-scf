@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SERVER_URLS } from "shared";
 import { browser } from "wxt/browser";
 import { Toggle } from "@/components/Toggle";
 import { type FeatureKey, type Settings, settingsItem } from "@/lib/settings";
@@ -226,7 +227,7 @@ export function App() {
             <input
               className={styles.input}
               aria-label="Server URL override"
-              placeholder="http://localhost:8787"
+              placeholder={SERVER_URLS.production}
               value={serverDraft}
               onChange={(event) => setServerDraft(event.target.value)}
             />

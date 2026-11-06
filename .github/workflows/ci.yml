@@ -32,9 +32,6 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      # An unset variable is an empty string, which new URL() in wxt.config.ts rejects.
-      WXT_SERVER_URL: ${{ vars.WXT_SERVER_URL || 'http://localhost:8787' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -43,7 +40,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter extension build
+      - run: pnpm build:prod
       - run: pnpm --filter extension zip
       - name: Name the zip after the root version
         id: zip

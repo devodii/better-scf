@@ -18,15 +18,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       zip-name: ${{ steps.zip.outputs.name }}
-    env:
-      WXT_SERVER_URL: ${{ vars.WXT_SERVER_URL }}
     steps:
-      - name: Require a release server URL
-        run: |
-          if [ -z "$WXT_SERVER_URL" ]; then
-            echo "Repository variable WXT_SERVER_URL is not set; a release would point at localhost." >&2
-            exit 1
-          fi
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -47,7 +39,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm --filter extension build
+      - run: pnpm build:prod
       - run: pnpm --filter extension zip
       - name: Name the zip after the root version
         id: zip

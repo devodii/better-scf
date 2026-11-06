@@ -7,7 +7,7 @@
 
 ## Repository variables
 
-- `WXT_SERVER_URL`: public base URL of the deployed server. The extension build bakes it in (a release fails without it) and the deploy workflow polls its `/health` after a deploy. It is a public address, not a secret.
+- `WXT_SERVER_URL`: public base URL of the deployed server. The deploy workflow polls its `/health` after a deploy. The extension does not read it: production builds use the URL in `packages/shared/src/server-urls.ts`. It is a public address, not a secret.
 
 ## Getting the Railway token
 

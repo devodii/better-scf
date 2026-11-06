@@ -60,20 +60,16 @@ pnpm dev
 | `pnpm build-storybook`        | Static Storybook build.              |
 | `pnpm --filter extension zip` | The release zip.                     |
 
-### Building with a server URL
+### Building for dev or prod
 
-The assistant talks to the server at `WXT_SERVER_URL`, a public value baked into the build (never put a secret in a `WXT_` variable). The manifest gets a host permission for that host and no other server:
+Two commands, same extension, different server:
 
-```sh
-WXT_SERVER_URL=https://your-server.example.com pnpm --filter extension build
-WXT_SERVER_URL=https://your-server.example.com pnpm --filter extension zip
-```
+| Command           | Server                                                   | Host permission                                         |
+| ----------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| `pnpm build:dev`  | `http://localhost:8787` (run `pnpm --filter server dev`) | `http://localhost/*`                                    |
+| `pnpm build:prod` | the Railway server                                       | `https://better-scf-server-production.up.railway.app/*` |
 
-You can also put the line in `apps/extension/.env`.
-
-- `pnpm dev` (development mode): the host permission is `http://localhost/*` when no URL is set, otherwise the host of `WXT_SERVER_URL`.
-- Production build with a URL: only that host. A `localhost`, `127.0.0.1` or `[::1]` URL gets no permission in a production build.
-- Production build without a URL: no server permission; the assistant says the assistant server is not configured.
+The URLs live in one place, `packages/shared/src/server-urls.ts`, and the build mode picks one and bakes it in. Output goes to `apps/extension/.output/chrome-mv3-dev` and `chrome-mv3`. `pnpm --filter extension zip` and the CI builds use production. A user can still point a copy at another server from the popup (long-press the version number).
 
 The other host permission is `https://communityfund.stellar.org/*`. Horizon is fetched from the page's origin and `unavatar.io` is only an image, so neither needs a permission.
 
