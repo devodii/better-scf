@@ -28,10 +28,11 @@ html [data-bscf-search-row] > [data-bscf-search-bar] {
   margin-block: calc(1rem - var(--bscf-site-gap, 0px)) -1rem;
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 40rem) {
   html [data-bscf-search-row] > [data-bscf-search-heading] {
     flex: 0 1 auto;
     align-self: center;
+    max-width: calc(100% - 15.5rem);
   }
 
   html [data-bscf-search-row] > [data-bscf-search-bar] {
