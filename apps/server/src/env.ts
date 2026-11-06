@@ -18,9 +18,9 @@ const envSchema = z
           .filter((id) => id.length > 0),
       ),
     PORT: intWithDefault(8787),
-    DAILY_CAP_PER_CLIENT: intWithDefault(40),
-    BURST_PER_MINUTE: intWithDefault(6),
-    GLOBAL_DAILY_CAP: intWithDefault(3000),
+    DAILY_CAP_PER_CLIENT: intWithDefault(300),
+    BURST_PER_MINUTE: intWithDefault(24),
+    GLOBAL_DAILY_CAP: intWithDefault(6000),
     MODEL: z.string().min(1).default(DEFAULT_MODEL),
   })
   .superRefine((value, ctx) => {
