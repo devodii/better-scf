@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { backendGet } from '../../site/backend';
+import { saveItem } from '../scratchpad';
 import { defineTool } from './registry';
 
 export const tool = defineTool({
@@ -12,10 +13,23 @@ export const tool = defineTool({
       .record(z.string(), z.string().max(64))
       .optional()
       .describe('Path params such as { "round": "45" }'),
+    save: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .optional()
+      .describe('Also keep the full result as data.<save> for run_js'),
   }),
-  run: async ({ endpoint, params }) => {
+  run: async ({ endpoint, params, save }) => {
     const result = await backendGet(endpoint, params ?? {});
     if (!result.ok) return result.error.toToolResult();
-    return { data: result.data, personal: result.personal, truncated: result.truncated };
+    const savedAs = save ? `data.${saveItem(save, result.data)}` : undefined;
+    return {
+      data: result.data,
+      personal: result.personal,
+      truncated: result.truncated,
+      ...(savedAs ? { savedAs } : {}),
+    };
   },
 });

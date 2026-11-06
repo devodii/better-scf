@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.166",
+    "@nyariv/sandboxjs": "^0.9.7",
     "@stellar/stellar-base": "^15.0.0",
     "@webext-core/messaging": "^4.0.1",
     "ai": "^7.0.162",

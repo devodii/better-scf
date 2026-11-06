@@ -17,6 +17,9 @@ importers:
       '@ai-sdk/react':
         specifier: ^4.0.166
         version: 4.0.166(react@19.3.1)(zod@4.6.7)
+      '@nyariv/sandboxjs':
+        specifier: ^0.9.7
+        version: 0.9.7
       '@stellar/stellar-base':
         specifier: ^15.0.0
         version: 15.0.0
@@ -552,6 +555,9 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@nyariv/sandboxjs@0.9.7':
+    resolution: {integrity: sha512-f/uSBJrEQ+yqyHgVd0ywFPhIAMyBSCCqTi5DThcOs6moUvZJi4t6jiAV78iwyDD+IWqoAGIIb9bAWZVdrMttTA==}
 
   '@oxc-parser/binding-android-arm-eabi@0.127.0':
     resolution: {integrity: sha512-0LC7ye4hvqbIKxAzThzvswgHLFu2AURKzYLeSVvLdu2TBOYWQDmHnTqPLeA597BcUCxiLqLsS4CJ5uoI5WYWCQ==}
@@ -3152,6 +3158,8 @@ snapshots:
       '@noble/hashes': 1.8.0
 
   '@noble/hashes@1.8.0': {}
+
+  '@nyariv/sandboxjs@0.9.7': {}
 
   '@oxc-parser/binding-android-arm-eabi@0.127.0':
     optional: true

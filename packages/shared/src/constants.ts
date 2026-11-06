@@ -17,7 +17,7 @@ export const CHAT_LIMITS = {
   maxToolInputChars: 4096,
   maxToolResultChars: 12000,
   maxToolErrorChars: 2000,
-  maxSteps: 5,
+  maxSteps: 8,
 } as const;
 
 export const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
@@ -92,6 +92,11 @@ const QUICK_PROMPTS: readonly QuickPrompt[] = [
     text: 'Which submissions are Integration track?',
   },
   {
+    id: 'round-status-track',
+    scope: 'round',
+    text: 'Break this round down by status and track',
+  },
+  {
     id: 'round-by-category',
     scope: 'round',
     text: 'Group submissions by category',
@@ -110,6 +115,11 @@ const QUICK_PROMPTS: readonly QuickPrompt[] = [
     id: 'dashboard-latest-awards',
     scope: 'dashboard',
     text: 'How much was awarded in the latest completed round?',
+  },
+  {
+    id: 'dashboard-funded-last-rounds',
+    scope: 'dashboard',
+    text: 'How many projects were funded in each of the last 5 rounds?',
   },
   {
     id: 'dashboard-go-analytics',

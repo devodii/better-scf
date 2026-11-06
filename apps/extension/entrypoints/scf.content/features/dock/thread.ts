@@ -59,6 +59,16 @@ function activityText(name: string, input: unknown): string {
     }
     case 'read_page':
       return 'Reading this page';
+    case 'fetch_page': {
+      const path = readString(input, 'path');
+      return path ? `Reading ${clip(path)}` : 'Reading a page';
+    }
+    case 'run_js':
+      return 'Working out the answer';
+    case 'read_proposals':
+      return 'Reading the proposals';
+    case 'submission_details':
+      return 'Reading the proposal';
     case 'list_routes':
       return 'Checking the site map';
     case 'list_endpoints':

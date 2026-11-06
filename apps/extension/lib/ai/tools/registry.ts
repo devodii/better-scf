@@ -62,6 +62,7 @@ export interface AssistantTool {
   readonly name: string;
   readonly description: string;
   readonly schema: Record<string, unknown>;
+  readonly timeoutMs: number;
   readonly execute: (raw: unknown) => Promise<ExecuteResult>;
 }
 
@@ -69,6 +70,7 @@ export interface ToolDefinition<TInput extends z.ZodObject> {
   name: string;
   description: string;
   input: TInput;
+  timeoutMs?: number;
   run: (input: z.output<TInput>) => unknown;
 }
 
@@ -87,6 +89,7 @@ export function defineTool<TInput extends z.ZodObject>(
     name: definition.name,
     description: definition.description,
     schema,
+    timeoutMs: definition.timeoutMs ?? TIMEOUT_MS,
     execute: async (raw) => {
       const parsed = definition.input.safeParse(raw ?? {});
       if (!parsed.success) {
@@ -149,11 +152,12 @@ function fail(error: ToolError): ToolOutcome {
 function withLimits(
   work: Promise<ExecuteResult>,
   signal: AbortSignal | undefined,
+  timeoutMs: number,
 ): Promise<ExecuteResult> {
   return new Promise<ExecuteResult>((resolve) => {
     const timer = setTimeout(
-      () => resolve({ ok: false, error: ToolError.timedOut(TIMEOUT_MS / 1000) }),
-      TIMEOUT_MS,
+      () => resolve({ ok: false, error: ToolError.timedOut(timeoutMs / 1000) }),
+      timeoutMs,
     );
     const onAbort = () => resolve({ ok: false, error: ToolError.cancelled() });
     signal?.addEventListener('abort', onAbort, { once: true });
@@ -175,7 +179,7 @@ export async function runTool(
     const tool = (await loadTools()).get(name);
     if (!tool) return fail(ToolError.unknownTool(name));
     if (signal?.aborted) return fail(ToolError.cancelled());
-    const result = await withLimits(tool.execute(input), signal);
+    const result = await withLimits(tool.execute(input), signal, tool.timeoutMs);
     if (!result.ok) return fail(result.error);
     const text = `${RESULT_LABEL}${JSON.stringify(result.value) ?? 'null'}`;
     const max = CHAT_LIMITS.maxToolResultChars;

@@ -125,7 +125,7 @@ export function readInlineScripts(root: ParentNode): string[] {
   return scripts;
 }
 
-function decodeFlight(scripts: readonly string[]): string {
+export function decodeFlight(scripts: readonly string[]): string {
   const chunks: string[] = [];
   for (const text of scripts) {
     const start = text.indexOf(FLIGHT_PUSH_PREFIX);
@@ -141,7 +141,7 @@ function decodeFlight(scripts: readonly string[]): string {
   return chunks.join('');
 }
 
-function sliceObject(text: string, start: number): string | null {
+export function sliceObject(text: string, start: number): string | null {
   const limit = Math.min(text.length, start + MAX_OBJECT_CHARS);
   let depth = 0;
   let inString = false;
@@ -160,7 +160,7 @@ function sliceObject(text: string, start: number): string | null {
   return null;
 }
 
-function parseObject(raw: string): Record<string, unknown> | null {
+export function parseObject(raw: string): Record<string, unknown> | null {
   try {
     const value: unknown = JSON.parse(raw);
     return isObject(value) ? value : null;
