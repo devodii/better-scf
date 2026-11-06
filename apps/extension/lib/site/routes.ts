@@ -1,7 +1,6 @@
 export const SITE_ORIGIN = 'https://communityfund.stellar.org';
 
 export type Route =
-  | { kind: 'landing' }
   | { kind: 'roundList' }
   | { kind: 'round'; roundId: string }
   | { kind: 'submission'; submissionId: string }
@@ -26,7 +25,6 @@ export function parseRoute(input: string | URL): Route {
   }
   if (url.origin !== SITE_ORIGIN) return OTHER;
   const path = url.pathname.replace(/\/+$/, '');
-  if (path === '') return { kind: 'landing' };
   if (ROUND_LIST.test(path)) return { kind: 'roundList' };
   const round = ROUND.exec(path)?.[1];
   if (round) return { kind: 'round', roundId: round };

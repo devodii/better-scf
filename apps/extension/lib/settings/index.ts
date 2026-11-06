@@ -23,7 +23,6 @@ const settingsSchema = z.object({
   teamAvatars: z.boolean().default(true),
   imageLightbox: z.boolean().default(true),
   shareButton: z.boolean().default(true),
-  landingChoice: z.boolean().default(true),
   aiDock: z.boolean().default(true),
   includeRepositoryLink: z.boolean().default(false),
   debugLogging: z.boolean().default(false),

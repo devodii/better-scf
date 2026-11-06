@@ -138,38 +138,6 @@ const checks = [
       expect(missing.length === 0, `missing record fields: ${missing.join(', ')}`);
     },
   },
-  {
-    name: 'Landing page keeps its two entry buttons',
-    why: 'The clearer landing choice finds the site buttons by their text.',
-    async run() {
-      const html = await get('/');
-      const chunks = [...html.matchAll(/src="(\/_next\/static\/[^"]+\.js[^"]*)"/g)].map(
-        (m) => m[1],
-      );
-      expect(chunks.length > 0, 'no script files found on the landing page');
-      let login = false;
-      let apply = false;
-      for (const chunk of chunks) {
-        const code = await get(chunk);
-        login ||= code.includes('Go to dashboard');
-        apply ||= /I don(?:'|\\u2019|’)t have an account/.test(code);
-        if (login && apply) break;
-      }
-      expect(login, 'the "Go to dashboard" button text is gone');
-      expect(apply, 'the "I don\'t have an account" button text is gone');
-    },
-  },
-  {
-    name: 'Sign-in status endpoint still answers the same way',
-    why: 'The landing choice tells signed-in visitors apart using the first bytes of this answer.',
-    async run() {
-      const answer = (await get('/api/auth/session')).trim();
-      expect(
-        answer === 'null' || answer === '{}',
-        `signed-out answer changed (starts with "${answer.slice(0, 12)}")`,
-      );
-    },
-  },
 ];
 
 const rows = [];
