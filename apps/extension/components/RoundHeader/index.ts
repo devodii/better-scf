@@ -1,1 +1,1 @@
-export { RoundHeader, type RoundHeaderProps } from './RoundHeader';
+export { type RoundCountdown, RoundHeader, type RoundHeaderProps } from './RoundHeader';

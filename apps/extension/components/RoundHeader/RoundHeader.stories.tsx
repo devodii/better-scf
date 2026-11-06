@@ -5,7 +5,7 @@ const meta = {
   title: 'Round/RoundHeader',
   component: RoundHeader,
   args: {
-    countdown: 'Community Vote starts in 18 days',
+    countdown: { phase: 'Community Vote', verb: 'starts', when: 'in 18 days' },
     submissions: 34,
     parsed: 31,
     totalRequested: 2_412_000,
@@ -47,7 +47,11 @@ export const Empty: Story = {
 
 export const LongText: Story = {
   args: {
-    countdown: 'Notification and Award Distribution starts in 120 days',
+    countdown: {
+      phase: 'Notification and Award Distribution',
+      verb: 'starts',
+      when: 'in 120 days',
+    },
     submissions: 5196,
     parsed: 5001,
     totalRequested: 123_456_789,
@@ -85,3 +89,5 @@ export const Medium: Story = {
     ),
   ],
 };
+
+export const WithSiteCounterNote: Story = { args: { siteTotal: 99 } };

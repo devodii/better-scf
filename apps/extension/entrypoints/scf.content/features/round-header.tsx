@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { RoundHeader } from '../../../components/RoundHeader';
+import { type RoundCountdown, RoundHeader } from '../../../components/RoundHeader';
 import type { RoundHeaderTrackCounts } from '../../../components/RoundHeaderTracks';
 import {
   findFirstSubmissionSection,
@@ -15,21 +15,23 @@ import headerCss from '../styles/round-header.scss?inline';
 
 const BAR = 'data-bscf-round-header-bar';
 
-function when(verb: string, at: number, now: dayjs.Dayjs): string {
+function when(at: number, now: dayjs.Dayjs): string {
   const days = dayjs(at).startOf('day').diff(now.startOf('day'), 'day');
-  if (days <= 0) return `${verb} today`;
-  return `${verb} in ${days} ${days === 1 ? 'day' : 'days'}`;
+  if (days <= 0) return 'today';
+  return `in ${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
-function countdownText(phases: readonly RoundPhase[], now: dayjs.Dayjs): string | null {
+function countdownOf(phases: readonly RoundPhase[], now: dayjs.Dayjs): RoundCountdown | null {
   const time = now.valueOf();
   let next: { name: string; start: number } | null = null;
   for (const { name, startsAt, endsAt } of phases) {
     if (startsAt === null || endsAt === null) continue;
-    if (startsAt <= time && time <= endsAt) return `${name} ${when('ends', endsAt, now)}`;
+    if (startsAt <= time && time <= endsAt) {
+      return { phase: name, verb: 'ends', when: when(endsAt, now) };
+    }
     if (startsAt > time && (!next || startsAt < next.start)) next = { name, start: startsAt };
   }
-  return next ? `${next.name} ${when('starts', next.start, now)}` : null;
+  return next ? { phase: next.name, verb: 'starts', when: when(next.start, now) } : null;
 }
 
 function median(sorted: readonly number[]): number | null {
@@ -58,7 +60,7 @@ export const feature: Feature = {
 
     const siteTotal = readSiteSubmissionCount(page.roundName ?? records[0]?.roundName ?? null);
     let tracks: RoundHeaderTrackCounts | null = null;
-    let countdown: string | null = null;
+    let countdown: RoundCountdown | null = null;
     let table: Element | null = null;
     let bar: HTMLElement | null = null;
     let ui: MountedUi | null = null;
@@ -107,7 +109,7 @@ export const feature: Feature = {
       else anchor.before(mine);
       table = found ?? anchor;
       bar = mine;
-      countdown = countdownText(readRoundPhases(region), dayjs());
+      countdown = countdownOf(readRoundPhases(region), dayjs());
       context
         .mount({ anchor: mine, append: 'last', children: view() })
         .then((handle) => {

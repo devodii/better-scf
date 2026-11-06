@@ -6,10 +6,11 @@ export interface RoundHeaderStatProps {
   label: string;
   value: string;
   hint?: string | undefined;
+  note?: string | undefined;
   icon?: ReactNode;
 }
 
-export function RoundHeaderStat({ label, value, hint, icon }: RoundHeaderStatProps) {
+export function RoundHeaderStat({ label, value, hint, note, icon }: RoundHeaderStatProps) {
   return (
     <div className={styles.root}>
       <dt className={styles.label}>
@@ -31,6 +32,7 @@ export function RoundHeaderStat({ label, value, hint, icon }: RoundHeaderStatPro
           value
         )}
       </dd>
+      {note ? <dd className={styles.note}>{note}</dd> : null}
     </div>
   );
 }

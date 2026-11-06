@@ -28,27 +28,58 @@
   min-width: 0;
 }
 
-.clock {
+.phaseIcon {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: var(--bscf-border-hairline) solid var(--bscf-accent-yellow);
-  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--bscf-accent-yellow) 16%, transparent);
   color: var(--bscf-accent-yellow);
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
 }
 
 .countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
   margin: 0;
   min-width: 0;
-  color: var(--bscf-accent-yellow);
   font-family: var(--bscf-font-body);
+}
+
+.phaseLabel {
+  color: var(--bscf-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.phaseLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
   font-size: 1.25rem;
-  font-weight: 700;
   line-height: 1.5rem;
-  overflow-wrap: anywhere;
+}
+
+.phaseName {
+  color: var(--bscf-text);
+  font-weight: 700;
+}
+
+.phaseWhen {
+  color: var(--bscf-accent-yellow);
+  font-weight: 600;
 }
 
 .stats {

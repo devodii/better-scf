@@ -1,17 +1,31 @@
 import { formatBudget } from '../../lib/format/money';
 import { RoundHeaderStat } from '../RoundHeaderStat';
 import { type RoundHeaderTrackCounts, RoundHeaderTracks } from '../RoundHeaderTracks';
-import { StatIcon } from '../StatIcon';
+import { StatIcon, type StatIconKind } from '../StatIcon';
 import styles from './RoundHeader.module.scss';
 
+export interface RoundCountdown {
+  phase: string;
+  verb: 'starts' | 'ends';
+  when: string;
+}
+
 export interface RoundHeaderProps {
-  countdown: string | null;
+  countdown: RoundCountdown | null;
   submissions: number;
   siteTotal?: number | null;
   parsed: number;
   totalRequested: number | null;
   medianRequested: number | null;
   tracks: RoundHeaderTrackCounts | null;
+}
+
+function phaseIcon(phase: string): StatIconKind {
+  if (/submission/i.test(phase)) return 'submit';
+  if (/review/i.test(phase)) return 'review';
+  if (/vote/i.test(phase)) return 'vote';
+  if (/award|distribution|notification/i.test(phase)) return 'award';
+  return 'clock';
 }
 
 export function RoundHeader({
@@ -28,19 +42,29 @@ export function RoundHeader({
     <section aria-label="Round summary" className={styles.root}>
       {countdown && (
         <div className={styles.countdownRow}>
-          <span className={styles.clock} aria-hidden="true">
-            <StatIcon kind="clock" />
+          <span className={styles.phaseIcon} aria-hidden="true">
+            <StatIcon kind={phaseIcon(countdown.phase)} />
           </span>
-          <p className={styles.countdown}>{countdown}</p>
+          <p className={styles.countdown}>
+            <span className={styles.phaseLabel}>
+              {countdown.verb === 'ends' ? 'In progress' : 'Next up'}
+            </span>
+            <span className={styles.phaseLine}>
+              <strong className={styles.phaseName}>{countdown.phase}</strong>
+              <span className={styles.phaseWhen}>
+                {countdown.verb} {countdown.when}
+              </span>
+            </span>
+          </p>
         </div>
       )}
       <dl className={styles.stats}>
         <RoundHeaderStat
           label="Submissions"
           value={String(submissions)}
-          hint={
+          note={
             siteTotal !== null && siteTotal > submissions
-              ? `${siteTotal} applications were counted. The site only lists the ${submissions} that passed pre-screen.`
+              ? `The site's counter says ${siteTotal}, but only ${submissions} are listed.`
               : undefined
           }
           icon={<StatIcon kind="submissions" />}
