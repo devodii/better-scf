@@ -48,6 +48,7 @@ export interface Repo {
 
   getProject(id: string): Promise<Cached<Project> | null>;
   putProject(project: Project): Promise<void>;
+  mergeProject(project: Project): Promise<Project>;
 
   getRound(id: string): Promise<Cached<Round> | null>;
   putRound(round: Round): Promise<void>;
@@ -148,6 +149,18 @@ function createRepo(db: Db): Repo {
     },
     async putProject(project) {
       await db.put('projects', project);
+    },
+    async mergeProject(project) {
+      const tx = db.transaction('projects', 'readwrite');
+      const raw: unknown = await tx.store.get(project.id);
+      const parsed = raw === undefined ? null : parseWith(projectSchema, raw);
+      const known = parsed?.ok ? parsed.data.submissionIds : [];
+      const merged: Project = {
+        ...project,
+        submissionIds: [...new Set([...known, ...project.submissionIds])],
+      };
+      await Promise.all([tx.store.put(merged), tx.done]);
+      return merged;
     },
 
     async getRound(id) {

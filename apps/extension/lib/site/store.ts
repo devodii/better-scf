@@ -134,11 +134,7 @@ export function createSiteStore(initial: Route): SiteStore {
 
     async save(page) {
       await rpc.putSubmissions([page.submission]);
-      const project = page.project;
-      if (!project) return;
-      const cached = await rpc.getProject(project.id);
-      const ids = new Set([...(cached?.value.submissionIds ?? []), ...project.submissionIds]);
-      await rpc.putProject({ ...project, submissionIds: [...ids] });
+      if (page.project) await rpc.mergeProject(page.project);
     },
   };
 }

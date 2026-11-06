@@ -40,6 +40,7 @@ export interface RpcProtocol {
 
   getProject(id: string): Cached<Project> | null;
   putProject(project: Project): void;
+  mergeProject(project: Project): Project;
 
   getRound(id: string): Cached<Round> | null;
   putRound(round: Round): void;
@@ -82,6 +83,7 @@ const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
   listSubmissionsByProject: idSchema,
   getProject: idSchema,
   putProject: projectSchema,
+  mergeProject: projectSchema,
   getRound: idSchema,
   putRound: roundSchema,
   getReview: idSchema,
@@ -125,6 +127,7 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
     listSubmissionsByProject: async (id) => (await repo()).listSubmissionsByProject(id),
     getProject: async (id) => (await repo()).getProject(id),
     putProject: async (project) => (await repo()).putProject(project),
+    mergeProject: async (project) => (await repo()).mergeProject(project),
     getRound: async (id) => (await repo()).getRound(id),
     putRound: async (round) => (await repo()).putRound(round),
     getReview: async (id) => (await repo()).getReview(id),
@@ -171,6 +174,7 @@ export interface RpcClient {
   peekProject(id: string): Cached<Project> | undefined;
   getProject(id: string): Promise<Cached<Project> | null>;
   putProject(project: Project): Promise<void>;
+  mergeProject(project: Project): Promise<Project>;
 
   peekRound(id: string): Cached<Round> | undefined;
   getRound(id: string): Promise<Cached<Round> | null>;
@@ -227,6 +231,11 @@ export function createRpcClient(
     async putProject(project) {
       await messenger.sendMessage('putProject', project);
       projects.set(project.id, fresh(project, project.fetchedAt));
+    },
+    async mergeProject(project) {
+      const merged = await messenger.sendMessage('mergeProject', project);
+      projects.set(merged.id, fresh(merged, merged.fetchedAt));
+      return merged;
     },
 
     peekRound: (id) => rounds.peek(id),
