@@ -172,7 +172,7 @@ export const NetworkError: Story = {
     messages: CONVERSATION.slice(0, 1),
     notice: {
       tone: 'error',
-      text: 'Could not reach the assistant. Check your connection and try again.',
+      text: 'Could not reach the assistant. Check your connection. If it keeps failing, the server may not allow this extension yet.',
     },
   },
 };

@@ -127,7 +127,7 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
       case 'server':
         return this.serverMessage ?? GENERIC_MESSAGE;
       case 'network':
-        return 'Could not reach the assistant. Check your connection and try again.';
+        return 'Could not reach the assistant. Check your connection. If it keeps failing, the server may not allow this extension yet.';
       default:
         return assertNever(this.kind);
     }
