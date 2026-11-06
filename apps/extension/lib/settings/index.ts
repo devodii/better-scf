@@ -7,6 +7,7 @@ const settingsSchema = z.object({
   awardedChip: z.boolean().default(true),
   commentsChip: z.boolean().default(true),
   avatarStack: z.boolean().default(true),
+  loadProposalPages: z.boolean().default(true),
   readState: z.boolean().default(true),
   showOpenedInsteadOfUnread: z.boolean().default(false),
   shortlistAndStance: z.boolean().default(true),
