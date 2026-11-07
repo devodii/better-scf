@@ -155,6 +155,53 @@ const ENDPOINTS: Record<string, Endpoint> = {
     summary: "get_changelog(since?, limit?): changes to the Stellarlight API",
     path: () => "/api/changelog",
   },
+  get_stablecoins: {
+    summary:
+      "get_stablecoins(): stablecoins on Stellar with supply, issuers and market data",
+    path: () => "/api/stablecoins",
+  },
+  get_rwa: {
+    summary:
+      "get_rwa(q?, state?, limit?): registry of tokenized real-world assets on Stellar",
+    path: () => "/api/rwa",
+  },
+  get_contracts: {
+    summary:
+      "get_contracts(q?, limit?): verified mainnet contracts grouped by what they do",
+    path: () => "/api/contracts",
+  },
+  get_lifecycle: {
+    summary:
+      "get_lifecycle(): how directory projects ended up: built, in progress or abandoned",
+    path: () => "/api/lifecycle",
+  },
+  verify_claim: {
+    summary:
+      "verify_claim(type!, subject!, auditor?, since?): checks a claim such as audited or live against indexed evidence",
+    path: () => "/api/verify",
+  },
+  get_xlm_price: {
+    summary: "get_xlm_price(): current XLM price, volume and market cap",
+    path: () => "/api/xlm-price",
+  },
+  get_changes: {
+    summary:
+      "get_changes(since!: ISO date): what changed in the directory since a date",
+    path: () => "/api/changes",
+  },
+  repo_trust: {
+    summary: "repo_trust(repo!: owner/name): trust summary for one repo",
+    path: () => "/api/repos/trust",
+  },
+  resolve_project: {
+    summary:
+      "resolve_project(q!): resolves a project name, slug or URL to its directory record",
+    path: () => "/api/projects/resolve",
+  },
+  get_partner: {
+    summary: "get_partner(slug!): one partner in full",
+    path: slug("slug", "/api/partners"),
+  },
   get_status: {
     summary: "get_status(): freshness and size of each data source",
     path: () => "/api/status",
