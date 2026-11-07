@@ -14,6 +14,7 @@ import {
   logChatEntry,
 } from "./routes/chat.js";
 import { createHealthRoute } from "./routes/health.js";
+import { createStellarlightRoute } from "./routes/stellarlight.js";
 
 const SERVER_VERSION = "0.1.0";
 
@@ -61,6 +62,7 @@ function createApp(env: Env, deps: AppDeps = {}) {
       ...(deps.now ? { now: deps.now } : {}),
     }),
   );
+  v1.route("/stellarlight", createStellarlightRoute());
   app.route("/v1", v1);
 
   app.notFound((c) => c.json(chatError("bad_request", "Not found."), 404));

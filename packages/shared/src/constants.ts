@@ -21,6 +21,8 @@ export const CHAT_LIMITS = {
   maxSteps: 8,
 } as const;
 
+export const SERVER_TOOL_NAMES = ["find_builder", "stellarlight"] as const;
+
 export const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
 
 export const PAGE_KINDS = [
@@ -73,6 +75,11 @@ const QUICK_PROMPTS: readonly QuickPrompt[] = [
     id: "team-roles",
     scope: "submission",
     text: "Who is on the team and what does each person own?",
+  },
+  {
+    id: "team-track-record",
+    scope: "submission",
+    text: "Check the team's track record on Stellarlight",
   },
   {
     id: "traction-evidence",

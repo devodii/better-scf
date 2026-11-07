@@ -10,6 +10,7 @@ export function Footer() {
           the Stellar Development Foundation.
         </p>
         <nav className={styles.nav} aria-label="Footer">
+          <a href="/better-scf/changelog/">Changelog</a>
           <a href={LINKS.feedback} target="_blank" rel="noreferrer noopener">
             Suggest a feature
           </a>

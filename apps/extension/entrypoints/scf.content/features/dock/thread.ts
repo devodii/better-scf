@@ -47,6 +47,18 @@ function confirmText(name: string, input: unknown): string {
     : "Read your Community Fund data and send it to the assistant";
 }
 
+const STELLARLIGHT_ACTIVITY: Record<string, string> = {
+  get_builders: "Searching Stellarlight builders",
+  search_projects: "Searching Stellarlight projects",
+  search_repos: "Searching Stellarlight repos",
+  get_hackathons: "Looking up hackathons on Stellarlight",
+  get_audits: "Looking up audits on Stellarlight",
+  get_partners: "Looking up partners on Stellarlight",
+  vet_idea: "Checking the competition on Stellarlight",
+  scf_pitch: "Preparing SCF pitch facts from Stellarlight",
+  analyze_ecosystem: "Checking ecosystem totals on Stellarlight",
+};
+
 function activityText(name: string, input: unknown): string {
   switch (name) {
     case "navigate": {
@@ -77,6 +89,17 @@ function activityText(name: string, input: unknown): string {
       return "Reading the proposals";
     case "submission_details":
       return "Reading the proposal";
+    case "find_builder": {
+      const handle = readString(input, "handle") ?? readString(input, "query");
+      return handle
+        ? `Finding ${clip(handle)} on Stellarlight`
+        : "Searching Stellarlight builders";
+    }
+    case "stellarlight":
+      return (
+        STELLARLIGHT_ACTIVITY[readString(input, "tool") ?? ""] ??
+        "Checking Stellarlight"
+      );
     case "list_routes":
       return "Checking the site map";
     case "list_endpoints":

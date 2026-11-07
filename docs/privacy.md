@@ -14,6 +14,10 @@ better-scf has no analytics, no telemetry and no accounts. This page lists exact
 
 The server passes the question, the page text and the tool results to Anthropic's model to generate the answer. It logs only: timestamp, client id, submission id, which quick prompt was used (or "free") and token counts. It never logs question text, page text or tool results. It keeps rate limit counters and a daily token total per client id in memory, to enforce usage limits. Nothing is stored in a database and there is no answer cache.
 
+### To Stellarlight, through our server (only when a question needs it)
+
+When you ask about a builder, a project, a repo or the wider Stellar ecosystem, the assistant can look the answer up on Stellarlight (stellarlight.xyz), a public community directory. Our server sends the lookup, for example a GitHub username taken from a team link or a search keyword, and receives public data. Your question, the page text and your session are not sent to Stellarlight. Answers are kept in the server's memory for a few minutes to avoid repeating requests.
+
 ### To the Stellar Community Fund site
 
 The extension reads the pages you open and, with your own signed-in session, the site's own pages and backend (`communityfund.stellar.org`), so it can show facts next to what you browse and answer questions. Your session token is sent only to the site, as the site itself does. It is never sent to our server, the AI model or any other service, and it is never stored.
@@ -27,14 +31,14 @@ These requests also carry your IP address. They contain no identifier from us.
 
 ### Nothing else
 
-Your stance, shortlist, notes, read state, navigation state and settings never leave your device. Nothing is sent to our server unless you send a chat message. There is no analytics and no telemetry.
+Your stance, shortlist, notes, read state, navigation state and settings never leave your device. The only thing our server receives besides chat messages is a request, at most once an hour, for a public list of GitHub usernames that have a Stellarlight profile. It carries nothing about you or the pages you read except the usual request details (the random client id and your IP address). The extension uses the list to decide whether a team avatar links to Stellarlight or to GitHub. There is no analytics and no telemetry.
 
 ## What is stored on your device
 
 In the extension's own storage:
 
 - IndexedDB database `better-scf`: parsed submissions, projects and rounds; your review state (stance, shortlist, note, last opened); navigation state; your recent chats (you can open, branch and delete them from the chat panel); cached Horizon summaries; and resolved avatar URLs.
-- `chrome.storage.local`: feature settings and the random client id.
+- `chrome.storage.local`: feature settings, the random client id and the downloaded list of Stellarlight usernames.
 
 On the Community Fund tab, `sessionStorage` keeps the scroll position and last opened card of a page, whether the chat panel is open and which chat is current, until the tab closes.
 

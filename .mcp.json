@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "stellar-scout": {
+      "command": "npx",
+      "args": ["-y", "@stellar-light/scout-mcp"]
+    }
+  }
+}

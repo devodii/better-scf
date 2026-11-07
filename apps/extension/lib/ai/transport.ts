@@ -17,6 +17,7 @@ import {
   EXTENSION_VERSION,
   type ProposalContext,
   parseChatError,
+  SERVER_TOOL_NAMES,
 } from "shared";
 import { AppError, assertNever, isAppError } from "../errors";
 import { gateFor } from "./safety";
@@ -482,6 +483,7 @@ export function createBscfChat(options: BscfChatTransportOptions): BscfChat {
     transport,
     onToolCall: ({ toolCall }) => {
       const { toolName, toolCallId, input } = toolCall;
+      if ((SERVER_TOOL_NAMES as readonly string[]).includes(toolName)) return;
       if (gateFor(toolName, input, transport.isUserInitiated()) === "run") {
         void answer(toolName, toolCallId, input);
         return;

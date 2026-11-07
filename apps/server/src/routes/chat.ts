@@ -19,12 +19,14 @@ import {
   chatError,
   chatRequestSchema,
   messageText,
+  SERVER_TOOL_NAMES,
 } from "shared";
 import {
   buildContextBlock,
   promptMatches,
   SYSTEM_PROMPT,
 } from "../ai/prompts.js";
+import { createStellarlightTools } from "../ai/stellarlight.js";
 import type { Env } from "../env.js";
 import type { ClientVariables } from "../middleware/client.js";
 
@@ -98,14 +100,17 @@ function lastUserText(
 
 function declaredTools(body: ChatRequest): ToolSet | undefined {
   if (body.tools === undefined || body.tools.length === 0) return undefined;
+  const reserved: readonly string[] = SERVER_TOOL_NAMES;
   return Object.fromEntries(
-    body.tools.map((declared) => [
-      declared.name,
-      tool({
-        description: declared.description,
-        inputSchema: jsonSchema(declared.inputSchema as JSONSchema7),
-      }),
-    ]),
+    body.tools
+      .filter((declared) => !reserved.includes(declared.name))
+      .map((declared) => [
+        declared.name,
+        tool({
+          description: declared.description,
+          inputSchema: jsonSchema(declared.inputSchema as JSONSchema7),
+        }),
+      ]),
   );
 }
 
@@ -149,6 +154,7 @@ export function createChatRoute(deps: ChatRouteDeps) {
     });
   };
 
+  const stellarlight = createStellarlightTools();
   const route = new Hono<{ Variables: ClientVariables }>();
 
   route.post(
@@ -162,10 +168,11 @@ export function createChatRoute(deps: ChatRouteDeps) {
       const last = body?.messages[body.messages.length - 1];
       if (body === undefined || last === undefined) return badRequest(c);
       const userText = lastUserText(body.messages);
-      const tools = declaredTools(body);
+      const clientTools = declaredTools(body);
       if (
         userText === undefined ||
-        (last.role !== "user" && (tools === undefined || !hasToolResult(last)))
+        (last.role !== "user" &&
+          (clientTools === undefined || !hasToolResult(last)))
       ) {
         return badRequest(c);
       }
@@ -173,6 +180,7 @@ export function createChatRoute(deps: ChatRouteDeps) {
         return badRequest(c);
       }
 
+      const tools = { ...clientTools, ...stellarlight };
       const clientId = c.get("clientId");
       const result = streamText({
         model: deps.getModel(),
@@ -187,12 +195,11 @@ export function createChatRoute(deps: ChatRouteDeps) {
           },
         ],
         messages: await convertToModelMessages(body.messages, {
-          ...(tools === undefined ? {} : { tools }),
+          tools,
           ignoreIncompleteToolCalls: true,
         }),
-        ...(tools === undefined
-          ? {}
-          : { tools, stopWhen: stepCountIs(CHAT_LIMITS.maxSteps) }),
+        tools,
+        stopWhen: stepCountIs(CHAT_LIMITS.maxSteps),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         temperature: TEMPERATURE,
         abortSignal: c.req.raw.signal,

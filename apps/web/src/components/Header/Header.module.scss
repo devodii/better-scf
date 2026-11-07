@@ -43,7 +43,7 @@
 }
 
 @media (max-width: 30rem) {
-  .nav a:first-child {
+  .nav a:nth-child(-n + 2) {
     display: none;
   }
 }

@@ -1,0 +1,59 @@
+@use "../../layout" as *;
+
+.root {
+  @include container;
+
+  max-width: 48rem;
+  padding-block: 4rem 6rem;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font: 800 clamp(2.25rem, 6vw, 3.5rem) / 1 var(--bscf-font-text);
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  margin: 0 0 3rem;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-body);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release {
+  padding: 1.75rem;
+  border-radius: var(--bscf-radius-chip);
+  background: var(--bscf-surface);
+}
+
+.version {
+  margin: 0 0 1rem;
+  color: var(--bscf-accent-yellow);
+  font: var(--bscf-type-title);
+}
+
+.group {
+  margin: 0 0 0.5rem;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-chip);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.items {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  font: var(--bscf-type-meta);
+
+  li + li {
+    margin-top: 0.5rem;
+  }
+}
