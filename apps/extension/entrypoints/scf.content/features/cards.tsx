@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ReviewState, Submission } from "shared";
+import { LINKS, type ReviewState, type Submission } from "shared";
 import type { AvatarStackPerson } from "../../../components/AvatarStack";
 import {
   BuildersLoader,
@@ -117,7 +117,8 @@ function githubOwner(url: string | null): string | null {
 }
 
 function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
-  if (github) return `https://github.com/${encodeURIComponent(github)}`;
+  if (github)
+    return `${LINKS.stellarlightBuilders}/${encodeURIComponent(github)}`;
   if (x) return `https://x.com/${encodeURIComponent(x)}`;
   return linkedin;
 }
@@ -125,7 +126,9 @@ function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
 function builderPeople(facts: Enrichment): AvatarStackPerson[] {
   const people: AvatarStackPerson[] = facts.builders.map((builder) => ({
     name: builder.name,
-    role: builder.role,
+    role: builder.github
+      ? `${builder.role ?? "Builder"} · Stellarlight profile`
+      : builder.role,
     src: builder.github ? githubAvatar(builder.github) : null,
     href: profileHref(builder),
   }));
