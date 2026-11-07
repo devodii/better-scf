@@ -48,6 +48,7 @@ export async function loadStellarlightHandles(
   const response = await options.fetch(
     `${options.serverUrl}/v1/stellarlight/handles`,
     {
+      method: "POST",
       headers: {
         "X-BSCF-Client": await options.getClientId(),
         "X-BSCF-Version": EXTENSION_VERSION,

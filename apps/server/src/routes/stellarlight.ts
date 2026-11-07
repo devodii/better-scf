@@ -4,7 +4,7 @@ import { builderHandles } from "../ai/builder-handles.js";
 
 export function createStellarlightRoute(): Hono {
   builderHandles().catch(() => undefined);
-  return new Hono().get("/handles", async (c) => {
+  return new Hono().post("/handles", async (c) => {
     try {
       const { handles, at } = await builderHandles();
       c.header("Cache-Control", "private, max-age=600");
