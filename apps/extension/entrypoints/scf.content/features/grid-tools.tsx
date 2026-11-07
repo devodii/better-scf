@@ -467,11 +467,7 @@ function openTools(
       }
       ui = handle;
       render();
-      if (seed && query !== "") {
-        const field = searchRef.current;
-        field?.focus();
-        field?.setSelectionRange(query.length, query.length);
-      }
+      if (seed && query !== "") focusSearchEnd(searchRef, () => closed);
     })
     .catch((error: unknown) => warn("mount", error));
   if (settings.keyboardShortcuts)
@@ -546,6 +542,24 @@ function seeAllButton(section: Element): HTMLElement | null {
     if (norm(button.textContent) === SEE_ALL_TEXT) return button;
   }
   return null;
+}
+
+function focusSearchEnd(
+  ref: { readonly current: HTMLInputElement | null },
+  isClosed: () => boolean,
+): void {
+  let frames = 0;
+  const attempt = (): void => {
+    const field = ref.current;
+    if (field) {
+      field.focus();
+      field.setSelectionRange(field.value.length, field.value.length);
+      return;
+    }
+    frames += 1;
+    if (frames < 90 && !isClosed()) requestAnimationFrame(attempt);
+  };
+  attempt();
 }
 
 function openPreview(
