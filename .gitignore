@@ -13,6 +13,9 @@ node_modules/
 # Build output of the server, written by tsup (`pnpm --filter server build`).
 /apps/server/dist/
 
+# Vite build output of the landing page, written by `pnpm --filter web build`.
+/apps/web/dist/
+
 # Local secrets and machine config; each app commits a .env.example instead.
 .env
 .env.*
