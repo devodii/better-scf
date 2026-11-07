@@ -32,6 +32,7 @@ import {
   contextLabelFor,
   describeError,
   placeholderFor,
+  storedParts,
   storedText,
   subjectOf,
   toItems,
@@ -89,14 +90,20 @@ export function mountPanel(
     if (message.role !== "user" && message.role !== "assistant") return;
     const content = storedText(message);
     if (content === "") return;
+    const parts = storedParts(message);
     const before = stored.get(message.id);
-    if (before?.content === content) return;
+    if (
+      before?.content === content &&
+      JSON.stringify(before.parts) === JSON.stringify(parts)
+    )
+      return;
     lastStamp = Math.max(Date.now(), lastStamp + 1);
     const row: ChatMessage = {
       id: message.id,
       submissionId: conversationId,
       role: message.role,
       content,
+      ...(parts.length === 0 ? {} : { parts }),
       createdAt: before?.createdAt ?? lastStamp,
       ...(promptId === undefined ? {} : { promptId }),
     };

@@ -1,5 +1,10 @@
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
-import type { ChatMessage, PageKind } from "shared";
+import {
+  CHAT_LIMITS,
+  type ChatMessage,
+  type PageKind,
+  type StoredPart,
+} from "shared";
 import type { AssistantActivityStatus } from "../../../../components/AssistantActivity";
 import type {
   AssistantMessageItem,
@@ -141,6 +146,49 @@ export function storedText(message: UIMessage): string {
   return messageText(message) || runningActivity(message) || "";
 }
 
+function boundedOutput(output: unknown): unknown {
+  const json = JSON.stringify(output) ?? "";
+  return json.length <= CHAT_LIMITS.maxToolResultChars
+    ? output
+    : json.slice(0, CHAT_LIMITS.maxToolResultChars);
+}
+
+function boundedInput(input: unknown): unknown {
+  const json = JSON.stringify(input ?? {}) ?? "";
+  return json.length <= CHAT_LIMITS.maxToolInputChars ? (input ?? {}) : {};
+}
+
+export function storedParts(message: UIMessage): StoredPart[] {
+  const parts: StoredPart[] = [];
+  for (const part of message.parts) {
+    if (part.type === "text") {
+      if (part.text.trim() !== "")
+        parts.push({ type: "text", text: part.text });
+      continue;
+    }
+    if (!isToolUIPart(part)) continue;
+    const base = {
+      type: part.type,
+      toolCallId: part.toolCallId,
+      input: boundedInput(part.input),
+      ...(part.type === "dynamic-tool" ? { toolName: getToolName(part) } : {}),
+    };
+    if (part.state === "output-available")
+      parts.push({
+        ...base,
+        state: "output-available",
+        output: boundedOutput(part.output),
+      });
+    else if (part.state === "output-error")
+      parts.push({
+        ...base,
+        state: "output-error",
+        errorText: part.errorText.slice(0, CHAT_LIMITS.maxToolErrorChars),
+      });
+  }
+  return parts;
+}
+
 function toolDetail(errorText: string): string {
   const separator = errorText.indexOf(": ");
   return clip(
@@ -239,11 +287,20 @@ export function toItems(
   return items;
 }
 
+function toUiPart(part: StoredPart): UIMessage["parts"][number] {
+  if (part.type === "text" && "text" in part)
+    return { type: "text", text: part.text };
+  return part as unknown as UIMessage["parts"][number];
+}
+
 export function toUiMessage(row: ChatMessage): UIMessage {
   return {
     id: row.id,
     role: row.role,
-    parts: [{ type: "text", text: row.content }],
+    parts:
+      row.parts && row.parts.length > 0
+        ? row.parts.map(toUiPart)
+        : [{ type: "text", text: row.content }],
   };
 }
 

@@ -118,11 +118,26 @@ export const navStateSchema = z.object({
 });
 export type NavState = z.infer<typeof navStateSchema>;
 
+export const storedPartSchema = z.union([
+  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({
+    type: z.string().min(1),
+    toolName: z.string().optional(),
+    toolCallId: z.string().min(1),
+    state: z.enum(["output-available", "output-error"]),
+    input: z.unknown(),
+    output: z.unknown().optional(),
+    errorText: z.string().optional(),
+  }),
+]);
+export type StoredPart = z.infer<typeof storedPartSchema>;
+
 export const chatMessageSchema = z.object({
   id: z.string().min(1),
   submissionId: z.string().min(1),
   role: z.enum(["user", "assistant"]),
   content: z.string(),
+  parts: z.array(storedPartSchema).optional(),
   promptId: z.string().optional(),
   createdAt: z.number(),
 });
