@@ -1,19 +1,25 @@
 $sides: left, right;
 
 :root {
-  --bscf-assistant-width: 400px;
+  --bscf-assistant-min: 400px;
+  --bscf-assistant-width: var(--bscf-assistant-min);
+  --bscf-assistant-size: clamp(
+    var(--bscf-assistant-min),
+    var(--bscf-assistant-width),
+    70vw
+  );
   --bscf-assistant-push: 0px;
   --bscf-assistant-duration: 320ms;
   --bscf-assistant-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   @media (max-width: 63.9375rem) {
-    --bscf-assistant-width: 360px;
+    --bscf-assistant-min: 360px;
   }
 }
 
 @media (min-width: 48rem) {
   :root[data-bscf-assistant="open"] {
-    --bscf-assistant-push: var(--bscf-assistant-width);
+    --bscf-assistant-push: var(--bscf-assistant-size);
   }
 
   [data-bscf-push] {

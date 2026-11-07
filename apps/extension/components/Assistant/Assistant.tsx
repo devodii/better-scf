@@ -42,6 +42,7 @@ export interface AssistantProps {
   onHistoryBranch: (item: AssistantHistoryItem) => void;
   onHistoryDelete: (item: AssistantHistoryItem) => void;
   onNewChat: () => void;
+  onResize?: ((width: number | null) => void) | undefined;
 }
 
 const ANNOUNCE_CHARS = 160;
@@ -86,6 +87,7 @@ export function Assistant({
   onHistoryBranch,
   onHistoryDelete,
   onNewChat,
+  onResize,
 }: AssistantProps) {
   const launcher = useRef<HTMLButtonElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
@@ -119,6 +121,7 @@ export function Assistant({
         onClose={() => onOpenChange(false)}
         contextLabel={contextLabel}
         side={side}
+        onResize={onResize}
         isHistoryOpen={isHistoryOpen}
         onHistoryOpenChange={onHistoryOpenChange}
         onNewChat={onNewChat}

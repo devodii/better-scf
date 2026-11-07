@@ -1,5 +1,24 @@
 const OPEN_KEY = "bscf:assistant-open";
 const CONVERSATION_KEY = "bscf:conversation";
+const WIDTH_KEY = "bscf:assistant-width";
+
+export function readWidth(): number | null {
+  try {
+    const width = Number(localStorage.getItem(WIDTH_KEY));
+    return Number.isFinite(width) && width > 0 ? width : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeWidth(width: number | null): void {
+  try {
+    if (width === null) localStorage.removeItem(WIDTH_KEY);
+    else localStorage.setItem(WIDTH_KEY, String(width));
+  } catch {
+    return;
+  }
+}
 
 export function readOpen(): boolean {
   try {

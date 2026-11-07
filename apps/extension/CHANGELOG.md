@@ -9,6 +9,7 @@
 - The assistant can now look up builders and the wider Stellar ecosystem on Stellarlight, and tells you each time it does.
 - Fixed the search box losing focus after the first letter when you start typing on a round page.
 - Fixed awards and totals missing on completed round cards when you open Award Rounds from a link inside the site.
+- The assistant panel can now be resized by dragging its inner edge (or with the arrow keys), never narrower than before, and it remembers your width. Double-click the edge to reset it.
 - shared@0.1.1
 
 ## 0.1.0

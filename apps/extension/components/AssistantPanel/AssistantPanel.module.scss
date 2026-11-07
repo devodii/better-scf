@@ -38,6 +38,13 @@ $ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
     visibility 0s linear 0s;
 }
 
+.resizer {
+  display: none;
+  margin: 0;
+  border: 0;
+  background: none;
+}
+
 .handle {
   display: flex;
   flex: none;
@@ -116,7 +123,10 @@ $ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
   .root {
     top: 0;
     bottom: 0;
-    width: var(--bscf-assistant-width, 25rem);
+    width: var(
+      --bscf-assistant-size,
+      clamp(400px, var(--bscf-assistant-width, 400px), 70vw)
+    );
     border: 0;
     border-radius: 0;
   }
@@ -143,6 +153,60 @@ $ease: var(--bscf-assistant-ease, cubic-bezier(0.16, 1, 0.3, 1));
 
   .handle {
     display: none;
+  }
+
+  .resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: block;
+    width: 0.625rem;
+    cursor: col-resize;
+    touch-action: none;
+
+    &::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0.1875rem;
+      background: transparent;
+      content: "";
+      transition: background 120ms ease;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      background: var(--bscf-accent-yellow);
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  .resizer-right {
+    left: 0;
+
+    &::after {
+      left: 0;
+    }
+  }
+
+  .resizer-left {
+    right: 0;
+
+    &::after {
+      right: 0;
+    }
+  }
+
+  .root[data-resizing] {
+    user-select: none;
+
+    .resizer::after {
+      background: var(--bscf-accent-yellow);
+    }
   }
 
   .header {

@@ -2,6 +2,7 @@ import type { UIMessage } from "ai";
 import dayjs from "dayjs";
 import { CHAT_LIMITS, type ChatMessage, quickPromptsFor } from "shared";
 import { Assistant } from "../../../../components/Assistant";
+import { clampWidth, WIDTH_VAR } from "../../../../components/Assistant/width";
 import type { AssistantHistoryItem } from "../../../../components/AssistantHistory";
 import type { AssistantPromptItem } from "../../../../components/AssistantPrompts";
 import { createBackgroundFetch } from "../../../../lib/ai/background-fetch";
@@ -22,8 +23,10 @@ import {
   isToggleShortcut,
   readConversation,
   readOpen,
+  readWidth,
   writeConversation,
   writeOpen,
+  writeWidth,
 } from "./state";
 import {
   contextLabelFor,
@@ -157,6 +160,7 @@ export function mountPanel(
         onHistoryBranch={(item) => void branchChat(item.id)}
         onHistoryDelete={(item) => void deleteChat(item.id)}
         onNewChat={newChat}
+        onResize={writeWidth}
       />
     );
   };
@@ -350,6 +354,13 @@ export function mountPanel(
   style.textContent = dockCss;
   (document.head ?? document.documentElement).append(style);
 
+  const savedWidth = readWidth();
+  if (savedWidth !== null)
+    document.documentElement.style.setProperty(
+      WIDTH_VAR,
+      `${clampWidth(savedWidth)}px`,
+    );
+
   if (isOpen) push.set(true, false);
 
   ui.render(view());
@@ -368,6 +379,7 @@ export function mountPanel(
     persistLast();
     dropSession();
     push.release();
+    document.documentElement.style.removeProperty(WIDTH_VAR);
     ui.remove();
     style.remove();
   };
