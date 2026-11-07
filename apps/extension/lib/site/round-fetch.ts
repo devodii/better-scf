@@ -3,6 +3,7 @@ import {
   readInlineScripts,
   type SubmissionSummary,
 } from "./round";
+import { parseRoundsPayload, type RoundRecord } from "./rounds";
 import { SITE_ORIGIN } from "./routes";
 
 export interface FetchedRound {
@@ -41,4 +42,23 @@ export function fetchRoundRecords(roundId: string): Promise<FetchedRound> {
     if (round.records === null) known.delete(roundId);
   });
   return next;
+}
+
+const ROUND_LIST_PATH = "/dashboard/award-rounds";
+
+export async function fetchRoundList(): Promise<RoundRecord[]> {
+  try {
+    const response = await fetch(`${SITE_ORIGIN}${ROUND_LIST_PATH}`, {
+      credentials: "include",
+      headers: { Accept: "text/html" },
+    });
+    if (!response.ok) return [];
+    const doc = new DOMParser().parseFromString(
+      await response.text(),
+      "text/html",
+    );
+    return parseRoundsPayload(readInlineScripts(doc));
+  } catch {
+    return [];
+  }
 }

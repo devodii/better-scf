@@ -1,5 +1,6 @@
 import { RoundStatTags } from "../../../components/RoundStatTags";
 import { readInlineScripts } from "../../../lib/site/round";
+import { fetchRoundList } from "../../../lib/site/round-fetch";
 import {
   mapRoundCards,
   parseRoundsPayload,
@@ -111,10 +112,16 @@ export const feature: Feature = {
     const begin = (): void => {
       frame = requestAnimationFrame(() => {
         frame = 0;
-        records = parseRoundsPayload(readInlineScripts(document));
-        if (records.length === 0) warn("round records not found");
-        ready = true;
-        sync();
+        const finish = (found: readonly RoundRecord[]): void => {
+          if (closed) return;
+          records = found;
+          if (records.length === 0) warn("round records not found");
+          ready = true;
+          sync();
+        };
+        const inline = parseRoundsPayload(readInlineScripts(document));
+        if (inline.length > 0) finish(inline);
+        else void fetchRoundList().then(finish);
       });
     };
 
