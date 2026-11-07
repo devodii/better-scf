@@ -1,6 +1,5 @@
 {
   "name": "better-scf",
-  "version": "0.1.0",
   "private": true,
   "description": "A reviewer-grade UX layer on communityfund.stellar.org, plus the small server behind its AI chat.",
   "type": "module",
@@ -18,11 +17,14 @@
     "lint": "biome check --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true . && prettier --check .",
     "format": "biome check --write --vcs-enabled=true --vcs-client-kind=git --vcs-use-ignore-file=true . && prettier --write .",
     "typecheck": "pnpm -r typecheck",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
     "storybook": "pnpm --filter extension storybook",
     "build-storybook": "pnpm --filter extension build-storybook"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.5",
+    "@changesets/cli": "^3.0.3",
     "prettier": "^3.9.10"
   }
 }

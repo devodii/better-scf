@@ -1,5 +1,6 @@
-/** Keep in step with the root package.json version. */
-export const EXTENSION_VERSION = "0.1.0";
+import pkg from "../package.json";
+
+export const EXTENSION_VERSION = pkg.version;
 
 export const CHAT_LIMITS = {
   maxMessages: 20,

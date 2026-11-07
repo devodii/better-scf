@@ -41,11 +41,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:prod
-      - run: pnpm --filter extension zip
+      - run: pnpm zip:store
       - name: Name the zip after the root version
         id: zip
         run: |
-          version="$(node -p "require('./package.json').version")"
+          version="$(node -p "require('./apps/extension/package.json').version")"
           zip_path="$(ls apps/extension/output/*-chrome.zip | head -n 1)"
           test -n "$zip_path"
           cp "$zip_path" "better-scf-${version}.zip"

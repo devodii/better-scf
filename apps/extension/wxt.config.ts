@@ -8,7 +8,7 @@ interface RootPackage {
 }
 
 const rootPackage = JSON.parse(
-  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
 ) as RootPackage;
 
 function serverUrl(mode: string): string {
