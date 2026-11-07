@@ -30,6 +30,10 @@ import {
   readRoundPhases,
 } from "../../../lib/site/round";
 import {
+  readRoundCount,
+  writeRoundCount,
+} from "../../../lib/site/round-counts";
+import {
   onFacts,
   publishFacts,
   readFacts,
@@ -193,6 +197,7 @@ export const feature: Feature = {
   mount({ page, region, settings, store, signal, mount, onMutation, warn }) {
     if (page.kind !== "round" || !page.records) return;
     const records = page.records;
+    const roundId = page.roundId;
     const wantsMeta =
       settings.trackChips || settings.awardedChip || settings.avatarStack;
     const wantsReviews = settings.readState || settings.shortlistAndStance;
@@ -551,7 +556,7 @@ export const feature: Feature = {
         done={loader.done}
         total={loader.total || entries.size}
         message={loader.message}
-        onStart={() => void runBatch()}
+        onStart={() => void runBatch(true)}
         onCancel={() => batch?.abort()}
       />
     );
@@ -561,7 +566,7 @@ export const feature: Feature = {
       if (!enrichable) return;
       publishLoader(
         { ...loader, total: loader.total || entries.size },
-        { start: () => void runBatch(), cancel: () => batch?.abort() },
+        { start: () => void runBatch(true), cancel: () => batch?.abort() },
       );
     };
 
@@ -575,7 +580,7 @@ export const feature: Feature = {
       renderLoader();
     };
 
-    async function runBatch(): Promise<void> {
+    async function runBatch(refresh = false): Promise<void> {
       if (batch) return;
       const center = window.innerHeight / 2;
       const nearest = new Map<string, number>();
@@ -597,7 +602,12 @@ export const feature: Feature = {
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
       adoptKnown();
-      const pending = ids.filter((id) => !facts.has(id));
+      const previous = await readRoundCount(roundId).catch(() => null);
+      const force =
+        refresh ||
+        (previous !== null && previous !== ids.length) ||
+        (loader.total > 0 && loader.total !== ids.length);
+      const pending = force ? ids : ids.filter((id) => !facts.has(id));
       loader = {
         status: "running",
         done: ids.length - pending.length,
@@ -611,7 +621,7 @@ export const feature: Feature = {
         while (!stop.aborted) {
           const id = pending[cursor++];
           if (id === undefined) return;
-          const data = await enrichSubmission(id, stop, frozen);
+          const data = await enrichSubmission(id, stop, frozen, force);
           if (stop.aborted) return;
           if (data) setFacts(data);
           loader = { ...loader, done: loader.done + 1 };
@@ -631,7 +641,33 @@ export const feature: Feature = {
         status: control.signal.aborted ? "cancelled" : "done",
       };
       renderLoader();
+      if (!control.signal.aborted)
+        void writeRoundCount(roundId, ids.length).catch(() => {});
     }
+
+    let kickTimer: number | undefined;
+    const needsLoad = (): boolean => {
+      const ids = new Set<string>();
+      for (const entry of entries.values()) ids.add(entry.id);
+      if (ids.size === 0) return false;
+      return ids.size !== loader.total || [...ids].some((id) => !facts.has(id));
+    };
+    const kick = (): void => {
+      if (
+        !enrichable ||
+        batch ||
+        loader.status === "stopped" ||
+        loader.status === "cancelled"
+      )
+        return;
+      window.clearTimeout(kickTimer);
+      kickTimer = window.setTimeout(() => {
+        if (!signal.aborted && !batch && needsLoad()) void runBatch();
+      }, 800);
+    };
+    signal.addEventListener("abort", () => window.clearTimeout(kickTimer), {
+      once: true,
+    });
 
     const syncLoader = (section: Element): void => {
       if (!enrichable || settings.gridTools || loaderBar?.isConnected) return;
@@ -676,21 +712,12 @@ export const feature: Feature = {
       for (const entry of [...entries.values()])
         if (!live.has(entry.card)) detach(entry);
       syncLoader(section);
+      kick();
     };
 
     sync();
     onMutation(sync);
     renderLoader();
-    if (enrichable) {
-      const start = window.setTimeout(() => {
-        if (!signal.aborted && !batch && loader.status === "idle")
-          void runBatch();
-      }, 1500);
-      signal.addEventListener("abort", () => window.clearTimeout(start), {
-        once: true,
-      });
-    }
-
     if (enrichable) {
       const offBlock = onEnrichBlock(stopLoader);
       signal.addEventListener("abort", offBlock, { once: true });

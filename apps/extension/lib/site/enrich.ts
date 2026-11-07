@@ -214,8 +214,9 @@ async function run(
   id: string,
   signal: AbortSignal,
   frozen: boolean,
+  force: boolean,
 ): Promise<Enrichment | null> {
-  if (frozen) {
+  if (frozen && !force) {
     const saved = await rpc.getSubmission(id).catch(() => null);
     if (saved && saved.value.parserVersion >= PARSER_VERSION)
       return toEnrichment(saved.value);
@@ -227,10 +228,13 @@ export function enrichSubmission(
   id: string,
   signal: AbortSignal,
   frozen = false,
+  force = false,
 ): Promise<Enrichment | null> {
   const pending = inflight.get(id);
   if (pending) return pending;
-  const next = run(id, signal, frozen).finally(() => inflight.delete(id));
+  const next = run(id, signal, frozen, force).finally(() =>
+    inflight.delete(id),
+  );
   inflight.set(id, next);
   return next;
 }
