@@ -11,6 +11,7 @@
 - Fixed awards and totals missing on completed round cards when you open Award Rounds from a link inside the site.
 - The assistant panel can now be resized by dragging its inner edge (or with the arrow keys), never narrower than before, and it remembers your width. Double-click the edge to reset it.
 - The steps the assistant took (pages it read, builders it looked up) now stay in the chat when you close and reopen it or come back later, and the assistant remembers where its answers came from.
+- Updating the extension no longer risks your notes, stances and chats: future updates keep them and only add what is new.
 - shared@0.1.1
 
 ## 0.1.0

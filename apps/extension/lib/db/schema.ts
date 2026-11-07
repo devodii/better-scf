@@ -109,36 +109,33 @@ export const CACHE_STORE_NAMES = [
   "projectIndex",
 ] as const satisfies readonly StoreName[];
 
+const STORES: readonly {
+  name: StoreName;
+  keyPath: string | string[];
+  indexes: readonly string[];
+}[] = [
+  {
+    name: "submissions",
+    keyPath: "id",
+    indexes: ["roundId", "projectId", "fetchedAt"],
+  },
+  { name: "projects", keyPath: "id", indexes: ["fetchedAt"] },
+  { name: "rounds", keyPath: "id", indexes: ["fetchedAt"] },
+  { name: "review", keyPath: "submissionId", indexes: [] },
+  { name: "navstate", keyPath: "routeKey", indexes: [] },
+  { name: "chat", keyPath: ["submissionId", "id"], indexes: ["submissionId"] },
+  { name: "horizon", keyPath: "accountId", indexes: ["fetchedAt"] },
+  { name: "avatars", keyPath: "handleKey", indexes: [] },
+  { name: "projectIndex", keyPath: "key", indexes: [] },
+];
+
 function createStores(db: Db): void {
   const native = unwrap(db);
-  for (const name of [...native.objectStoreNames])
-    native.deleteObjectStore(name);
-
-  const submissions = db.createObjectStore("submissions", { keyPath: "id" });
-  submissions.createIndex("roundId", "roundId");
-  submissions.createIndex("projectId", "projectId");
-  submissions.createIndex("fetchedAt", "fetchedAt");
-
-  db.createObjectStore("projects", { keyPath: "id" }).createIndex(
-    "fetchedAt",
-    "fetchedAt",
-  );
-  db.createObjectStore("rounds", { keyPath: "id" }).createIndex(
-    "fetchedAt",
-    "fetchedAt",
-  );
-  db.createObjectStore("review", { keyPath: "submissionId" });
-  db.createObjectStore("navstate", { keyPath: "routeKey" });
-  db.createObjectStore("chat", { keyPath: ["submissionId", "id"] }).createIndex(
-    "submissionId",
-    "submissionId",
-  );
-  db.createObjectStore("horizon", { keyPath: "accountId" }).createIndex(
-    "fetchedAt",
-    "fetchedAt",
-  );
-  db.createObjectStore("avatars", { keyPath: "handleKey" });
-  db.createObjectStore("projectIndex", { keyPath: "key" });
+  for (const { name, keyPath, indexes } of STORES) {
+    if (native.objectStoreNames.contains(name)) continue;
+    const store = native.createObjectStore(name, { keyPath });
+    for (const index of indexes) store.createIndex(index, index);
+  }
 }
 
 export interface OpenOptions {
