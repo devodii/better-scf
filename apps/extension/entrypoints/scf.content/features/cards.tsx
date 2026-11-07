@@ -10,6 +10,7 @@ import {
   type CardCornerProps,
 } from "../../../components/CardCorner";
 import { CardMeta, type CardMetaProps } from "../../../components/CardMeta";
+import { createBackgroundFetch } from "../../../lib/ai/background-fetch";
 import { formatBudget, trackLabel } from "../../../lib/export/format";
 import type { Settings } from "../../../lib/settings";
 import {
@@ -39,6 +40,11 @@ import {
   readFacts,
 } from "../../../lib/site/round-facts";
 import { SECTION_HEADING } from "../../../lib/site/selectors/round";
+import {
+  hasStellarlightProfile,
+  loadStellarlightHandles,
+  onStellarlight,
+} from "../../../lib/site/stellarlight";
 import type { Feature } from "../../../lib/ui/feature";
 import { type MountedUi, OWN_ATTRIBUTE } from "../../../lib/ui/mount";
 import cardsCss from "../styles/cards.scss?inline";
@@ -118,7 +124,9 @@ function githubOwner(url: string | null): string | null {
 
 function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
   if (github)
-    return `${LINKS.stellarlightBuilders}/${encodeURIComponent(github)}`;
+    return hasStellarlightProfile(github)
+      ? `${LINKS.stellarlightBuilders}/${encodeURIComponent(github)}`
+      : `https://github.com/${encodeURIComponent(github)}`;
   if (x) return `https://x.com/${encodeURIComponent(x)}`;
   return linkedin;
 }
@@ -126,9 +134,10 @@ function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
 function builderPeople(facts: Enrichment): AvatarStackPerson[] {
   const people: AvatarStackPerson[] = facts.builders.map((builder) => ({
     name: builder.name,
-    role: builder.github
-      ? `${builder.role ?? "Builder"} · Stellarlight profile`
-      : builder.role,
+    role:
+      builder.github && hasStellarlightProfile(builder.github)
+        ? `${builder.role ?? "Builder"} · Stellarlight profile`
+        : builder.role,
     src: builder.github ? githubAvatar(builder.github) : null,
     href: profileHref(builder),
   }));
@@ -392,6 +401,16 @@ export const feature: Feature = {
     adoptKnown();
     const offFacts = onFacts(adoptKnown);
     signal.addEventListener("abort", offFacts, { once: true });
+    const offStellarlight = onStellarlight(() => {
+      for (const entry of entries.values()) placeMeta(entry);
+    });
+    signal.addEventListener("abort", offStellarlight, { once: true });
+    if (wantsMeta)
+      loadStellarlightHandles({
+        serverUrl: import.meta.env.WXT_SERVER_URL ?? "",
+        fetch: createBackgroundFetch(),
+        getClientId: () => store.send("getClientId", undefined),
+      }).catch((error: unknown) => warn("stellarlight builders", error));
 
     const stopHover = (entry: Entry): void => {
       window.clearTimeout(entry.hoverTimer);
