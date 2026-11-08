@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.2 - 2026-11-08
+
+### Patch Changes
+
+- Fixed tracks and teams sometimes stopping part way on a round that is still taking submissions, while the page said everything was up to date. Every proposal now loads, and if some cannot be loaded it tells you how many.
+- shared@0.1.2
+
 ## 0.1.1 - 2026-11-08
 
 ### Patch Changes
