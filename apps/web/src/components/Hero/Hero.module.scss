@@ -28,16 +28,26 @@
   justify-content: center;
 }
 
-.primary {
+.install {
   @include button;
 
+  min-height: 3.5rem;
+  padding: 0 2.25rem;
   border-color: var(--bscf-accent-yellow);
   background: var(--bscf-accent-yellow);
   color: var(--bscf-bg);
+  font-size: 1.125rem;
+  font-weight: 700;
 
   &:hover {
     border-color: var(--bscf-text);
   }
+}
+
+.note {
+  margin: 1.25rem 0 0;
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-meta);
 }
 
 .secondary {

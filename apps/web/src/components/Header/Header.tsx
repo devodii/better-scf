@@ -14,8 +14,21 @@ export function Header() {
           <a href={LINKS.feedback} target="_blank" rel="noreferrer noopener">
             Suggest a feature
           </a>
-          <a href={LINKS.github} target="_blank" rel="noreferrer noopener">
-            GitHub
+          <a
+            className={styles.source}
+            href={LINKS.github}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Open source on GitHub
+          </a>
+          <a
+            className={styles.install}
+            href={LINKS.chromeStore}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Add to Chrome
           </a>
         </nav>
       </div>

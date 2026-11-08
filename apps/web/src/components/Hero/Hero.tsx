@@ -12,7 +12,15 @@ export function Hero() {
         and anyone following the fund.
       </p>
       <div className={styles.actions}>
-        <a className={styles.primary} href="#demo">
+        <a
+          className={styles.install}
+          href={LINKS.chromeStore}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Add to Chrome
+        </a>
+        <a className={styles.secondary} href="#demo">
           Watch the 30-second demo
         </a>
         <a
@@ -21,9 +29,10 @@ export function Hero() {
           target="_blank"
           rel="noreferrer noopener"
         >
-          View on GitHub
+          Open source on GitHub
         </a>
       </div>
+      <p className={styles.note}>Free and open source. Works in Chrome.</p>
     </section>
   );
 }
