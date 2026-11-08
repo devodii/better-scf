@@ -25,10 +25,11 @@ What you get:
 - Search a round and filter by track or by your own marks.
 - Your own shortlist: mark a stance, star proposals and keep private notes. They stay on your device.
 - An AI assistant that answers questions about rounds and proposals in plain words, with the numbers and where they come from. It asks before it opens a page or reads anything personal.
+- Builder profiles: connects to Stellar ecosystem tools like Stellarlight to look up who is behind a proposal. Team avatars open the builder's profile.
 - Easier proposal pages: a contents list, tranche totals at a glance, one-click sharing and tidy wallet addresses.
 - Four switches in the popup. Turn anything off.
 
-Private by design: no analytics, no telemetry, no accounts. Nothing leaves your device unless you send a chat message to the assistant. Full details: https://github.com/devodii/better-scf/blob/main/docs/privacy.md
+Private by design: no analytics, no telemetry, no accounts. Your shortlist and notes never leave your device. Only your chat messages, and builder lookups the assistant makes, go out. Full details: https://github.com/devodii/better-scf/blob/main/docs/privacy.md
 
 better-scf is independent and is not affiliated with the Stellar Development Foundation.
 
@@ -39,7 +40,7 @@ better-scf is independent and is not affiliated with the Stellar Development Fou
   - `storage`: saves the user's settings, shortlist, notes and a random client id on their device.
   - `scripting`: adds the extension's interface to Community Fund tabs that were already open when the extension was installed or updated.
   - Host permission `https://communityfund.stellar.org/*`: the site the extension improves. It reads the pages the user opens and, with the user's own session, the site's own pages and backend.
-  - Host permission `https://better-scf-server-production.up.railway.app/*`: our server, used only to send the user's chat messages to the AI model.
+  - Host permission `https://better-scf-server-production.up.railway.app/*`: our server, used to send the user's chat messages to the AI model and to fetch public builder profile data from Stellarlight (stellarlight.xyz). It never receives the user's notes or shortlist.
 - **Remote code:** No. All code is in the package. The assistant can run small scripts written by the model to analyse data, but they are run by a bundled JavaScript interpreter inside a sandbox with no access to the page, the network or extension APIs. No code is fetched or evaluated with eval.
 - **Data usage:** tick **Website content** (the page text and the user's questions are sent when the user uses the AI assistant). Leave every other box unticked.
 - **Certifications:** the data is not sold, not used for anything unrelated to the single purpose, and not used for credit or lending decisions.
