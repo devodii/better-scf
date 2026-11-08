@@ -52,6 +52,22 @@ import cardsCss from "../styles/cards.scss?inline";
 const COVER_IMAGE = "img:not([data-bscf])";
 const COVER_ATTRIBUTE = "data-bscf-cover";
 const CARD_ATTRIBUTE = "data-bscf-card";
+const RETRY_PASSES = 2;
+const RETRY_DELAY_MS = 1500;
+
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        window.clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
+}
 const META_SLOT = "cards-meta-slot";
 const CORNER_SLOT = "cards-corner-slot";
 const BACKDROP = "cards-backdrop";
@@ -638,33 +654,58 @@ export const feature: Feature = {
       };
       renderLoader();
       const frozen = isFrozen();
-      let cursor = 0;
-      const worker = async (): Promise<void> => {
-        while (!stop.aborted) {
-          const id = pending[cursor++];
-          if (id === undefined) return;
-          const data = await enrichSubmission(id, stop, frozen, force);
-          if (stop.aborted) return;
-          if (data) setFacts(data);
-          loader = { ...loader, done: loader.done + 1 };
-          renderLoader();
-        }
+      const load = async (queue: readonly string[]): Promise<void> => {
+        let cursor = 0;
+        const worker = async (): Promise<void> => {
+          while (!stop.aborted) {
+            const id = queue[cursor++];
+            if (id === undefined) return;
+            const data = await enrichSubmission(id, stop, frozen, force);
+            if (stop.aborted) return;
+            if (!data) continue;
+            setFacts(data);
+            loader = { ...loader, done: loader.done + 1 };
+            renderLoader();
+          }
+        };
+        await Promise.all(
+          Array.from(
+            { length: Math.min(ENRICH_CONCURRENCY, queue.length) },
+            () => worker(),
+          ),
+        );
       };
-      await Promise.all(
-        Array.from(
-          { length: Math.min(ENRICH_CONCURRENCY, pending.length) },
-          () => worker(),
-        ),
-      );
+      let missing = pending;
+      for (let pass = 0; pass <= RETRY_PASSES; pass += 1) {
+        if (pass > 0) await wait(RETRY_DELAY_MS * pass, stop);
+        if (stop.aborted || loader.status === "stopped") break;
+        await load(missing);
+        missing = missing.filter((id) => !facts.has(id));
+        if (missing.length === 0) break;
+      }
       batch = null;
       if (signal.aborted || loader.status === "stopped") return;
-      loader = {
-        ...loader,
-        status: control.signal.aborted ? "cancelled" : "done",
-      };
+      if (control.signal.aborted) {
+        loader = { ...loader, status: "cancelled" };
+        renderLoader();
+        return;
+      }
+      if (missing.length > 0) {
+        const block = await readEnrichBlock().catch(() => null);
+        loader = {
+          ...loader,
+          status: "stopped",
+          message: block
+            ? enrichBlockMessage(block)
+            : `${missing.length} of ${ids.length} proposals could not be loaded. Use reload to try again.`,
+        };
+        renderLoader();
+        return;
+      }
+      loader = { ...loader, status: "done" };
       renderLoader();
-      if (!control.signal.aborted)
-        void writeRoundCount(roundId, ids.length).catch(() => {});
+      void writeRoundCount(roundId, ids.length).catch(() => {});
+      kick();
     }
 
     let kickTimer: number | undefined;

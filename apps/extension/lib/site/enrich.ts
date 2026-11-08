@@ -9,6 +9,8 @@ import { parseSubmissionPage } from "./submission";
 
 export const ENRICH_CONCURRENCY = 20;
 const BLOCK_MS = 15 * 60_000;
+const UNAVAILABLE_BLOCK_MS = 60_000;
+const FETCH_TIMEOUT_MS = 30_000;
 const MAX_FAILURES = 3;
 const STATE_KEY = "enrichState";
 const PATH_PREFIX = "/dashboard/submissions/";
@@ -127,7 +129,12 @@ async function stopFor(reason: EnrichBlock): Promise<void> {
   await writeState({
     ...state,
     failures: 0,
-    block: { reason, until: Date.now() + BLOCK_MS },
+    block: {
+      reason,
+      until:
+        Date.now() +
+        (reason === "unavailable" ? UNAVAILABLE_BLOCK_MS : BLOCK_MS),
+    },
   });
   for (const listener of blockListeners) listener(reason);
 }
@@ -224,17 +231,35 @@ async function run(
   return fetchOne(id, signal, frozen);
 }
 
+function untilAborted(
+  task: Promise<Enrichment | null>,
+  signal: AbortSignal,
+): Promise<Enrichment | null> {
+  if (signal.aborted) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const stop = (): void => resolve(null);
+    signal.addEventListener("abort", stop, { once: true });
+    task
+      .then(resolve, () => resolve(null))
+      .finally(() => signal.removeEventListener("abort", stop));
+  });
+}
+
 export function enrichSubmission(
   id: string,
   signal: AbortSignal,
   frozen = false,
   force = false,
 ): Promise<Enrichment | null> {
-  const pending = inflight.get(id);
-  if (pending) return pending;
-  const next = run(id, signal, frozen, force).finally(() =>
-    inflight.delete(id),
-  );
-  inflight.set(id, next);
-  return next;
+  let shared = inflight.get(id);
+  if (!shared) {
+    shared = run(
+      id,
+      AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      frozen,
+      force,
+    ).finally(() => inflight.delete(id));
+    inflight.set(id, shared);
+  }
+  return untilAborted(shared, signal);
 }
