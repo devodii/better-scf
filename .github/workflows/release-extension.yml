@@ -16,6 +16,8 @@ jobs:
     name: Build and zip
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      WXT_SERVER_URL: ${{ vars.WXT_SERVER_URL }}
     outputs:
       zip-name: ${{ steps.zip.outputs.name }}
     steps:
