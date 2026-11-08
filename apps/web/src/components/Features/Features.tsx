@@ -51,6 +51,16 @@ export function Features() {
           label="Jumping to a section and sharing a proposal"
         />
       </Feature>
+      <Feature
+        title="Know who is behind a proposal"
+        text="Team avatars open each builder's Stellarlight profile, so you can see their track record across the Stellar ecosystem. Or just ask the assistant to look them up."
+        isReversed
+      >
+        <Clip
+          name="stellarlight"
+          label="Opening a builder's Stellarlight profile and asking the assistant about them"
+        />
+      </Feature>
     </>
   );
 }
