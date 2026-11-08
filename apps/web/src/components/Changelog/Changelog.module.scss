@@ -35,9 +35,18 @@
 }
 
 .version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
   margin: 0 0 1rem;
   color: var(--bscf-accent-yellow);
   font: var(--bscf-type-title);
+}
+
+.date {
+  color: var(--bscf-text-muted);
+  font: var(--bscf-type-meta);
 }
 
 .group {

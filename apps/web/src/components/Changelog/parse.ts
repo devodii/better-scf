@@ -5,6 +5,7 @@ export interface ReleaseGroup {
 
 export interface Release {
   version: string;
+  date: string | null;
   groups: ReleaseGroup[];
 }
 
@@ -19,9 +20,10 @@ export function parseChangelog(raw: string): Release[] {
   const releases: Release[] = [];
   let group: ReleaseGroup | null = null;
   for (const line of raw.split("\n")) {
-    const version = /^## (\S+)/.exec(line)?.[1];
+    const heading = /^## (\S+)(?: - (\d{4}-\d{2}-\d{2}))?/.exec(line);
+    const version = heading?.[1];
     if (version) {
-      releases.push({ version, groups: [] });
+      releases.push({ version, date: heading?.[2] ?? null, groups: [] });
       group = null;
       continue;
     }

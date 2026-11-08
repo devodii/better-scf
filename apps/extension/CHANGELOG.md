@@ -1,6 +1,6 @@
 # extension
 
-## 0.1.1
+## 0.1.1 - 2026-11-08
 
 ### Patch Changes
 
@@ -14,7 +14,7 @@
 - Updating the extension no longer risks your notes, stances and chats: future updates keep them and only add what is new.
 - shared@0.1.1
 
-## 0.1.0
+## 0.1.0 - 2026-11-06
 
 ### Initial release
 

@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import raw from "../../../../extension/CHANGELOG.md?raw";
 import styles from "./Changelog.module.scss";
 import { parseChangelog } from "./parse";
@@ -12,7 +13,14 @@ export function Changelog() {
       <ol className={styles.list}>
         {RELEASES.map((release) => (
           <li key={release.version} className={styles.release}>
-            <h2 className={styles.version}>{release.version}</h2>
+            <h2 className={styles.version}>
+              {release.version}
+              {release.date && (
+                <time className={styles.date} dateTime={release.date}>
+                  {dayjs(release.date).format("D MMM YYYY")}
+                </time>
+              )}
+            </h2>
             {release.groups.map((group) => (
               <div key={group.title}>
                 <h3 className={styles.group}>{group.title}</h3>
