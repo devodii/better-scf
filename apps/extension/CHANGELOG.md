@@ -1,5 +1,13 @@
 # extension
 
+## 0.1.5 - 2026-11-09
+
+### Patch Changes
+
+- 40eb38f: Tracks and teams are now remembered for 25 minutes for each round, so reloading a round or coming back to it no longer loads everything again. Only newly added proposals are fetched, a tab left open refreshes itself when you return after that time, and the reload button still refetches everything.
+- 3420fb6: Builders with a Stellarlight profile now come first in a proposal's team avatars.
+- shared@0.1.5
+
 ## 0.1.4 - 2026-11-09
 
 ### Patch Changes
