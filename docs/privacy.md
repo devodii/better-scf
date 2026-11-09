@@ -12,7 +12,7 @@ better-scf has no analytics, no telemetry and no accounts. This page lists exact
 - The submission id, a hash of the page content, which kind of page you are on, a random client id generated once on your device, and the extension version.
 - Your IP address, as every web request carries one. Our server uses it only for rate limiting and keeps it in memory. The hosting platform may log IP addresses too.
 
-The server passes the question, the page text and the tool results to Anthropic's model to generate the answer. It logs only: timestamp, client id, submission id, which quick prompt was used (or "free") and token counts. It never logs question text, page text or tool results. It keeps rate limit counters and a daily token total per client id in memory, to enforce usage limits. Nothing is stored in a database and there is no answer cache.
+The server passes the question, the page text and the tool results to Anthropic's model to generate the answer. It logs only: timestamp, client id, submission id, which quick prompt was used (or "free") and token counts. It never logs question text, page text or tool results. It keeps a count of questions per client id for the last day in memory, to enforce the daily question limit. Nothing is stored in a database and there is no answer cache.
 
 ### To Stellarlight, through our server (only when a question needs it)
 
@@ -31,7 +31,7 @@ These requests also carry your IP address. They contain no identifier from us.
 
 ### Nothing else
 
-Your stance, shortlist, notes, read state, navigation state and settings never leave your device. The only thing our server receives besides chat messages is a request, at most once an hour, for a public list of GitHub usernames that have a Stellarlight profile. It carries nothing about you or the pages you read except the usual request details (the random client id and your IP address). The extension uses the list to decide whether a team avatar links to Stellarlight or to GitHub. There is no analytics and no telemetry.
+Your stance, shortlist, notes, read state, navigation state and settings never leave your device. The only thing our server receives besides chat messages is a request, at most once an hour, for a public list of GitHub usernames that have a Stellarlight profile. It carries nothing about you or the pages you read except the usual request details (the random client id and your IP address). The extension uses the list to decide whether a team avatar links to Stellarlight or to GitHub. When you uninstall the extension, Chrome opens a short feedback form in a new tab; nothing is sent to us when it opens. There is no analytics and no telemetry.
 
 ## What is stored on your device
 

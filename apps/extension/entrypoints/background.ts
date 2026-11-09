@@ -1,3 +1,4 @@
+import { LINKS } from "shared/links";
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
 import { registerBackgroundFetch } from "../lib/ai/background-fetch";
@@ -42,5 +43,6 @@ export default defineBackground(() => {
   registerRpcHandlers(
     createRpcHandlers({ getRepo: createRepoProvider(), getClientId }),
   );
+  browser.runtime.setUninstallURL(LINKS.uninstallSurvey).catch(() => {});
   browser.runtime.onInstalled.addListener(() => void injectIntoOpenTabs());
 });
