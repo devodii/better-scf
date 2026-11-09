@@ -31,10 +31,7 @@ import {
   readRoundPhases,
 } from "../../../lib/site/round";
 import {
-  readRoundCount,
-  writeRoundCount,
-} from "../../../lib/site/round-counts";
-import {
+  hasStale,
   loadSavedFacts,
   onFacts,
   publishFacts,
@@ -232,7 +229,7 @@ export const feature: Feature = {
   mount({ page, region, settings, store, signal, mount, onMutation, warn }) {
     if (page.kind !== "round" || !page.records) return;
     const records = page.records;
-    const roundId = page.roundId;
+    const round = /(\d+)/.exec(page.roundName ?? "")?.[1] ?? page.roundId;
     const wantsMeta =
       settings.trackChips || settings.awardedChip || settings.avatarStack;
     const wantsReviews = settings.readState || settings.shortlistAndStance;
@@ -414,7 +411,7 @@ export const feature: Feature = {
 
     const setFacts = (data: Enrichment): void => {
       adoptFacts(data);
-      publishFacts(data);
+      publishFacts(data, round);
     };
 
     const adoptKnown = (): void => {
@@ -423,7 +420,7 @@ export const feature: Feature = {
     };
     adoptKnown();
     const offFacts = onFacts(adoptKnown);
-    void loadSavedFacts();
+    void loadSavedFacts(round);
     signal.addEventListener("abort", offFacts, { once: true });
     const offStellarlight = onStellarlight(() => {
       for (const entry of entries.values()) placeMeta(entry);
@@ -647,13 +644,9 @@ export const feature: Feature = {
       const control = new AbortController();
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
-      await loadSavedFacts();
+      await loadSavedFacts(round);
       adoptKnown();
-      const previous = await readRoundCount(roundId).catch(() => null);
-      const force =
-        refresh ||
-        (previous !== null && previous !== ids.length) ||
-        (loader.total > 0 && loader.total !== ids.length);
+      const force = refresh;
       const pending = force ? ids : ids.filter((id) => !facts.has(id));
       loader = {
         status: "running",
@@ -663,6 +656,7 @@ export const feature: Feature = {
       };
       renderLoader();
       const frozen = isFrozen();
+      const refreshed = new Set<string>();
       const load = async (queue: readonly string[]): Promise<void> => {
         let cursor = 0;
         const worker = async (): Promise<void> => {
@@ -673,6 +667,7 @@ export const feature: Feature = {
             if (stop.aborted) return;
             if (!data) continue;
             setFacts(data);
+            refreshed.add(id);
             loader = { ...loader, done: loader.done + 1 };
             renderLoader();
           }
@@ -689,7 +684,9 @@ export const feature: Feature = {
         if (pass > 0) await wait(RETRY_DELAY_MS * pass, stop);
         if (stop.aborted || loader.status === "stopped") break;
         await load(missing);
-        missing = missing.filter((id) => !facts.has(id));
+        missing = missing.filter((id) =>
+          force ? !refreshed.has(id) : !facts.has(id),
+        );
         if (missing.length === 0) break;
       }
       batch = null;
@@ -713,7 +710,6 @@ export const feature: Feature = {
       }
       loader = { ...loader, status: "done" };
       renderLoader();
-      void writeRoundCount(roundId, ids.length).catch(() => {});
       kick();
     }
 
@@ -740,6 +736,13 @@ export const feature: Feature = {
     signal.addEventListener("abort", () => window.clearTimeout(kickTimer), {
       once: true,
     });
+    const refreshIfStale = (): void => {
+      if (document.visibilityState !== "visible" || batch || !enrichable)
+        return;
+      if (hasStale(facts.keys())) void runBatch(true);
+    };
+    document.addEventListener("visibilitychange", refreshIfStale, { signal });
+    window.addEventListener("focus", refreshIfStale, { signal });
 
     const syncLoader = (section: Element): void => {
       if (!enrichable || settings.gridTools || loaderBar?.isConnected) return;
