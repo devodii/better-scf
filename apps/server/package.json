@@ -8,7 +8,9 @@
     "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
     "build": "tsup --entry.index src/server.ts --out-dir dist --format esm --target node22 --clean",
     "start": "node --env-file-if-exists=.env dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "probe": "tsx --env-file-if-exists=.env evals/probe.ts",
+    "eval": "tsx --env-file=.env evals/run.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.96",

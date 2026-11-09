@@ -36,3 +36,5 @@ pw-shot-*.png
 .DS_Store
 # Local contact sheet of the verification screenshots, regenerated with them.
 docs/verification/index.html
+apps/server/evals/results/
+apps/server/evals/*.out
