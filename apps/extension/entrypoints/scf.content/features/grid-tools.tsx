@@ -9,6 +9,7 @@ import {
 } from "../../../components/GridFilters";
 import type { GridSortKey } from "../../../components/GridSort";
 import { GridToolbar } from "../../../components/GridToolbar";
+import type { Enrichment } from "../../../lib/site/enrich";
 import { onLoader, readLoader } from "../../../lib/site/loader-store";
 import {
   type CardMatcher,
@@ -143,7 +144,7 @@ function collect(
       cell,
       id: record?.id ?? null,
       title,
-      text: norm(`${title} ${facts?.team ?? record?.projectName ?? ""}`),
+      text: norm(`${title} ${facts?.team ?? ""} ${record?.projectName ?? ""}`),
       budget: record?.budget ?? facts?.budget ?? null,
     });
   }
@@ -207,9 +208,35 @@ function openTools(
 
   const terms = (): string[] => norm(query).split(" ").filter(Boolean);
 
-  const passes = (entry: Entry, needles: readonly string[]): boolean => {
-    if (!needles.every((needle) => entry.text.includes(needle))) return false;
+  const haystack = (
+    entry: Entry,
+    review: ReviewState,
+    known: ReadonlyMap<string, Enrichment>,
+  ): string => {
+    const data = entry.id === null ? undefined : known.get(entry.id);
+    const people =
+      data?.builders.flatMap((b) => [b.name, b.github ?? ""]) ?? [];
+    return norm(
+      [
+        entry.text,
+        ...people,
+        data?.track ?? "",
+        data?.projectGithub ?? "",
+        review.note,
+      ].join(" "),
+    );
+  };
+
+  const passes = (
+    entry: Entry,
+    needles: readonly string[],
+    known: ReadonlyMap<string, Enrichment>,
+  ): boolean => {
     const review = reviewOf(entry);
+    if (needles.length > 0) {
+      const text = haystack(entry, review, known);
+      if (!needles.every((needle) => text.includes(needle))) return false;
+    }
     if (filters.stances.length > 0 && !filters.stances.includes(review.stance))
       return false;
     if (filters.shortlisted && !review.shortlisted) return false;
@@ -280,7 +307,8 @@ function openTools(
 
   const apply = (): void => {
     const needles = terms();
-    const visible = all.filter((entry) => passes(entry, needles));
+    const known = readFacts();
+    const visible = all.filter((entry) => passes(entry, needles, known));
     const shown = new Set(visible);
     if (focused && !shown.has(focused)) setFocus(null);
     ordered = sort === "site" ? visible : visible.toSorted(compare);

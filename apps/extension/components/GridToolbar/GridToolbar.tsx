@@ -68,8 +68,8 @@ export function GridToolbar({
         <div className={styles.search}>
           <TextField
             {...(searchRef ? { ref: searchRef } : {})}
-            aria-label="Search submissions by title or team"
-            placeholder="Search title or team"
+            aria-label="Search submissions by title, project, team or builder"
+            placeholder="Search proposals, teams or builders"
             className={styles.searchInput}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
