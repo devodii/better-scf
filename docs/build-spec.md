@@ -170,7 +170,7 @@ Key deps:
   - Content script `matches: ["https://communityfund.stellar.org/*"]`, `runAt: "document_idle"`, `cssInjectionMode: "ui"` (we inject into a shadow root).
 - Hono server with `/health` returning version.
 - Biome config, Vitest config, root scripts: `dev`, `build`, `lint`, `typecheck`, `test`, `tokens`, `recon`.
-- `.env.example` in `apps/server`: `ANTHROPIC_API_KEY=`, `ALLOWED_EXTENSION_IDS=`, `PORT=8787`, `DAILY_CAP_PER_CLIENT=300`.
+- `.env.example` in `apps/server`: `ANTHROPIC_API_KEY=`, `ALLOWED_EXTENSION_IDS=`, `PORT=8787`, `DAILY_CAP_PER_CLIENT=50`.
 - `.env.example` in `apps/extension`: `WXT_SERVER_URL=http://localhost:8787`.
 
 Acceptance: `pnpm dev` runs both apps, extension loads unpacked, server `/health` responds.
