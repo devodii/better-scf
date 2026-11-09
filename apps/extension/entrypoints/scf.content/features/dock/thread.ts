@@ -307,10 +307,8 @@ export function toUiMessage(row: ChatMessage): UIMessage {
 export function describeError(error: Error): AssistantNotice {
   if (error instanceof ChatTransportError) {
     switch (error.kind) {
-      case "rate-limited":
       case "daily-limit":
         return { tone: "limit", text: error.userMessage() };
-      case "global-cap":
       case "server":
       case "network":
       case "not-configured":

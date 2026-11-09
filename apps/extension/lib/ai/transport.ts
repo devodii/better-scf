@@ -37,13 +37,7 @@ export interface BscfChatTransportOptions {
 }
 
 export type ChatTransportErrorKind =
-  | "daily-limit"
-  | "rate-limited"
-  | "global-cap"
-  | "server"
-  | "network"
-  | "not-configured"
-  | "not-allowed";
+  "daily-limit" | "server" | "network" | "not-configured" | "not-allowed";
 
 interface ChatTransportErrorDetail {
   status: number;
@@ -81,13 +75,6 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
     this.resetsAt = detail.resetsAt;
   }
 
-  static rateLimited(retryAfterSeconds: number | null): ChatTransportError {
-    return new ChatTransportError("rate-limited", {
-      status: 429,
-      retryAfterSeconds,
-    });
-  }
-
   static dailyLimit(
     retryAfterSeconds: number | null,
     nowMs: number,
@@ -99,17 +86,6 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
         retryAfterSeconds === null
           ? undefined
           : formatResetTime(nowMs, retryAfterSeconds),
-    });
-  }
-
-  static globalCap(
-    serverMessage: string | undefined,
-    retryAfterSeconds: number | null,
-  ): ChatTransportError {
-    return new ChatTransportError("global-cap", {
-      status: 503,
-      retryAfterSeconds,
-      serverMessage,
     });
   }
 
@@ -153,20 +129,8 @@ export class ChatTransportError extends AppError<ChatTransportErrorKind> {
         return "The assistant server is not configured, so the assistant is unavailable in this build.";
       case "not-allowed":
         return "The assistant server does not recognise this copy of the extension yet.";
-      case "rate-limited": {
-        const wait =
-          this.retryAfterSeconds === null
-            ? "a moment"
-            : `${this.retryAfterSeconds} seconds`;
-        return `You're asking too fast. Try again in ${wait}.`;
-      }
       case "daily-limit":
-        return `You've hit the limit for today (${CHAT_LIMITS.dailyQuestionsPerClient} questions). Resets at ${this.resetsAt ?? "tomorrow"}.`;
-      case "global-cap":
-        return (
-          this.serverMessage ??
-          "The assistant is busy right now. Please try again later."
-        );
+        return `You've reached today's question limit. It resets at ${this.resetsAt ?? "tomorrow"}.`;
       case "server":
         return this.serverMessage ?? GENERIC_MESSAGE;
       case "network":
@@ -194,15 +158,10 @@ async function mapChatErrorResponse(
     detail?.retryAfterSeconds ??
     parseRetryAfterHeader(response.headers.get("Retry-After"));
 
-  if (response.status === 429) {
-    return detail?.code === "rate_limited"
-      ? ChatTransportError.rateLimited(retryAfter)
-      : ChatTransportError.dailyLimit(retryAfter, now());
-  }
+  if (response.status === 429)
+    return ChatTransportError.dailyLimit(retryAfter, now());
   if (detail?.code === "forbidden_origin")
     return ChatTransportError.notAllowed();
-  if (response.status === 503)
-    return ChatTransportError.globalCap(detail?.message, retryAfter);
   return ChatTransportError.server(
     response.status,
     detail?.message,

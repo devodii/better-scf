@@ -147,9 +147,7 @@ const chatErrorCodeSchema = z.enum([
   "bad_request",
   "forbidden_origin",
   "missing_client",
-  "rate_limited",
   "daily_limit",
-  "global_cap",
   "internal",
 ]);
 export type ChatErrorCode = z.infer<typeof chatErrorCodeSchema>;

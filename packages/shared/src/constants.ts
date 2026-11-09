@@ -9,7 +9,6 @@ export const CHAT_LIMITS = {
   maxContextChars: 24000,
   maxIdChars: 128,
   maxPromptIdChars: 64,
-  dailyQuestionsPerClient: 40,
   maxRequestBytes: 200 * 1024,
   maxPartsPerMessage: 40,
   maxTools: 12,
