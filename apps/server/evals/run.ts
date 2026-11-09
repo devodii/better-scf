@@ -24,6 +24,16 @@ const only = process.argv
 
 const tools = createStellarlightTools();
 
+const planned = CASES.filter(
+  (item) => !only || only.includes(item.id) || only.includes(item.group),
+).length;
+if (!process.argv.includes("--yes")) {
+  console.error(
+    `This calls the paid model for ${planned} cases: about ${(planned * 0.02).toFixed(1)}M tokens plus the judge, which costs real money. Re-run with --yes to start.`,
+  );
+  process.exit(2);
+}
+
 interface Outcome {
   id: string;
   group: string;
