@@ -170,7 +170,7 @@ Key deps:
   - Content script `matches: ["https://communityfund.stellar.org/*"]`, `runAt: "document_idle"`, `cssInjectionMode: "ui"` (we inject into a shadow root).
 - Hono server with `/health` returning version.
 - Biome config, Vitest config, root scripts: `dev`, `build`, `lint`, `typecheck`, `test`, `tokens`, `recon`.
-- `.env.example` in `apps/server`: `ANTHROPIC_API_KEY=`, `ALLOWED_EXTENSION_IDS=`, `PORT=8787`, `DAILY_CAP_PER_CLIENT=40`, `BURST_PER_MINUTE=6`.
+- `.env.example` in `apps/server`: `ANTHROPIC_API_KEY=`, `ALLOWED_EXTENSION_IDS=`, `PORT=8787`, `DAILY_CAP_PER_CLIENT=300`.
 - `.env.example` in `apps/extension`: `WXT_SERVER_URL=http://localhost:8787`.
 
 Acceptance: `pnpm dev` runs both apps, extension loads unpacked, server `/health` responds.
@@ -487,7 +487,7 @@ Middleware order: `origin` → `client` → `ratelimit` → handler.
 
 - origin: accept `Origin: chrome-extension://<id>` for ids in `ALLOWED_EXTENSION_IDS` (comma separated; include the dev id), plus `http://localhost:*` when `NODE_ENV=development`. Reject others with 403. Note: Chrome sends `Origin` on content-script fetches with host permissions; verify and fall back to a signed client header if not.
 - client: `X-BSCF-Client` must be a uuid v4. Missing → 400.
-- ratelimit: sliding window in memory (`Map<string, number[]>`): 6/min burst and 40/day per client id, 120/day per IP. Single instance is fine. Expose `Retry-After`. Add a global daily cap (`GLOBAL_DAILY_CAP`, default 3000) that returns a friendly 503 to protect the key.
+- ratelimit: sliding 24 hour window in memory (`Map<string, number[]>`), one counter per client id (`DAILY_CAP_PER_CLIENT` questions a day). Single instance is fine. Expose `Retry-After`. No burst, per-IP, global or token limits.
 - handler:
   - validate body with zod (`packages/shared/src/chat.ts`): messages ≤ 20, each ≤ 2k chars, context ≤ 24k chars.
   - model: `claude-sonnet-4-5` (or current default; read from env `MODEL`). `maxTokens: 900`. Temperature 0.2.
@@ -555,7 +555,7 @@ restartPolicyMaxRetries = 5
 
 `apps/server/Dockerfile` (multi stage, monorepo aware): copy root `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packages/shared`, `apps/server`; `pnpm install --frozen-lockfile --filter server...`; build; runtime image `node:22-alpine` with only `dist` and production deps. Expose `$PORT`. Optional volume mounted at `/data` for the sqlite cache.
 
-Railway service env: `ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT`, `BURST_PER_MINUTE`, `GLOBAL_DAILY_CAP`, `NODE_ENV=production`.
+Railway service env: `ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT`, `NODE_ENV=production`.
 
 ---
 

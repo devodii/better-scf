@@ -21,7 +21,7 @@ The manifest pins its key, so every build has the id `eaplcaohhkncckjnobkipmkpbn
 
 The build and deploy config is `railway.toml` at the repository root (Dockerfile `apps/server/Dockerfile`, built with the root as context), so no "Config as Code file path" setting is needed in the Railway dashboard.
 
-`ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `BURST_PER_MINUTE`, `DAILY_CAP_PER_CLIENT`, `IP_DAILY_CAP`, `GLOBAL_DAILY_CAP`, `DAILY_TOKEN_CAP_PER_CLIENT` (all five limits are required, the server refuses to start without them), `NODE_ENV=production`.
+`ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT` (questions one person may ask per day; required, the server refuses to start without it), `NODE_ENV=production`. There are no other rate limits: no burst limit, no per-IP or global cap and no token budget.
 
 ## Web page
 
