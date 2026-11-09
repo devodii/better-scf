@@ -35,6 +35,7 @@ import {
   writeRoundCount,
 } from "../../../lib/site/round-counts";
 import {
+  loadSavedFacts,
   onFacts,
   publishFacts,
   readFacts,
@@ -416,6 +417,7 @@ export const feature: Feature = {
     };
     adoptKnown();
     const offFacts = onFacts(adoptKnown);
+    void loadSavedFacts();
     signal.addEventListener("abort", offFacts, { once: true });
     const offStellarlight = onStellarlight(() => {
       for (const entry of entries.values()) placeMeta(entry);
@@ -639,6 +641,7 @@ export const feature: Feature = {
       const control = new AbortController();
       const stop = AbortSignal.any([signal, control.signal]);
       batch = control;
+      await loadSavedFacts();
       adoptKnown();
       const previous = await readRoundCount(roundId).catch(() => null);
       const force =

@@ -43,6 +43,9 @@ export default defineBackground(() => {
   registerRpcHandlers(
     createRpcHandlers({ getRepo: createRepoProvider(), getClientId }),
   );
+  browser.storage.session
+    .setAccessLevel({ accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" })
+    .catch(() => {});
   browser.runtime.setUninstallURL(LINKS.uninstallSurvey).catch(() => {});
   browser.runtime.onInstalled.addListener(() => void injectIntoOpenTabs());
 });

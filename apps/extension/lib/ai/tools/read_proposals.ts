@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { ENRICH_CONCURRENCY, enrichSubmission } from "../../site/enrich";
-import { publishFacts, readFacts } from "../../site/round-facts";
+import {
+  loadSavedFacts,
+  publishFacts,
+  readFacts,
+} from "../../site/round-facts";
 import { defineTool } from "./registry";
 
 const DEADLINE_MS = 65_000;
@@ -17,6 +21,7 @@ export const tool = defineTool({
       .max(200),
   }),
   run: async ({ ids }) => {
+    await loadSavedFacts();
     const known = readFacts();
     const pending = [...new Set(ids)].filter((id) => !known.has(id));
     const control = new AbortController();

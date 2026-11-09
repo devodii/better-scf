@@ -39,6 +39,7 @@ In the extension's own storage:
 
 - IndexedDB database `better-scf`: parsed submissions, projects and rounds; your review state (stance, shortlist, note, last opened); navigation state; your recent chats (you can open, branch and delete them from the chat panel); cached Horizon summaries; and resolved avatar URLs.
 - `chrome.storage.local`: feature settings, the random client id and the downloaded list of Stellarlight usernames.
+- `chrome.storage.session`: the tracks and teams read from a round's proposals during the last 10 minutes, so reloading a round or coming back to it is instant. It is kept in memory only, never written to disk, and cleared when you close the browser.
 
 On the Community Fund tab, `sessionStorage` keeps the scroll position and last opened card of a page, whether the chat panel is open and which chat is current, until the tab closes.
 
