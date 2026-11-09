@@ -149,7 +149,13 @@ function profileHref({ linkedin, github, x }: EnrichedBuilder): string | null {
 }
 
 function builderPeople(facts: Enrichment): AvatarStackPerson[] {
-  const people: AvatarStackPerson[] = facts.builders.map((builder) => ({
+  const onStellarlight = (github: string | null): boolean =>
+    github !== null && hasStellarlightProfile(github);
+  const ordered = [
+    ...facts.builders.filter(({ github }) => onStellarlight(github)),
+    ...facts.builders.filter(({ github }) => !onStellarlight(github)),
+  ];
+  const people: AvatarStackPerson[] = ordered.map((builder) => ({
     name: builder.name,
     role:
       builder.github && hasStellarlightProfile(builder.github)
