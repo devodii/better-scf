@@ -1,5 +1,16 @@
 # extension
 
+## 0.1.3 - 2026-11-09
+
+### Patch Changes
+
+- Search on a round page now also finds proposals by project name, team name, builder name, GitHub username, track and your own private notes. The search box reads "Search proposals, teams or builders".
+- Team members now appear before the organisation's GitHub account on proposal cards, so a large team is never hidden behind the +N.
+- The assistant can use all of Stellarlight for any Stellar question, not only builders: projects, repos and source code, standards, audits, hackathons, funding, partners, stablecoins and prices. It links builders to their Stellarlight profile and sticks to what Stellarlight returns.
+- The assistant has no limit on how fast you can ask, only a daily question limit. When you reach it, it tells you when it resets.
+- When you uninstall the extension, Chrome opens a short form asking why.
+- shared@0.1.3
+
 ## 0.1.2 - 2026-11-08
 
 ### Patch Changes
