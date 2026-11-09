@@ -1,15 +1,16 @@
 import type { Context, MiddlewareHandler } from "hono";
+import type { Redis } from "ioredis";
 import { chatError } from "shared";
 
 export interface RateLimitOptions {
+  redis: Redis;
   perClientPerDay: number;
-  now?: () => number;
   getIp?: (c: Context) => string;
 }
 
 const CLIENT_HEADER = "x-bscf-client";
-const DAY_MS = 24 * 60 * 60_000;
-const SWEEP_EVERY = 500;
+const KEY_PREFIX = "bscf:questions:";
+const DAY_SECONDS = 24 * 60 * 60;
 
 function clientIpFromRequest(c: Context): string {
   const forwarded = c.req.header("x-forwarded-for");
@@ -26,52 +27,48 @@ function clientIpFromRequest(c: Context): string {
 }
 
 export function createRateLimit(options: RateLimitOptions): MiddlewareHandler {
-  const now = options.now ?? Date.now;
   const getIp = options.getIp ?? clientIpFromRequest;
-  const clients = new Map<string, number[]>();
-  let calls = 0;
 
-  const recent = (clientId: string, t: number): number[] => {
-    const stamps = (clients.get(clientId) ?? []).filter(
-      (stamp) => stamp > t - DAY_MS,
-    );
-    if (stamps.length === 0) clients.delete(clientId);
-    else clients.set(clientId, stamps);
-    return stamps;
+  const retryAfterSeconds = async (key: string): Promise<number | null> => {
+    try {
+      const replies = await options.redis
+        .multi()
+        .set(key, 0, "EX", DAY_SECONDS, "NX")
+        .incr(key)
+        .ttl(key)
+        .exec();
+      const count = Number(replies?.[1]?.[1]);
+      const ttl = Number(replies?.[2]?.[1]);
+      if (!Number.isFinite(count) || count <= options.perClientPerDay)
+        return null;
+      return Math.max(1, Number.isFinite(ttl) ? ttl : DAY_SECONDS);
+    } catch {
+      return null;
+    }
   };
 
   return async (c, next) => {
-    const t = now();
-    calls += 1;
-    if (calls % SWEEP_EVERY === 0) {
-      for (const key of [...clients.keys()]) recent(key, t);
-    }
     const clientId = c.req.header(CLIENT_HEADER) ?? `ip:${getIp(c)}`;
-    const stamps = recent(clientId, t);
-    if (stamps.length >= options.perClientPerDay) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil(((stamps[0] ?? t) + DAY_MS - t) / 1000),
-      );
-      console.warn(
-        JSON.stringify({
-          event: "limit",
-          limit: "DAILY_CAP_PER_CLIENT",
-          clientId,
-        }),
-      );
-      c.header("Retry-After", String(retryAfter));
-      return c.json(
-        chatError(
-          "daily_limit",
-          "You have reached the daily question limit.",
-          retryAfter,
-        ),
-        429,
-      );
+    const retryAfter = await retryAfterSeconds(`${KEY_PREFIX}${clientId}`);
+    if (retryAfter === null) {
+      await next();
+      return;
     }
-    stamps.push(t);
-    clients.set(clientId, stamps);
-    await next();
+    console.warn(
+      JSON.stringify({
+        event: "limit",
+        limit: "DAILY_CAP_PER_CLIENT",
+        clientId,
+      }),
+    );
+    c.header("Retry-After", String(retryAfter));
+    return c.json(
+      chatError(
+        "daily_limit",
+        "You have reached the daily question limit.",
+        retryAfter,
+      ),
+      429,
+    );
   };
 }

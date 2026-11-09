@@ -6,6 +6,7 @@ import { PINNED_EXTENSION_ID } from "./extension-id.js";
 import { client } from "./middleware/client.js";
 import { origin } from "./middleware/origin.js";
 import { createRateLimit } from "./middleware/ratelimit.js";
+import { createRedis } from "./redis.js";
 import {
   type ChatRouteDeps,
   createChatRoute,
@@ -41,8 +42,8 @@ function createApp(env: Env, deps: AppDeps = {}) {
   v1.use(client);
   v1.use(
     createRateLimit({
+      redis: createRedis(env.REDIS_URL),
       perClientPerDay: env.DAILY_CAP_PER_CLIENT,
-      ...(deps.now ? { now: deps.now } : {}),
     }),
   );
   v1.route(

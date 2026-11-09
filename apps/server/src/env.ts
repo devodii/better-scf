@@ -30,6 +30,9 @@ const envSchema = z
       ),
     PORT: intWithDefault(8787),
     DAILY_CAP_PER_CLIENT: requiredInt(),
+    REDIS_URL: z
+      .string({ error: "is required (set it in the environment)" })
+      .min(1),
     MODEL: z.string().min(1).default(DEFAULT_MODEL),
   })
   .superRefine((value, ctx) => {

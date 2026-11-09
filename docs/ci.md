@@ -21,7 +21,7 @@ The manifest pins its key, so every build has the id `eaplcaohhkncckjnobkipmkpbn
 
 The build and deploy config is `railway.toml` at the repository root (Dockerfile `apps/server/Dockerfile`, built with the root as context), so no "Config as Code file path" setting is needed in the Railway dashboard.
 
-`ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT` (questions one person may ask per day; required, the server refuses to start without it), `NODE_ENV=production`. There are no other rate limits: no burst limit, no per-IP or global cap and no token budget.
+`ANTHROPIC_API_KEY`, `ALLOWED_EXTENSION_IDS`, `MODEL`, `DAILY_CAP_PER_CLIENT` (questions one person may ask per day; required, the server refuses to start without it), `REDIS_URL` (required; set it to the reference `${{Redis.REDIS_URL}}` of the Redis service in the same Railway project, so the daily counters survive deployments), `NODE_ENV=production`. The counters live in Redis (one key per client id, expiring after 24 hours); if Redis is unreachable the server keeps answering and does not count. For local development run `docker compose up -d redis` and keep `REDIS_URL=redis://localhost:6379` in `apps/server/.env`. There are no other rate limits: no burst limit, no per-IP or global cap and no token budget.
 
 ## Web page
 
