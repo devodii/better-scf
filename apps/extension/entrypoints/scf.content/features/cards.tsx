@@ -164,7 +164,7 @@ function builderPeople(facts: Enrichment): AvatarStackPerson[] {
       ({ github }) => github?.toLowerCase() === owner.toLowerCase(),
     )
   ) {
-    people.unshift({
+    people.push({
       name: owner,
       role: "On GitHub",
       src: githubAvatar(owner),
