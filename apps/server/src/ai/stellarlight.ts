@@ -341,7 +341,7 @@ function briefBuilder(row: BuilderRow): Record<string, unknown> {
     location: row.location,
     bio: row.bio?.slice(0, 200),
     projectCount: row.projectCount,
-    profileUrl: row.url ?? `${BASE}/builders/${row.githubUsername}`,
+    profileUrl: `${BASE}/builders/${encodeURIComponent(row.githubUsername ?? "")}`,
   };
 }
 
@@ -355,7 +355,7 @@ function compactBuilder(row: BuilderRow): Record<string, unknown> {
     location: row.location,
     websiteUrl: row.websiteUrl,
     twitterHandle: row.twitterHandle,
-    profileUrl: row.url ?? `${BASE}/builders/${row.githubUsername}`,
+    profileUrl: `${BASE}/builders/${encodeURIComponent(row.githubUsername ?? "")}`,
     projectCount: row.projectCount,
     projects: row.projects?.slice(0, 8),
     onStellar: {
