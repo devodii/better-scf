@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.4 - 2026-11-09
+
+### Patch Changes
+
+- Fixed the search box dropping letters when you start typing right after a round page opens.
+- shared@0.1.4
+
 ## 0.1.3 - 2026-11-09
 
 ### Patch Changes
