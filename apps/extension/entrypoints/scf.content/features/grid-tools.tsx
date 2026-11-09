@@ -173,6 +173,7 @@ function openTools(
   context: FeatureContext,
   { grid, entries }: Collected,
   seed: Seed | null,
+  handoff: Handoff | null,
 ): GridTools {
   const { store, settings, warn } = context;
   const control = new AbortController();
@@ -495,7 +496,24 @@ function openTools(
       }
       ui = handle;
       render();
-      if (seed && query !== "") focusSearchEnd(searchRef, () => closed);
+      if (handoff) {
+        focusSearchEnd(
+          searchRef,
+          () => closed,
+          (field) => {
+            const typed = handoff.query();
+            if (typed !== query) {
+              query = typed;
+              field.value = typed;
+              apply();
+              render();
+            }
+            handoff.done();
+          },
+        );
+      } else if (seed && query !== "") {
+        focusSearchEnd(searchRef, () => closed);
+      }
     })
     .catch((error: unknown) => warn("mount", error));
   if (settings.keyboardShortcuts)
@@ -562,7 +580,13 @@ function openTools(
 
 interface Preview {
   readonly section: Element;
+  query(): string;
   close(): void;
+}
+
+interface Handoff {
+  query(): string;
+  done(): void;
 }
 
 function seeAllButton(section: Element): HTMLElement | null {
@@ -572,20 +596,27 @@ function seeAllButton(section: Element): HTMLElement | null {
   return null;
 }
 
+const FOCUS_WAIT_MS = 10_000;
+
 function focusSearchEnd(
   ref: { readonly current: HTMLInputElement | null },
   isClosed: () => boolean,
+  onFocused?: (field: HTMLInputElement) => void,
 ): void {
-  let frames = 0;
+  const startedAt = performance.now();
   const attempt = (): void => {
     const field = ref.current;
     if (field) {
       field.focus();
+      onFocused?.(field);
       field.setSelectionRange(field.value.length, field.value.length);
+      requestAnimationFrame(() =>
+        field.setSelectionRange(field.value.length, field.value.length),
+      );
       return;
     }
-    frames += 1;
-    if (frames < 90 && !isClosed()) requestAnimationFrame(attempt);
+    if (performance.now() - startedAt < FOCUS_WAIT_MS && !isClosed())
+      setTimeout(attempt, 16);
   };
   attempt();
 }
@@ -610,6 +641,7 @@ function openPreview(
   const ids = new Set((records ?? []).map((record) => record.id));
   let closed = false;
   let ui: MountedUi | null = null;
+  let query = "";
 
   const known = (): GridTrack[] => {
     const found = new Set<GridTrack>();
@@ -620,10 +652,12 @@ function openPreview(
 
   const toolbar = () => (
     <GridToolbar
-      query=""
-      onQueryChange={(query) =>
-        choose({ query, filters: EMPTY_GRID_FILTERS, sort: "site" })
-      }
+      query={query}
+      onQueryChange={(value) => {
+        query = value;
+        ui?.render(toolbar());
+        choose({ query: value, filters: EMPTY_GRID_FILTERS, sort: "site" });
+      }}
       filters={EMPTY_GRID_FILTERS}
       onFiltersChange={(filters) =>
         choose({ query: "", filters, sort: "site" })
@@ -659,6 +693,7 @@ function openPreview(
 
   return {
     section,
+    query: () => query,
     close() {
       if (closed) return;
       closed = true;
@@ -708,19 +743,27 @@ export const feature: Feature = {
             carry = seed;
             seeAllButton(section)?.click();
           });
-        } else {
+        } else if (carry === null) {
           closePreview();
         }
         return;
       }
-      closePreview();
       if (tools && tools.grid !== collected.grid) {
         tools.close();
         tools = null;
       }
-      if (tools) tools.update(collected.entries);
-      else {
-        tools = openTools(context, collected, carry);
+      if (tools) {
+        closePreview();
+        tools.update(collected.entries);
+      } else {
+        const old = preview;
+        preview = null;
+        tools = openTools(
+          context,
+          collected,
+          carry,
+          old ? { query: old.query, done: old.close } : null,
+        );
         carry = null;
       }
     };
