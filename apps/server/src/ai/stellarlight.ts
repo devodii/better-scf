@@ -13,6 +13,7 @@ const ARG_KEY = /^[A-Za-z]{1,20}$/;
 interface Endpoint {
   summary: string;
   path: (args: Record<string, unknown>) => string | null;
+  pathKey?: string;
   method?: "GET" | "POST";
   body?: (args: Record<string, unknown>) => unknown;
 }
@@ -22,193 +23,194 @@ const text = (args: Record<string, unknown>, key: string): string | null => {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 };
 
-const slug =
-  (key: string, route: string) => (args: Record<string, unknown>) => {
+const slug = (key: string, route: string) => ({
+  pathKey: key,
+  path: (args: Record<string, unknown>) => {
     const value = text(args, key);
     return value === null ? null : `${route}/${encodeURIComponent(value)}`;
-  };
+  },
+});
+
+const get = (summary: string, route: string): Endpoint => ({
+  summary,
+  path: () => route,
+});
 
 const ENDPOINTS: Record<string, Endpoint> = {
-  get_builders: {
-    summary:
-      "get_builders(skill?, location?, limit?): people directory, with bio, role and shipped projects",
-    path: () => "/api/builders",
-  },
-  get_people: {
-    summary:
-      "get_people(q?, section?, limit?): Stellar Development Foundation leadership, board and advisors",
-    path: () => "/api/people",
-  },
-  search_projects: {
-    summary:
-      "search_projects(q?, category?, type?, status?, scfAwarded?, limit?): what has been built, by whom, with SCF funding",
-    path: () => "/api/projects/search",
-  },
-  search_repos: {
-    summary:
-      "search_repos(q?, language?, activity?, minScore?, limit?, offset?): indexed GitHub repos scored for depth, freshness and traction",
-    path: () => "/api/repos/search",
-  },
-  explain_repo: {
-    summary:
-      "explain_repo(q!, repo?): answers a deep code question about an indexed repo",
-    path: () => "/api/repos/explain",
-  },
-  locate_source: {
-    summary:
-      "locate_source(q!, repo?, kind?, page?): where something is defined in Stellar core source repos",
-    path: () => "/api/sources/locate",
-  },
-  get_hackathons: {
-    summary:
-      "get_hackathons(status?, q?, organizer?, source?, limit?): Stellar hackathon events",
-    path: () => "/api/hackathons",
-  },
+  get_builders: get(
+    "get_builders(q?, location?, skill?, limit?, offset?): the people directory with bio, role and shipped projects. For one named person prefer find_builder",
+    "/api/builders",
+  ),
+  get_people: get(
+    "get_people(q?, section?, limit?, offset?): Stellar Development Foundation leadership, board and advisors",
+    "/api/people",
+  ),
+  search_projects: get(
+    "search_projects(q?, category?: Infrastructure|Tooling|User-Facing App|Asset|Protocol/Contract|Anchor|Partner Integration, type?: Wallet|DEX|Lending|Bridge|Payments|Anchor|SDK|Indexer|Explorer|Analytics|AI|Gaming|Education|Security|NFT|RWA|Stablecoin|Oracle|Yield|..., scfAwarded?, status?, limit?, offset?): the project directory: what has been built, by whom, with which SCF funding",
+    "/api/projects/search",
+  ),
+  search_repos: get(
+    "search_repos(q?, language?, activity?: active|maintained|dormant|archived|unknown, minScore?, limit?, offset?, view?: full|compact): indexed GitHub repos scored for depth, freshness and traction",
+    "/api/repos/search",
+  ),
+  explain_repo: get(
+    "explain_repo(q!, repo?: owner/name): answers a deep code question about an indexed repo",
+    "/api/repos/explain",
+  ),
+  locate_source: get(
+    "locate_source(q!, repo?: stellar/stellar-core|stellar/rs-soroban-sdk|stellar/rs-soroban-env|stellar/js-stellar-sdk|stellar/stellar-rpc|stellar/stellar-cli|stellar/soroban-examples|OpenZeppelin/stellar-contracts|..., kind?: file|symbol|heading, page?): where something is defined in the Stellar core source repos",
+    "/api/sources/locate",
+  ),
+  get_hackathons: get(
+    "get_hackathons(status?: upcoming|active|completed, organizer?, q?, source?: curated|dorahacks, limit?): Stellar hackathon events",
+    "/api/hackathons",
+  ),
   get_hackathon: {
     summary:
       "get_hackathon(slug!): one hackathon with every submission, placement and prize",
-    path: slug("slug", "/api/hackathons"),
+    ...slug("slug", "/api/hackathons"),
   },
   compare_hackathons: {
-    summary: "compare_hackathons(slugs![2-5]): side by side comparison",
+    summary:
+      "compare_hackathons(slugs![2-5 slugs]): side by side comparison of hackathons",
     method: "POST",
     path: () => "/api/hackathons/compare",
     body: (args) => ({ slugs: Array.isArray(args.slugs) ? args.slugs : [] }),
   },
-  search_hackathon_builds: {
-    summary:
-      "search_hackathon_builds(q?, hackathon?, limit?, offset?): prior art across hackathon prototypes",
-    path: () => "/api/hackathons/builds",
-  },
+  search_hackathon_builds: get(
+    "search_hackathon_builds(q?, mode?: keyword|meaning|hybrid, winnersOnly?, hackathon?, track?, category?, package?, limit?, offset?): prior art across hackathon prototypes",
+    "/api/hackathons/builds",
+  ),
   get_hackathon_submission: {
     summary: "get_hackathon_submission(id!): one hackathon submission in full",
-    path: slug("id", "/api/hackathons/builds"),
+    ...slug("id", "/api/hackathons/builds"),
   },
-  analyze_hackathon_submissions: {
-    summary:
-      "analyze_hackathon_submissions(facet?, by?, value?, top?): counts across hackathon submissions",
-    path: () => "/api/hackathons/analyze",
-  },
-  review_submission: {
-    summary:
-      "review_submission(link!, hackathon?): facts about one hackathon submission from its repo or DoraHacks link",
-    path: () => "/api/hackathons/review",
-  },
-  get_audits: {
-    summary:
-      "get_audits(project?, auditor?, query?, since?, limit?): Stellar security audit reports",
-    path: () => "/api/audits",
-  },
-  search_research: {
-    summary:
-      "search_research(query!, source?, auditor?, protocol?, severity?, limit?): semantic search over SDF blog, SCF handbook, SEPs, docs, audits",
-    path: () => "/api/research",
-  },
-  get_rfps: {
-    summary: "get_rfps(status?, quarter?, limit?): curated Stellar RFPs",
-    path: () => "/api/rfps",
-  },
-  get_partners: {
-    summary:
-      "get_partners(type?, sector?, region?, q?): audit firms, anchors, ramps, infra, wallets",
-    path: () => "/api/partners",
-  },
-  get_leaderboard: {
-    summary:
-      "get_leaderboard(type?): ranked active projects with GitHub rollups and developer counts",
-    path: () => "/api/leaderboard",
-  },
-  get_clusters: {
-    summary:
-      "get_clusters(dimension?, minSize?): topic clusters scored on how crowded they are",
-    path: () => "/api/clusters",
-  },
-  analyze_ecosystem: {
-    summary:
-      "analyze_ecosystem(dimension?: all|hackathons|categories|funding): ecosystem totals and SCF funding per round",
-    path: () => "/api/analyze",
-  },
-  vet_idea: {
-    summary:
-      "vet_idea(q!): competitors, maturity and prior art for an idea on Stellar",
-    path: () => "/api/vet-idea",
-  },
-  hackathon_brief: {
-    summary:
-      "hackathon_brief(q!): vet view, winners, starter repos and contracts for an idea",
-    path: () => "/api/hackathon-brief",
-  },
-  scf_pitch: {
-    summary:
-      "scf_pitch(q!): live SCF round state, funded projects in the vertical and pitch angles",
-    path: () => "/api/scf-pitch",
-  },
-  list_skills: {
-    summary: "list_skills(): installable Stellar AI skills and tools",
-    path: () => "/api/skills",
-  },
-  get_skill: {
-    summary: "get_skill(name!): one skill in full",
-    path: slug("name", "/api/skills"),
-  },
-  get_changelog: {
-    summary: "get_changelog(since?, limit?): changes to the Stellarlight API",
-    path: () => "/api/changelog",
-  },
-  get_stablecoins: {
-    summary:
-      "get_stablecoins(): stablecoins on Stellar with supply, issuers and market data",
-    path: () => "/api/stablecoins",
-  },
-  get_rwa: {
-    summary:
-      "get_rwa(q?, state?, limit?): registry of tokenized real-world assets on Stellar",
-    path: () => "/api/rwa",
-  },
-  get_contracts: {
-    summary:
-      "get_contracts(q?, limit?): verified mainnet contracts grouped by what they do",
-    path: () => "/api/contracts",
-  },
-  get_lifecycle: {
-    summary:
-      "get_lifecycle(): how directory projects ended up: built, in progress or abandoned",
-    path: () => "/api/lifecycle",
-  },
-  verify_claim: {
-    summary:
-      "verify_claim(type!, subject!, auditor?, since?): checks a claim such as audited or live against indexed evidence",
-    path: () => "/api/verify",
-  },
-  get_xlm_price: {
-    summary: "get_xlm_price(): current XLM price, volume and market cap",
-    path: () => "/api/xlm-price",
-  },
-  get_changes: {
-    summary:
-      "get_changes(since!: ISO date): what changed in the directory since a date",
-    path: () => "/api/changes",
-  },
-  repo_trust: {
-    summary: "repo_trust(repo!: owner/name): trust summary for one repo",
-    path: () => "/api/repos/trust",
-  },
-  resolve_project: {
-    summary:
-      "resolve_project(q!): resolves a project name, slug or URL to its directory record",
-    path: () => "/api/projects/resolve",
-  },
+  analyze_hackathon_submissions: get(
+    "analyze_hackathon_submissions(facet?: category|package|library|activity|project|projectStatus|scf|placement|track|event|year, by?: event|year|placement|track, value?, top?, q?, mode?, winnersOnly?, hackathon?, track?, category?, package?): counts across hackathon submissions",
+    "/api/hackathons/analyze",
+  ),
+  review_submission: get(
+    "review_submission(link!, hackathon?): facts about one hackathon submission from its repo or DoraHacks link",
+    "/api/hackathons/review",
+  ),
+  get_audits: get(
+    "get_audits(project?, auditor?, q?, since?, limit?, offset?): Stellar security audit reports",
+    "/api/audits",
+  ),
+  search_research: get(
+    "search_research(q! or query!, source?: sdf-blog|scf-handbook|sep|cap|dev-docs|paper|scf-proposal|repo-docs|audit|incident|security-program|sdf-org|release, auditor?, protocol?, severity?: critical|high|medium|low|informational, limit?): semantic search over SDF blog, SCF handbook, SEPs, CAPs, docs, audits and incidents",
+    "/api/research",
+  ),
+  get_rfps: get(
+    "get_rfps(status?: open|closed, quarter?, q?, category?, limit?, offset?): curated Stellar RFPs",
+    "/api/rfps",
+  ),
+  get_partners: get(
+    "get_partners(type?: anchor|on-off-ramp|infrastructure|tooling|protocol|wallet|audit-firm|legal|agency|asset-issuer|other, sector?, region?: global|north-america|latam|europe|africa|mena|asia|oceania, ramps?, accepting?: 1|0, q?, limit?): audit firms, anchors, ramps, infrastructure, wallets and other partners",
+    "/api/partners",
+  ),
   get_partner: {
     summary: "get_partner(slug!): one partner in full",
-    path: slug("slug", "/api/partners"),
+    ...slug("slug", "/api/partners"),
   },
-  get_status: {
-    summary: "get_status(): freshness and size of each data source",
-    path: () => "/api/status",
+  match_partners: {
+    summary:
+      "match_partners(need!, type?, sector?, region?, limit?): partners that fit a plain language need, for example 'a fiat on-ramp in Brazil'",
+    method: "POST",
+    path: () => "/api/partners/match",
+    body: (args) => ({
+      need: text(args, "need") ?? "",
+      ...(text(args, "type") ? { type: text(args, "type") } : {}),
+      ...(text(args, "sector") ? { sector: text(args, "sector") } : {}),
+      ...(text(args, "region") ? { region: text(args, "region") } : {}),
+      ...(typeof args.limit === "number" ? { limit: args.limit } : {}),
+    }),
   },
+  get_leaderboard: get(
+    "get_leaderboard(sort?: activity|stars|issues|tvl|supply, range?: 7d|30d|90d|1y|all, category?, type?, limit?): ranked active projects with GitHub rollups and developer counts",
+    "/api/leaderboard",
+  ),
+  get_clusters: get(
+    "get_clusters(dimension?: category|types, minSize?): topic clusters scored on how crowded they are",
+    "/api/clusters",
+  ),
+  analyze_ecosystem: get(
+    "analyze_ecosystem(dimension?: all|hackathons|categories|funding|tvl|gaps|developers|toolchain): ecosystem totals, SCF funding per round, TVL, gaps and developer counts",
+    "/api/analyze",
+  ),
+  vet_idea: get(
+    "vet_idea(q!): competitors, maturity and prior art for an idea on Stellar",
+    "/api/vet-idea",
+  ),
+  hackathon_brief: get(
+    "hackathon_brief(q!): vet view, winners, starter repos and contracts for an idea",
+    "/api/hackathon-brief",
+  ),
+  scf_pitch: get(
+    "scf_pitch(q!): live SCF round state, funded projects in the vertical and pitch angles",
+    "/api/scf-pitch",
+  ),
+  list_skills: get(
+    "list_skills(q?, source?: sdf|stellarlight|lumenloop|external|community, kind?: skill-md|mcp-server|sdk|cli|agent-kit|tool): installable Stellar AI skills and tools",
+    "/api/skills",
+  ),
+  get_skill: {
+    summary: "get_skill(name!): one skill in full",
+    ...slug("name", "/api/skills"),
+  },
+  get_changelog: get(
+    "get_changelog(since?, limit?): changes to the Stellarlight API itself",
+    "/api/changelog",
+  ),
+  get_stablecoins: get(
+    "get_stablecoins(sort?: marketcap|supply|holders|volume, peg?, assetType?, limit?): stablecoins on Stellar with supply, issuers and market data",
+    "/api/stablecoins",
+  ),
+  get_rwa: get(
+    "get_rwa(state?: live|issued-single-holder|deployed-no-supply|not-found, level?, kind?: classic|soroban, project?, limit?): registry of tokenized real-world assets on Stellar",
+    "/api/rwa",
+  ),
+  get_contracts: get(
+    "get_contracts(q?, domain?: defi-lending|defi-amm|defi-yield|oracle|payments-x402|wallet-infra|anchor-ramp|indexer, limit?, offset?): verified mainnet contracts grouped by what they do",
+    "/api/contracts",
+  ),
+  get_lifecycle: get(
+    "get_lifecycle(): how directory projects ended up: built, in progress or abandoned",
+    "/api/lifecycle",
+  ),
+  verify_claim: get(
+    "verify_claim(type!: audited|live|maintained|issued, subject!, auditor?, since?): checks a claim against indexed evidence, for example whether a project was audited",
+    "/api/verify",
+  ),
+  get_xlm_price: get(
+    "get_xlm_price(): current XLM price, volume and market cap",
+    "/api/xlm-price",
+  ),
+  get_changes: get(
+    "get_changes(since!: ISO date, surfaces?, limit?): what changed in the directory since a date",
+    "/api/changes",
+  ),
+  repo_trust: get(
+    "repo_trust(repo!: owner/name): trust summary for one repo",
+    "/api/repos/trust",
+  ),
+  resolve_project: get(
+    "resolve_project(q!): resolves a project name, slug or URL to its directory record",
+    "/api/projects/resolve",
+  ),
+  get_quality: get(
+    "get_quality(): how complete and fresh the Stellarlight data is, per source",
+    "/api/quality",
+  ),
+  get_status: get(
+    "get_status(): freshness and size of each data source",
+    "/api/status",
+  ),
 };
 
 const NAMES = Object.keys(ENDPOINTS) as [string, ...string[]];
+
+export const STELLARLIGHT_TOOL_NAMES: readonly string[] = NAMES;
 
 const cache = new Map<string, { at: number; value: string }>();
 
@@ -231,7 +233,8 @@ async function request(
   const query = new URLSearchParams();
   if (endpoint.method !== "POST") {
     for (const [key, value] of Object.entries(args)) {
-      if (!ARG_KEY.test(key) || key === "slugs") continue;
+      if (!ARG_KEY.test(key) || key === "slugs" || key === endpoint.pathKey)
+        continue;
       if (
         typeof value === "string" ||
         typeof value === "number" ||
@@ -261,10 +264,56 @@ async function request(
   return { ok: response.ok, status: response.status, body };
 }
 
+function fitJson(value: string): string | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  const holder: Record<string, unknown> = Array.isArray(parsed)
+    ? { items: parsed }
+    : typeof parsed === "object" && parsed !== null
+      ? { ...(parsed as Record<string, unknown>) }
+      : {};
+  let key: string | null = null;
+  let size = 0;
+  for (const [name, entry] of Object.entries(holder)) {
+    if (Array.isArray(entry) && entry.length > size) {
+      key = name;
+      size = entry.length;
+    }
+  }
+  if (key === null) return null;
+  const list = holder[key] as unknown[];
+  const build = (shown: number): string =>
+    JSON.stringify({
+      ...holder,
+      [key]: list.slice(0, shown),
+      _truncated: {
+        list: key,
+        shown,
+        total: list.length,
+        note: "Narrow the query or lower limit to see the rest.",
+      },
+    });
+  let low = 1;
+  let high = list.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (build(mid).length <= MAX_CHARS) low = mid;
+    else high = mid - 1;
+  }
+  const fitted = build(low);
+  return fitted.length <= MAX_CHARS ? fitted : null;
+}
+
 function clip(value: string): string {
-  return value.length <= MAX_CHARS
-    ? value
-    : `${value.slice(0, MAX_CHARS)}\n[cut: ${value.length - MAX_CHARS} more characters. Narrow the query or lower limit.]`;
+  if (value.length <= MAX_CHARS) return value;
+  return (
+    fitJson(value) ??
+    `${value.slice(0, MAX_CHARS)}\n[cut: ${value.length - MAX_CHARS} more characters. Narrow the query or lower limit.]`
+  );
 }
 
 interface BuilderRow {
