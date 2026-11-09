@@ -79,7 +79,7 @@ const rpc = createRpcClient();
 const inflight = new Map<string, Promise<Enrichment | null>>();
 const blockListeners = new Set<(reason: EnrichBlock) => void>();
 
-export function toEnrichment(submission: Submission): Enrichment {
+function toEnrichment(submission: Submission): Enrichment {
   return {
     id: submission.id,
     track: submission.track === "unknown" ? null : submission.track,

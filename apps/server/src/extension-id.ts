@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { EXTENSION_PUBLIC_KEY } from "shared";
 
-export function extensionIdFromKey(key: string): string {
+function extensionIdFromKey(key: string): string {
   const digest = createHash("sha256")
     .update(Buffer.from(key, "base64"))
     .digest("hex")

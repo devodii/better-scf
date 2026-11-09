@@ -13,7 +13,7 @@ export type ProjectRecord = ProjectIndexEntry;
 
 export type ProjectsIndexErrorKind = "unavailable" | "unreadable";
 
-export class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
+class ProjectsIndexError extends AppError<ProjectsIndexErrorKind> {
   readonly status: number | undefined;
 
   private constructor(

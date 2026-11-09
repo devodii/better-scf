@@ -37,10 +37,9 @@ function isFeature(value: unknown): value is Feature {
   );
 }
 
-export const FEATURES: readonly RegisteredFeature[] = Object.entries(
-  modules,
-).flatMap(([path, feature]) =>
-  isFeature(feature) ? [{ name: nameOf(path), feature }] : [],
+const FEATURES: readonly RegisteredFeature[] = Object.entries(modules).flatMap(
+  ([path, feature]) =>
+    isFeature(feature) ? [{ name: nameOf(path), feature }] : [],
 );
 
 export function featuresFor(

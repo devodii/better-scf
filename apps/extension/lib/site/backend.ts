@@ -26,7 +26,7 @@ interface BackendErrorDetail {
 
 const MAX_PATH_CHARS = 120;
 
-export class BackendError extends AppError<BackendErrorKind> {
+class BackendError extends AppError<BackendErrorKind> {
   readonly status: number | undefined;
   readonly path: string | undefined;
   readonly retryAfterMs: number | undefined;

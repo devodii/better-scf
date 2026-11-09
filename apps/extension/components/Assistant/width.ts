@@ -1,5 +1,5 @@
 export const WIDTH_VAR = "--bscf-assistant-width";
-export const MAX_RATIO = 0.7;
+const MAX_RATIO = 0.7;
 export const KEY_STEP = 24;
 
 const NARROW_QUERY = "(max-width: 63.9375rem)";

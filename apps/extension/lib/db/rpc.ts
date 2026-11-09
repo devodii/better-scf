@@ -115,8 +115,8 @@ const rpcInputSchemas: { [K in RpcType]: z.ZodType<RpcInput<K>> } = {
 
 export type RpcMessenger = ExtensionMessenger<RpcProtocol>;
 
-export const { sendMessage, onMessage } =
-  defineExtensionMessaging<RpcProtocol>();
+const messaging = defineExtensionMessaging<RpcProtocol>();
+export const { sendMessage } = messaging;
 
 export interface RpcDeps {
   getRepo: () => Promise<Repo>;
@@ -165,7 +165,9 @@ export function createRpcHandlers(deps: RpcDeps): RpcHandlers {
 
 export function registerRpcHandlers(
   handlers: RpcHandlers,
-  messenger: Pick<RpcMessenger, "onMessage"> = { onMessage },
+  messenger: Pick<RpcMessenger, "onMessage"> = {
+    onMessage: messaging.onMessage,
+  },
 ): void {
   function register<K extends RpcType>(type: K): void {
     messenger.onMessage(type, async (message) => {
