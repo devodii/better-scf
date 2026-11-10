@@ -18,7 +18,7 @@ export function Hero() {
           target="_blank"
           rel="noreferrer noopener"
         >
-          Add to Chrome
+          Add to browser
         </a>
         <a className={styles.secondary} href="#demo">
           Watch the 30-second demo
@@ -32,7 +32,9 @@ export function Hero() {
           Open source on GitHub
         </a>
       </div>
-      <p className={styles.note}>Free and open source. Works in Chrome.</p>
+      <p className={styles.note}>
+        Free and open source. Works in Chrome and other Chromium browsers.
+      </p>
     </section>
   );
 }

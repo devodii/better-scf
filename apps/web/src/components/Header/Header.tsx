@@ -28,7 +28,7 @@ export function Header() {
             target="_blank"
             rel="noreferrer noopener"
           >
-            Add to Chrome
+            Add to browser
           </a>
         </nav>
       </div>
