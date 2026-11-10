@@ -12,7 +12,7 @@ const SHOTS = [
 export function Gallery() {
   return (
     <section className={styles.root} aria-label="Screenshots">
-      <h2 className={styles.title}>On the real SCF site</h2>
+      <h2 className={styles.title}>And many more.. 🚀</h2>
       <ul className={styles.grid}>
         {SHOTS.map((shot) => (
           <li key={shot.file}>
