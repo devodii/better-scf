@@ -17,7 +17,7 @@ const DEADLINE_MS = 65_000;
 export const tool = defineTool({
   name: "read_proposals",
   description:
-    "Reads proposals so their derived facts (track open, integration or rfp, team, funding history) become available in run_js as tracks and facts, and returns track counts. For a whole round pass only roundId (the rec id in the round page path): do not list ids, it is far faster. Otherwise pass up to 200 ids. Use it before answering anything about tracks or teams across a round. Pass withText to also search what proposals say. In run_js each facts[id] has title, status, round, track, people (name, role, github, x, linkedin), awardedBeforeCount and awardedBeforeUsd, and text when withText was set. If complete is false, call it again.",
+    "Reads proposals so their facts (track, team, funding history) are available in run_js as tracks and facts. For a whole round pass only roundId (the rec id in the round page path), otherwise up to 200 ids. Set withText to also search what proposals say (facts[id].text). Call again if complete is false. Use it before answering about tracks, teams or what proposals say across a round.",
   timeoutMs: DEADLINE_MS + 3000,
   input: z.object({
     roundId: z
