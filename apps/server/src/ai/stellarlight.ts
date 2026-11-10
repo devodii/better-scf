@@ -54,7 +54,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/repos/search",
   ),
   explain_repo: get(
-    "explain_repo(q!, repo?: owner/name): answers a deep code question about an indexed repo",
+    "explain_repo(q!, repo?: owner/name): slow (10s or more) and often times out; prefer locate_source for where something is defined, use this only for a narrow question about one named repo",
     "/api/repos/explain",
   ),
   locate_source: get(
@@ -62,7 +62,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/sources/locate",
   ),
   get_hackathons: get(
-    "get_hackathons(status?: upcoming|active|completed, organizer?, q?, source?: curated|dorahacks, limit?): Stellar hackathon events",
+    "get_hackathons(status?: upcoming|active|completed, organizer?, q?, source?: curated|dorahacks, limit?): Stellar hackathon events, most recent first, without winners (call get_hackathon(slug) for winners)",
     "/api/hackathons",
   ),
   get_hackathon: {
@@ -72,7 +72,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
   },
   compare_hackathons: {
     summary:
-      "compare_hackathons(slugs![2-5 slugs]): side by side comparison of hackathons",
+      "compare_hackathons(slugs![2-5 slugs]): side by side comparison of hackathons; slugs come from get_hackathons",
     method: "POST",
     path: () => "/api/hackathons/compare",
     body: (args) => ({ slugs: Array.isArray(args.slugs) ? args.slugs : [] }),
@@ -139,11 +139,11 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/analyze",
   ),
   vet_idea: get(
-    "vet_idea(q!): competitors, maturity and prior art for an idea on Stellar",
+    "vet_idea(q!): competitors, maturity and prior art for an idea on Stellar (not for hackathon questions, hackathon_brief already includes it)",
     "/api/vet-idea",
   ),
   hackathon_brief: get(
-    "hackathon_brief(q!): vet view, winners, starter repos and contracts for an idea",
+    "hackathon_brief(q!): large result: vet view, winners, starter repos and contracts for an idea. Do not also call vet_idea",
     "/api/hackathon-brief",
   ),
   scf_pitch: get(
@@ -163,7 +163,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/changelog",
   ),
   get_stablecoins: get(
-    "get_stablecoins(sort?: marketcap|supply|holders|volume, peg?, assetType?, limit?): stablecoins on Stellar with supply, issuers and market data",
+    "get_stablecoins(sort?: marketcap|supply|holders|volume, peg?, assetType?, limit?): stablecoins on Stellar with supply, issuers and market data. Supply can be unmeasured (counts.byBasis), say so instead of ranking by it",
     "/api/stablecoins",
   ),
   get_rwa: get(
@@ -175,7 +175,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/contracts",
   ),
   get_lifecycle: get(
-    "get_lifecycle(): how directory projects ended up: built, in progress or abandoned",
+    "get_lifecycle(): counts of directory projects by launch state (launched, marked live, no activity data) plus names newly launched or newly inactive. There is no abandoned count",
     "/api/lifecycle",
   ),
   verify_claim: get(
@@ -191,7 +191,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     "/api/changes",
   ),
   repo_trust: get(
-    "repo_trust(repo!: owner/name): trust summary for one repo",
+    "repo_trust(repo!: owner/name): trust summary for one repo; take the repo from a project or builder record, never guess it",
     "/api/repos/trust",
   ),
   resolve_project: get(
@@ -281,12 +281,35 @@ const isEmpty = (value: unknown): boolean =>
     !Array.isArray(value) &&
     Object.keys(value).length === 0);
 
-function prune(value: unknown, depth: number): unknown {
-  if (Array.isArray(value)) return value.map((item) => prune(item, depth + 1));
+const META_NOISE = new Set([
+  "methodology",
+  "matchBasis",
+  "matchModeLabel",
+  "note",
+  "validTypes",
+  "validRamps",
+  "humanPage",
+  "apiVersion",
+  "generatedAt",
+]);
+const ROW_NOISE = new Set([
+  "logoUrl",
+  "tomlSourceUrl",
+  "tomlFetchedAt",
+  "factors",
+  "blobSha",
+  "verifiedAt",
+]);
+
+function prune(value: unknown, depth: number, parent = ""): unknown {
+  if (Array.isArray(value))
+    return value.map((item) => prune(item, depth + 1, parent));
   if (typeof value !== "object" || value === null) return value;
   const kept: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
-    const next = prune(item, depth + 1);
+    if (depth > 0 && ROW_NOISE.has(key)) continue;
+    if (parent === "meta" && depth === 1 && META_NOISE.has(key)) continue;
+    const next = prune(item, depth + 1, key);
     if (depth > 0 && isEmpty(next)) continue;
     kept[key] = next;
   }
@@ -432,7 +455,11 @@ export function createStellarlightTools() {
             error: "That does not look like a GitHub username.",
           };
         const term = wanted || query?.trim();
-        if (!term) return { found: false, error: "Pass a handle or a query." };
+        if (!term)
+          return {
+            found: false,
+            error: "Pass handle (a GitHub username) or query (a name).",
+          };
         try {
           const result = await request(
             { summary: "", path: () => "/api/builders" },
