@@ -235,6 +235,11 @@ function githubHandle(url: URL): string | null {
     : segment;
 }
 
+function wholeBudget(value: number | null): number | null {
+  if (value === null || value <= 0) return value;
+  return Math.round(value < 1000 ? value * 1000 : value);
+}
+
 function isLeafBlock(element: Element): boolean {
   return element.querySelector(SEL.blocks) === null;
 }
@@ -740,7 +745,9 @@ async function parse(
     projectId,
     title: header.title ?? cleanRecordText(summary?.title ?? null) ?? "",
     byLine,
-    budgetUsd: summary?.budget ?? header.budgetUsd ?? requestedBudget,
+    budgetUsd: wholeBudget(
+      requestedBudget ?? summary?.budget ?? header.budgetUsd,
+    ),
     status: summary?.status ?? header.status ?? "",
     kind: awardType !== null && /build/i.test(awardType) ? "build" : "other",
     track: respondsToRfp

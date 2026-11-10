@@ -5,11 +5,11 @@ import { readFacts } from "../../site/round-facts";
 import { readItems, saveItem } from "../scratchpad";
 import { defineTool } from "./registry";
 
-const QUOTA = 3_000_000n;
+const QUOTA = 9_000_000n;
 const MAX_RESULT_CHARS = 9000;
 const MAX_LOG_CHARS = 1500;
 
-function trackIndex(): {
+function trackIndex(withText: boolean): {
   tracks: Record<string, string>;
   facts: Record<string, unknown>;
 } {
@@ -24,7 +24,7 @@ function trackIndex(): {
       round: data.round,
       team: data.builders.map((builder) => builder.name),
       people: data.builders,
-      text: readProposalText(id),
+      text: withText ? readProposalText(id) : undefined,
       awardedBeforeUsd: data.awardedUsd,
       awardedBeforeCount: data.awardedCount,
     };
@@ -44,7 +44,7 @@ export const tool = defineTool({
     const logs: string[] = [];
     const scope = {
       data: readItems(),
-      ...trackIndex(),
+      ...trackIndex(code.includes("text")),
       console: {
         log: (...parts: unknown[]) => logs.push(parts.map(String).join(" ")),
       },
