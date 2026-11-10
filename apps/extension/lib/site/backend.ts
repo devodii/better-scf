@@ -103,6 +103,7 @@ class BackendError extends AppError<BackendErrorKind> {
 export interface BackendSuccess {
   ok: true;
   data: unknown;
+  full?: unknown;
   personal: boolean;
   truncated: boolean;
 }
@@ -335,6 +336,7 @@ async function request(
     const result: BackendSuccess = {
       ok: true,
       data,
+      full: entry.personal ? undefined : raw,
       personal: entry.personal,
       truncated,
     };

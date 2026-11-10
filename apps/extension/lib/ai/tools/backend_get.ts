@@ -29,7 +29,9 @@ export const tool = defineTool({
   run: async ({ endpoint, params, save }) => {
     const result = await backendGet(endpoint, params ?? {});
     if (!result.ok) return result.error.toToolResult();
-    const savedAs = save ? `data.${saveItem(save, result.data)}` : undefined;
+    const savedAs = save
+      ? `data.${saveItem(save, result.full ?? result.data)}`
+      : undefined;
     return {
       data: result.data,
       personal: result.personal,
