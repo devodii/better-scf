@@ -1,7 +1,7 @@
 import { browser } from "wxt/browser";
 import type { Enrichment } from "./enrich";
 
-const TTL_MS = 25 * 60_000;
+const TTL_MS = 2 * 60 * 60_000;
 const KEY_PREFIX = "bscfFacts:";
 const SAVE_DELAY_MS = 400;
 const NO_ROUND = "none";
