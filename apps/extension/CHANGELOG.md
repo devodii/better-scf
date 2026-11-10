@@ -1,5 +1,13 @@
 # extension
 
+## 0.1.6 - 2026-11-10
+
+### Patch Changes
+
+- 206b086: Tracks and teams are now remembered for 2 hours for each round, so coming back to a round rarely needs to read the proposals again. The reload button still refetches everything whenever you want fresh data.
+- ea7a967: The Awarded Submissions section now has the same search, filters and sorting as Received Submissions.
+- shared@0.1.6
+
 ## 0.1.5 - 2026-11-09
 
 ### Patch Changes
