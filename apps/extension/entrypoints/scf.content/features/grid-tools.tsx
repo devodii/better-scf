@@ -14,10 +14,12 @@ import { onLoader, readLoader } from "../../../lib/site/loader-store";
 import {
   type CardMatcher,
   createCardMatcher,
+  findAwardedSection,
   findReceivedSection,
   findRoundCards,
   readRoundCard,
   readRoundView,
+  type SubmissionSummary,
 } from "../../../lib/site/round";
 import { onFacts, readFacts } from "../../../lib/site/round-facts";
 import {
@@ -174,6 +176,7 @@ function openTools(
   { grid, entries }: Collected,
   seed: Seed | null,
   handoff: Handoff | null,
+  { shortcuts, showLoader }: Pick<SectionOptions, "shortcuts" | "showLoader">,
 ): GridTools {
   const { store, settings, warn } = context;
   const control = new AbortController();
@@ -375,7 +378,7 @@ function openTools(
             }
           : null
       }
-      trailing={loaderStatus()}
+      trailing={showLoader ? loaderStatus() : null}
       searchRef={searchRef}
     />
   );
@@ -484,7 +487,8 @@ function openTools(
     apply();
   });
   signal.addEventListener("abort", offFacts, { once: true });
-  signal.addEventListener("abort", onLoader(render), { once: true });
+  if (showLoader)
+    signal.addEventListener("abort", onLoader(render), { once: true });
   grid.before(bar);
   context
     .mount({ anchor: bar, append: "last", children: toolbar() })
@@ -516,7 +520,7 @@ function openTools(
       }
     })
     .catch((error: unknown) => warn("mount", error));
-  if (settings.keyboardShortcuts)
+  if (shortcuts && settings.keyboardShortcuts)
     document.addEventListener("keydown", onKeydown, { signal });
   const releaseCard = (event: Event): void => {
     const path = event.composedPath();
@@ -589,6 +593,12 @@ interface Handoff {
   done(): void;
 }
 
+interface SectionOptions {
+  find: (root: ParentNode) => Element | null;
+  shortcuts: boolean;
+  showLoader: boolean;
+}
+
 function seeAllButton(section: Element): HTMLElement | null {
   for (const button of section.querySelectorAll<HTMLElement>(TOGGLE_BUTTON)) {
     if (norm(button.textContent) === SEE_ALL_TEXT) return button;
@@ -626,6 +636,7 @@ function openPreview(
   section: Element,
   records: readonly { id: string }[] | null,
   choose: (seed: Seed) => void,
+  showLoader: boolean,
 ): Preview | null {
   const heading = section.querySelector(SECTION_HEADING);
   const row = heading?.parentElement?.parentElement;
@@ -672,7 +683,7 @@ function openPreview(
       isFiltered={false}
       onReset={() => {}}
       note={null}
-      trailing={loaderStatus()}
+      trailing={showLoader ? loaderStatus() : null}
       searchRef={searchRef}
     />
   );
@@ -689,7 +700,9 @@ function openPreview(
     })
     .catch((error: unknown) => context.warn("mount preview", error));
   const off = onFacts(() => ui?.render(toolbar()));
-  const offLoader = onLoader(() => ui?.render(toolbar()));
+  const offLoader = showLoader
+    ? onLoader(() => ui?.render(toolbar()))
+    : () => {};
 
   return {
     section,
@@ -705,11 +718,84 @@ function openPreview(
   };
 }
 
+function mountSection(
+  context: FeatureContext,
+  records: readonly SubmissionSummary[] | null,
+  match: CardMatcher | null,
+  options: SectionOptions,
+): () => void {
+  const { region, onMutation } = context;
+  let tools: GridTools | null = null;
+  let preview: Preview | null = null;
+  let carry: Seed | null = null;
+
+  const closePreview = (): void => {
+    preview?.close();
+    preview = null;
+  };
+
+  const sync = (): void => {
+    if (tools?.isIntact()) return;
+    const section = options.find(region);
+    const view = section ? readRoundView(section) : null;
+    const collected =
+      section && view === "grid" ? collect(section, match) : null;
+    if (!collected) {
+      tools?.close();
+      tools = null;
+      if (section && view === "carousel") {
+        if (preview && !preview.section.isConnected) closePreview();
+        preview ??= openPreview(
+          context,
+          section,
+          records,
+          (seed) => {
+            carry = seed;
+            seeAllButton(section)?.click();
+          },
+          options.showLoader,
+        );
+      } else if (carry === null) {
+        closePreview();
+      }
+      return;
+    }
+    if (tools && tools.grid !== collected.grid) {
+      tools.close();
+      tools = null;
+    }
+    if (tools) {
+      closePreview();
+      tools.update(collected.entries);
+    } else {
+      const old = preview;
+      preview = null;
+      tools = openTools(
+        context,
+        collected,
+        carry,
+        old ? { query: old.query, done: old.close } : null,
+        options,
+      );
+      carry = null;
+    }
+  };
+
+  onMutation(sync);
+  sync();
+
+  return () => {
+    tools?.close();
+    tools = null;
+    closePreview();
+  };
+}
+
 export const feature: Feature = {
   pages: ["round"],
   toggles: ["gridTools"],
   mount(context) {
-    const { page, region, onMutation } = context;
+    const { page } = context;
     if (page.kind !== "round") return;
     const records = page.records;
     const match = records ? createCardMatcher(records) : null;
@@ -719,62 +805,21 @@ export const feature: Feature = {
     style.textContent = gridCss;
     (document.head ?? document.documentElement).append(style);
 
-    let tools: GridTools | null = null;
-    let preview: Preview | null = null;
-    let carry: Seed | null = null;
-
-    const closePreview = (): void => {
-      preview?.close();
-      preview = null;
-    };
-
-    const sync = (): void => {
-      if (tools?.isIntact()) return;
-      const section = findReceivedSection(region);
-      const view = section ? readRoundView(section) : null;
-      const collected =
-        section && view === "grid" ? collect(section, match) : null;
-      if (!collected) {
-        tools?.close();
-        tools = null;
-        if (section && view === "carousel") {
-          if (preview && !preview.section.isConnected) closePreview();
-          preview ??= openPreview(context, section, records, (seed) => {
-            carry = seed;
-            seeAllButton(section)?.click();
-          });
-        } else if (carry === null) {
-          closePreview();
-        }
-        return;
-      }
-      if (tools && tools.grid !== collected.grid) {
-        tools.close();
-        tools = null;
-      }
-      if (tools) {
-        closePreview();
-        tools.update(collected.entries);
-      } else {
-        const old = preview;
-        preview = null;
-        tools = openTools(
-          context,
-          collected,
-          carry,
-          old ? { query: old.query, done: old.close } : null,
-        );
-        carry = null;
-      }
-    };
-
-    onMutation(sync);
-    sync();
+    const stops = [
+      mountSection(context, records, match, {
+        find: findReceivedSection,
+        shortcuts: true,
+        showLoader: true,
+      }),
+      mountSection(context, records, match, {
+        find: findAwardedSection,
+        shortcuts: false,
+        showLoader: false,
+      }),
+    ];
 
     return () => {
-      tools?.close();
-      tools = null;
-      closePreview();
+      for (const stop of stops) stop();
       style.remove();
     };
   },
