@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.8 - 2026-11-10
+
+### Patch Changes
+
+- Awarded proposals in older rounds now get a track from the round's community vote list instead of showing unknown, so track counts by round are complete.
+- shared@0.1.8
+
 ## 0.1.7 - 2026-11-10
 
 ### Patch Changes
