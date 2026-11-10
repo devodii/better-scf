@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.10 - 2026-11-10
+
+### Patch Changes
+
+- Fixes the assistant not being able to read whole rounds or search proposal text in 0.1.9, which also made big round questions slow again.
+- shared@0.1.10
+
 ## 0.1.9 - 2026-11-10
 
 ### Patch Changes
