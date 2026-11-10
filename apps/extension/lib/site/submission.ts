@@ -211,6 +211,30 @@ function firstPathSegment(url: URL): string | null {
   return segment === undefined ? null : segment;
 }
 
+const GITHUB_RESERVED = new Set([
+  "orgs",
+  "users",
+  "sponsors",
+  "topics",
+  "features",
+  "marketplace",
+  "settings",
+  "about",
+  "pricing",
+  "enterprise",
+  "apps",
+  "login",
+  "join",
+  "search",
+]);
+
+function githubHandle(url: URL): string | null {
+  const segment = firstPathSegment(url);
+  return segment === null || GITHUB_RESERVED.has(segment.toLowerCase())
+    ? null
+    : segment;
+}
+
 function isLeafBlock(element: Element): boolean {
   return element.querySelector(SEL.blocks) === null;
 }
@@ -486,7 +510,7 @@ function readTeam(
       const url = unwrapHref(anchor.getAttribute("href"));
       if (url === null) continue;
       const host = hostOf(url);
-      if (host === "github.com") member.github ??= firstPathSegment(url);
+      if (host === "github.com") member.github ??= githubHandle(url);
       else if (host === "x.com" || host === "twitter.com")
         member.x ??= firstPathSegment(url);
       else if (onDomain(url, "linkedin.com")) member.linkedin ??= url.href;
