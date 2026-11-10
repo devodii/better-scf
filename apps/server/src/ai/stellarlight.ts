@@ -4,7 +4,7 @@ import { z } from "zod";
 const BASE = "https://stellarlight.xyz";
 const TIMEOUT_MS = 12_000;
 const MAX_CHARS = 8_000;
-const CACHE_MS = 5 * 60_000;
+const CACHE_MS = 10 * 60_000;
 const CACHE_LIMIT = 200;
 const USER_AGENT = "better-scf-server";
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
@@ -213,6 +213,10 @@ const NAMES = Object.keys(ENDPOINTS) as [string, ...string[]];
 export const STELLARLIGHT_TOOL_NAMES: readonly string[] = NAMES;
 
 const cache = new Map<string, { at: number; value: string }>();
+const inflight = new Map<
+  string,
+  Promise<{ ok: boolean; status: number; body: string }>
+>();
 
 function remember(key: string, value: string): void {
   if (cache.size >= CACHE_LIMIT) {
@@ -225,7 +229,6 @@ function remember(key: string, value: string): void {
 async function request(
   endpoint: Endpoint,
   args: Record<string, unknown>,
-  signal: AbortSignal | undefined,
 ): Promise<{ ok: boolean; status: number; body: string }> {
   const path = endpoint.path(args);
   if (path === null)
@@ -248,20 +251,54 @@ async function request(
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_MS)
     return { ok: true, status: 200, body: hit.value };
-  const timeout = AbortSignal.timeout(TIMEOUT_MS);
-  const response = await fetch(url, {
-    method: endpoint.method ?? "GET",
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "application/json",
-      ...(endpoint.body ? { "Content-Type": "application/json" } : {}),
-    },
-    ...(endpoint.body ? { body: JSON.stringify(endpoint.body(args)) } : {}),
-    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-  });
-  const body = await response.text();
-  if (response.ok) remember(cacheKey, body);
-  return { ok: response.ok, status: response.status, body };
+  const shared = inflight.get(cacheKey);
+  if (shared) return shared;
+  const started = (async () => {
+    const response = await fetch(url, {
+      method: endpoint.method ?? "GET",
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/json",
+        ...(endpoint.body ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(endpoint.body ? { body: JSON.stringify(endpoint.body(args)) } : {}),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    const body = await response.text();
+    if (response.ok) remember(cacheKey, body);
+    return { ok: response.ok, status: response.status, body };
+  })().finally(() => inflight.delete(cacheKey));
+  inflight.set(cacheKey, started);
+  return started;
+}
+
+const isEmpty = (value: unknown): boolean =>
+  value === null ||
+  value === "" ||
+  (Array.isArray(value) && value.length === 0) ||
+  (typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 0);
+
+function prune(value: unknown, depth: number): unknown {
+  if (Array.isArray(value)) return value.map((item) => prune(item, depth + 1));
+  if (typeof value !== "object" || value === null) return value;
+  const kept: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    const next = prune(item, depth + 1);
+    if (depth > 0 && isEmpty(next)) continue;
+    kept[key] = next;
+  }
+  return kept;
+}
+
+export function compactJson(body: string): string {
+  try {
+    return JSON.stringify(prune(JSON.parse(body), 0));
+  } catch {
+    return body;
+  }
 }
 
 function fitJson(value: string): string | null {
@@ -400,7 +437,6 @@ export function createStellarlightTools() {
           const result = await request(
             { summary: "", path: () => "/api/builders" },
             { q: term, limit: 10 },
-            options.abortSignal,
           );
           if (!result.ok)
             return {
@@ -453,14 +489,10 @@ export function createStellarlightTools() {
         const endpoint = ENDPOINTS[name];
         if (!endpoint) return "Unknown Stellarlight tool.";
         try {
-          const result = await request(
-            endpoint,
-            args ?? {},
-            options.abortSignal,
-          );
+          const result = await request(endpoint, args ?? {});
           if (!result.ok)
             return `Stellarlight answered ${result.status} for ${name}: ${result.body.slice(0, 300)}. Usage: ${endpoint.summary}`;
-          return clip(result.body);
+          return clip(compactJson(result.body));
         } catch {
           return "Stellarlight did not answer in time.";
         }
