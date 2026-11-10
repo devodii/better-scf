@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.9 - 2026-11-10
+
+### Patch Changes
+
+- The assistant can now search what proposals say across a whole round, such as how many mention a technology, and reads team handles and budgets more accurately. Asking about a big round is also more reliable because failed proposal reads are retried.
+- shared@0.1.9
+
 ## 0.1.8 - 2026-11-10
 
 ### Patch Changes

@@ -1,5 +1,9 @@
 # shared
 
+## 0.1.9 - 2026-11-10
+
+No changes in this release.
+
 ## 0.1.8 - 2026-11-10
 
 No changes in this release.
