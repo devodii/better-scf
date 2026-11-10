@@ -5,6 +5,7 @@ import {
   publishFacts,
   readFacts,
 } from "../../site/round-facts";
+import { fetchRoundRecords } from "../../site/round-fetch";
 import { defineTool } from "./registry";
 
 const DEADLINE_MS = 65_000;
@@ -12,18 +13,33 @@ const DEADLINE_MS = 65_000;
 export const tool = defineTool({
   name: "read_proposals",
   description:
-    "Reads many proposals at once (up to 200 ids) so their derived facts, such as track (open, integration, rfp), team and funding history, become available in run_js as tracks and facts. Use it before answering anything about tracks or teams across a round. Takes up to a minute for a large round. Get the ids from a round page via fetch_page.",
+    "Reads proposals so their derived facts (track open, integration or rfp, team, funding history) become available in run_js as tracks and facts, and returns track counts. For a whole round pass only roundId (the rec id in the round page path): do not list ids, it is far faster. Otherwise pass up to 200 ids. Use it before answering anything about tracks or teams across a round.",
   timeoutMs: DEADLINE_MS + 3000,
   input: z.object({
+    roundId: z
+      .string()
+      .regex(/^rec[A-Za-z0-9]{14}$/)
+      .optional(),
     ids: z
       .array(z.string().regex(/^rec[A-Za-z0-9]{14}$/))
       .min(1)
-      .max(200),
+      .max(200)
+      .optional(),
   }),
-  run: async ({ ids }) => {
+  run: async ({ roundId, ids: listed }) => {
+    const round = roundId ? await fetchRoundRecords(roundId) : null;
+    const ids = [
+      ...new Set(listed ?? round?.records?.map((record) => record.id) ?? []),
+    ];
+    if (ids.length === 0)
+      return {
+        error: roundId
+          ? "That round could not be read. Check the round id."
+          : "Pass roundId or ids.",
+      };
     await loadSavedFacts();
     const known = readFacts();
-    const pending = [...new Set(ids)].filter((id) => !known.has(id));
+    const pending = ids.filter((id) => !known.has(id));
     const control = new AbortController();
     const timer = setTimeout(() => control.abort(), DEADLINE_MS);
     let cursor = 0;
