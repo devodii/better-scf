@@ -18,10 +18,13 @@ export const tool = defineTool({
       .describe("Submission id such as recXXXXXXXXXXXXXX"),
   }),
   run: async ({ id }) => {
-    const response = await fetch(`${SITE_ORIGIN}/dashboard/submissions/${id}`, {
-      credentials: "include",
-      headers: { Accept: "text/html" },
-    });
+    const get = () =>
+      fetch(`${SITE_ORIGIN}/dashboard/submissions/${id}`, {
+        credentials: "include",
+        headers: { Accept: "text/html" },
+        signal: AbortSignal.timeout(20_000),
+      });
+    const response = await get().catch(() => get());
     if (!response.ok || new URL(response.url).pathname.includes("login")) {
       return {
         found: false,

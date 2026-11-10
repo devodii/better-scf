@@ -1,5 +1,6 @@
 import Sandbox, { SandboxExecutionQuotaExceededError } from "@nyariv/sandboxjs";
 import { z } from "zod";
+import { readProposalText } from "../../site/enrich";
 import { readFacts } from "../../site/round-facts";
 import { readItems, saveItem } from "../scratchpad";
 import { defineTool } from "./registry";
@@ -18,7 +19,12 @@ function trackIndex(): {
     if (data.track) tracks[id] = data.track;
     facts[id] = {
       track: data.track,
+      title: data.title,
+      status: data.status,
+      round: data.round,
       team: data.builders.map((builder) => builder.name),
+      people: data.builders,
+      text: readProposalText(id),
       awardedBeforeUsd: data.awardedUsd,
       awardedBeforeCount: data.awardedCount,
     };

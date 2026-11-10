@@ -54,7 +54,16 @@ export interface Enrichment {
   awardedUsd: number | null;
   awardedCount: number | null;
   projectGithub: string | null;
+  title?: string;
+  status?: string;
+  round?: string | null;
 }
+
+const MAX_TEXT_CHARS = 20000;
+const texts = new Map<string, string>();
+
+export const readProposalText = (id: string): string | undefined =>
+  texts.get(id);
 
 const BLOCK_STATUS: Record<number, EnrichBlock> = {
   401: "signed-out",
@@ -95,6 +104,9 @@ function toEnrichment(submission: Submission): Enrichment {
     awardedUsd: submission.totalAwardedUsd,
     awardedCount: submission.awardedSubmissions,
     projectGithub: submission.links.github,
+    title: submission.title,
+    status: submission.status,
+    round: submission.roundId === "" ? null : submission.roundId,
   };
 }
 
@@ -191,6 +203,7 @@ async function readResponse(
     return null;
   }
   await recordOutcome(false);
+  texts.set(id, page.bodyText.slice(0, MAX_TEXT_CHARS));
   if (frozen) await rpc.putSubmissions([page.submission]).catch(() => {});
   return toEnrichment(page.submission);
 }
