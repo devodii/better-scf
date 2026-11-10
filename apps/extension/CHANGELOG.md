@@ -1,5 +1,12 @@
 # extension
 
+## 0.1.7 - 2026-11-10
+
+### Patch Changes
+
+- Asking the assistant about a whole round, such as how many proposals are on a track, is much faster because it no longer has to list every proposal by hand.
+- shared@0.1.7
+
 ## 0.1.6 - 2026-11-10
 
 ### Patch Changes

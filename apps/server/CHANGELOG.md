@@ -1,5 +1,9 @@
 # server
 
+## 0.1.7 - 2026-11-10
+
+No changes in this release.
+
 ## 0.1.6
 
 No changes in this release.

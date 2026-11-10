@@ -1,5 +1,11 @@
 # web
 
+## 0.1.7 - 2026-11-10
+
+### Patch Changes
+
+- shared@0.1.7
+
 ## 0.1.6
 
 ### Patch Changes
