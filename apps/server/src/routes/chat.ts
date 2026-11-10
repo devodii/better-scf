@@ -30,7 +30,7 @@ import { createStellarlightTools } from "../ai/stellarlight.js";
 import type { Env } from "../env.js";
 import type { ClientVariables } from "../middleware/client.js";
 
-const MAX_OUTPUT_TOKENS = 1500;
+const MAX_OUTPUT_TOKENS = 3500;
 const TEMPERATURE = 0.2;
 
 export interface ChatLogEntry {
