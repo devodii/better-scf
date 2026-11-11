@@ -4,6 +4,7 @@ import {
   type JSONSchema7,
   jsonSchema,
   type LanguageModel,
+  type ModelMessage,
   stepCountIs,
   streamText,
   type ToolSet,
@@ -32,6 +33,18 @@ import type { ClientVariables } from "../middleware/client.js";
 
 const MAX_OUTPUT_TOKENS = 3500;
 const TEMPERATURE = 0.2;
+const CACHE_ANTHROPIC = { cacheControl: { type: "ephemeral" } } as const;
+
+function cacheLastMessage(messages: ModelMessage[]): ModelMessage[] {
+  return messages.map((message, index) => {
+    const { anthropic: _previous, ...others } = message.providerOptions ?? {};
+    const providerOptions =
+      index === messages.length - 1
+        ? { ...others, anthropic: CACHE_ANTHROPIC }
+        : others;
+    return { ...message, providerOptions };
+  });
+}
 
 export interface ChatLogEntry {
   ts: string;
@@ -183,13 +196,15 @@ export function createChatRoute(deps: ChatRouteDeps) {
       const result = streamText({
         model: deps.getModel(),
         instructions: [
-          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+            providerOptions: { anthropic: CACHE_ANTHROPIC },
+          },
           {
             role: "system",
             content: buildContextBlock(body.context, body.page),
-            providerOptions: {
-              anthropic: { cacheControl: { type: "ephemeral" } },
-            },
+            providerOptions: { anthropic: CACHE_ANTHROPIC },
           },
         ],
         messages: await convertToModelMessages(body.messages, {
@@ -197,6 +212,9 @@ export function createChatRoute(deps: ChatRouteDeps) {
           ignoreIncompleteToolCalls: true,
         }),
         tools,
+        prepareStep: ({ messages }) => ({
+          messages: cacheLastMessage(messages),
+        }),
         stopWhen: stepCountIs(CHAT_LIMITS.maxSteps),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         temperature: TEMPERATURE,
